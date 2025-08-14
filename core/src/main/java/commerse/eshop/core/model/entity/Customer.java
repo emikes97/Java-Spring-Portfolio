@@ -9,6 +9,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Getter
 @Setter
 @Table(name = "customers")
@@ -25,10 +28,10 @@ public class Customer {
     private java.util.UUID customer_id;
     // ------------------------------------------------------------
 
-    @Column(length = 20)
+    @Column(name = "phone_number", length = 20, nullable = false)
     @Pattern(regexp = "^\\+?[1-9]\\d{7,14}$")
     @Size(max = 20)
-    private String phone_number;
+    private String phoneNumber;
 
     @Email
     @Column(nullable = false, unique = true, length = 255)
@@ -38,7 +41,6 @@ public class Customer {
     private String username;
 
     @Column(nullable = false, length = 100)
-    @lombok.ToString.Exclude
     private String password_hash;
 
     private String name;
@@ -46,9 +48,16 @@ public class Customer {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private java.time.OffsetDateTime created_at;
+    private java.time.OffsetDateTime createdAt;
 
-    private boolean subscribed;
+    @Column(name = "is_subscribed", nullable = false)
+    private boolean isSubscribed;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CustomerPaymentMethod> paymentMethods = new HashSet<>();
+
+    @OneToOne(mappedBy =  "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Cart cart;
 
     // == Constructor ==
     protected Customer(){}
@@ -66,11 +75,11 @@ public class Customer {
     public String toString() {
         return "Customer{" +
                 "email='" + email + '\'' +
-                ", phone_number='" + phone_number + '\'' +
+                ", phone_number='" + phoneNumber + '\'' +
                 ", name='" + name + '\'' +
                 ", surname='" + surname + '\'' +
-                ", created_at=" + created_at +
-                ", subscribed=" + subscribed +
+                ", created_at=" + createdAt +
+                ", subscribed=" + isSubscribed +
                 ", username='" + username + '\'' +
                 '}';
     }

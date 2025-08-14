@@ -1,0 +1,62 @@
+package commerse.eshop.core.model.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+@Setter
+@Getter
+@Entity
+@Table(name = "cart")
+public class Cart {
+
+    // == Constants ==
+    // == Fields ==
+    // == Auto Generated UUID for the cart_id
+    @Setter(AccessLevel.NONE)
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name="cart_id", updatable=false, nullable=false)
+    private java.util.UUID cartId;
+
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "customer_id", nullable = false)
+    @JsonIgnore
+    private Customer customer;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private java.time.OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private java.time.OffsetDateTime updatedAt;
+
+    // == Constructors ==
+
+    protected Cart(){}
+
+    // == Private Methods ==
+
+    // == Public Methods ==
+    /// Attach Cart to Customer and Customer to Cart. Only 1 unique Cart per customer ///
+    public void attachTo(Customer c){
+        this.customer = c;
+        c.setCart(this);
+    }
+
+    // == ToString ==
+
+    @Override
+    public String toString() {
+        return "Cart{" +
+                "cartId=" + cartId +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
+}
