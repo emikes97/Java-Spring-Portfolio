@@ -8,6 +8,9 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Setter
 @Getter
 @Entity
@@ -35,6 +38,10 @@ public class Cart {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private java.time.OffsetDateTime updatedAt;
+
+    /// Link Cart_Item to Cart -- Reverse ///
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<CartItem> cartItems = new HashSet<>();
 
     // == Constructors ==
 

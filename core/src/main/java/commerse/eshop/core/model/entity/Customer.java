@@ -53,9 +53,11 @@ public class Customer {
     @Column(name = "is_subscribed", nullable = false)
     private boolean isSubscribed;
 
+    /// Link PaymentMethods to Customer -- Reverse ///
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CustomerPaymentMethod> paymentMethods = new HashSet<>();
 
+    /// Link Cart to Customer -- Reverse ///
     @OneToOne(mappedBy =  "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
 
