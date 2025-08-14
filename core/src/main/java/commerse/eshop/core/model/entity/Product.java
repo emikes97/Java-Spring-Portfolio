@@ -3,6 +3,7 @@ package commerse.eshop.core.model.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
@@ -23,10 +24,15 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    @Column(name = "cart_item_id", nullable = false)
+    @Column(name = "product_id", nullable = false)
     private long product_id;
 
+    @NotBlank
+    @Column(name = "product_name", nullable = false, length = 200)
     private String name;
+
+    @NotBlank
+    @Column(name = "product_description", nullable = false, length = 255)
     private String description;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -49,10 +55,33 @@ public class Product {
     private OffsetDateTime updatedAt;
 
     @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    private boolean isActive = true;
+
+    @OneToMany(mappedBy = "product")
+    private ProductCategory productCategory;
+
 
     // == Constructors ==
+
+    protected Product(){}
+
     // == Private Methods ==
     // == Public Methods ==
+
     // == ToString ==
+
+    @Override
+    public String toString() {
+        return "Product{" +
+                "product_id=" + product_id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", productDetails=" + productDetails +
+                ", availStock=" + availStock +
+                ", price=" + price +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", isActive=" + isActive +
+                '}';
+    }
 }

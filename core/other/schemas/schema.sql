@@ -134,3 +134,6 @@ create table transactions(
 -- CREATE INDEX idx_tx_payment_gin     ON transactions USING GIN (payment_method   jsonb_path_ops);
 -- CREATE INDEX idx_transactions_order ON transactions(order_id);
 -- CREATE INDEX idx_transactions_time  ON transactions(submitted_at)
+
+ALTER TABLE transactions
+  ADD CONSTRAINT uq_transactions_order UNIQUE (order_id);
