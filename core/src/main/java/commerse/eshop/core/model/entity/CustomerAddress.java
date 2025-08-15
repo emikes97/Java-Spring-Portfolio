@@ -12,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Table(name = "customers_address")
 public class CustomerAddress {
+
     // == Constants ==
     // == Fields ==
     @Id

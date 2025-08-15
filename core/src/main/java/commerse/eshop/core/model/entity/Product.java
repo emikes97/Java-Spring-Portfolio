@@ -13,7 +13,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "products")
@@ -40,10 +42,11 @@ public class Product {
     private Map<String, Object> productDetails;
 
     @Min(0)
-    @Column(name = "avail_stock", nullable = false)
-    private int availStock;
+    @Column(name = "product_available_stock", nullable = false)
+    private int productAvailableStock;
 
     @Min(0)
+    @Column(name = "product_price", nullable = false)
     private BigDecimal price;
 
     @CreationTimestamp
@@ -58,7 +61,7 @@ public class Product {
     private boolean isActive = true;
 
     @OneToMany(mappedBy = "product")
-    private ProductCategory productCategory;
+    private Set<ProductCategory> productCategories = new HashSet<>();
 
 
     // == Constructors ==
@@ -77,7 +80,7 @@ public class Product {
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", productDetails=" + productDetails +
-                ", availStock=" + availStock +
+                ", availStock=" + productAvailableStock +
                 ", price=" + price +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +

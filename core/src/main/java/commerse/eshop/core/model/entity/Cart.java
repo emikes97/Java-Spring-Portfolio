@@ -8,8 +8,10 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Setter
 @Getter
@@ -24,7 +26,7 @@ public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name="cart_id", updatable=false, nullable=false)
-    private java.util.UUID cartId;
+    private UUID cartId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
@@ -33,11 +35,11 @@ public class Cart {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private java.time.OffsetDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private java.time.OffsetDateTime updatedAt;
+    private OffsetDateTime updatedAt;
 
     /// Link Cart_Item to Cart -- Reverse ///
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)

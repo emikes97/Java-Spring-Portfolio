@@ -9,8 +9,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -25,7 +27,7 @@ public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name="customer_id", updatable=false, nullable=false)
-    private java.util.UUID customer_id;
+    private UUID customerId;
     // ------------------------------------------------------------
 
     @Column(name = "phone_number", length = 20, nullable = false)
@@ -40,15 +42,15 @@ public class Customer {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, length = 100)
-    private String password_hash;
+    @Column(name = "password_hash", nullable = false, length = 100)
+    private String passwordHash;
 
     private String name;
     private String surname;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private java.time.OffsetDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     @Column(name = "is_subscribed", nullable = false)
     private boolean isSubscribed;
@@ -58,7 +60,7 @@ public class Customer {
     private Set<CustomerPaymentMethod> paymentMethods = new HashSet<>();
 
     /// Link Cart to Customer -- Reverse ///
-    @OneToOne(mappedBy =  "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
 
     // == Constructor ==

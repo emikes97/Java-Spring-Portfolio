@@ -12,8 +12,8 @@ public class ProductCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    @Column(name = "product_id", nullable = false)
-    private long product_id;
+    @Column(name = "product_category_id", nullable = false)
+    private long productCategoryId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)

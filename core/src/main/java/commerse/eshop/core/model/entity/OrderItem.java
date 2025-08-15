@@ -41,7 +41,7 @@ public class OrderItem {
     private BigDecimal priceAt;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "snap_shot_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     // == Constructors ==

@@ -26,14 +26,14 @@ public class Transaction {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Setter(AccessLevel.NONE)
-    @Column(name = "trans_id", nullable = false)
-    private UUID transId;
+    @Column(name = "transaction_id", nullable = false)
+    private UUID transactionId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", columnDefinition = "jsonb", nullable = false)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(name="customer_id", nullable = false)
+    @Column(name="customer_id_snapshot", nullable = false, length = 36)
     private String customerId;
 
     @JdbcTypeCode(SqlTypes.JSON)
@@ -49,8 +49,8 @@ public class Transaction {
     private OffsetDateTime submittedAt;
 
     // Will be updated at the final check if the transaction has been successful.
-    @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    @Column(name = "completed_at", nullable = false)
+    private OffsetDateTime completedAt;
 
     // == Constructors ==
 
@@ -63,12 +63,12 @@ public class Transaction {
     @Override
     public String toString() {
         return "Transaction{" +
-                "transId=" + transId +
+                "transId=" + transactionId +
                 ", order=" + order +
                 ", customerId='" + customerId + '\'' +
                 ", totalOutstanding=" + totalOutstanding +
                 ", submittedAt=" + submittedAt +
-                ", updatedAt=" + updatedAt +
+                ", updatedAt=" + completedAt +
                 '}';
     }
 }

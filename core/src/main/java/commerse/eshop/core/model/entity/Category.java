@@ -5,6 +5,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Setter
 @Getter
 @Entity
@@ -26,8 +29,8 @@ public class Category {
     @Column(name = "category_description", nullable = false)
     private String categoryDescription;
 
-    @OneToMany(mappedBy = "categories")
-    private ProductCategory productCategory;
+    @OneToMany(mappedBy = "category")
+    private Set<ProductCategory> productCategories = new HashSet<>();
 
     // == Constructors ==
 

@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 
@@ -65,7 +66,7 @@ public class CustomerPaymentMethod {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private java.time.OffsetDateTime createdAt;
+    private OffsetDateTime createdAt;
 
     // == Constructors ==
 

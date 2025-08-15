@@ -36,23 +36,20 @@ public class Order {
     private Customer customer;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "addr_to_send", columnDefinition = "jsonb", nullable = false)
-    private Map<String, Object> addresToSend;
+    @Column(name = "address_to_send", columnDefinition = "jsonb", nullable = false)
+    private Map<String, Object> addressToSend;
 
     @DecimalMin("0.01")
     @Column(name = "total_outstanding", nullable = false)
     private BigDecimal totalOutstanding;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "order_created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     // set when completed; null while pending
-    // Will be updated once transaction has been finalized, should be done via Async as its not crucial for
-    // the customer as the verification will be sent via sms/mail.
-    // Order // Transaction is for validation - on our side in case of an issue.
-    @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    @Column(name = "order_completed_at", nullable = false)
+    private OffsetDateTime completedAt;
 
     // == Constructors ==
 
@@ -67,10 +64,10 @@ public class Order {
         return "Order{" +
                 "orderId=" + orderId +
                 ", customer=" + customer +
-                ", addresToSend=" + addresToSend +
+                ", addresToSend=" + addressToSend +
                 ", totalOutstanding=" + totalOutstanding +
                 ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
+                ", updatedAt=" + completedAt +
                 '}';
     }
 }
