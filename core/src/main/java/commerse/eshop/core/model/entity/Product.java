@@ -31,7 +31,7 @@ public class Product {
 
     @NotBlank
     @Column(name = "product_name", nullable = false, length = 200)
-    private String name;
+    private String productName;
 
     @NotBlank
     @Column(name = "product_description", nullable = false, length = 255)
@@ -77,7 +77,7 @@ public class Product {
     public String toString() {
         return "Product{" +
                 "product_id=" + product_id +
-                ", name='" + name + '\'' +
+                ", productName='" + productName + '\'' +
                 ", description='" + description + '\'' +
                 ", productDetails=" + productDetails +
                 ", availStock=" + productAvailableStock +
