@@ -19,7 +19,7 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     // == Fetch all Cart_Items from a cart UUID.
     List<CartItem> findByCart_CartId(UUID cartId);
 
-    // == Sum all the outstanding of cart_items
+    // == Sum all the total outstanding of cart_items
     @Query(value = "select coalesce(sum(price_at * quantity), 0)::numeric from cart_item where cart_id = :cartId", nativeQuery = true)
     BigDecimal sumCartTotalOutstanding(@Param("cartId") UUID cartId);
 }
