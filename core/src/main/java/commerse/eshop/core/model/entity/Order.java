@@ -48,7 +48,7 @@ public class Order {
     private OffsetDateTime createdAt;
 
     // set when completed; null while pending
-    @Column(name = "order_completed_at", nullable = false)
+    @Column(name = "order_completed_at")
     private OffsetDateTime completedAt;
 
     // == Constructors ==
@@ -64,7 +64,7 @@ public class Order {
         return "Order{" +
                 "orderId=" + orderId +
                 ", customer=" + customer +
-                ", addresToSend=" + addressToSend +
+                ", addressToSend=" + addressToSend +
                 ", totalOutstanding=" + totalOutstanding +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + completedAt +

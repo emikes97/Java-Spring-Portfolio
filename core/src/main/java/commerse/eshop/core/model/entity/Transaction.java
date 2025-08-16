@@ -44,13 +44,27 @@ public class Transaction {
     @Column(name = "total_outstanding", nullable = false)
     private BigDecimal totalOutstanding;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 16)
+    private Status status;
+
+    @Column(name = "idempotency_key", unique = true, length = 100)
+    private String idempotencyKey;
+
     @CreationTimestamp
     @Column(name = "submitted_at", nullable = false, updatable = false)
     private OffsetDateTime submittedAt;
 
     // Will be updated at the final check if the transaction has been successful.
-    @Column(name = "completed_at", nullable = false)
+    @Column(name = "completed_at")
     private OffsetDateTime completedAt;
+
+    public enum Status { PENDING, SUCCEEDED, FAILED }
+
+    @PrePersist
+    void prePersist() {
+        if (status == null) status = Status.PENDING;
+    }
 
     // == Constructors ==
 
