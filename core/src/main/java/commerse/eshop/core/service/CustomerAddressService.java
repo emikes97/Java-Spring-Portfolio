@@ -5,6 +5,9 @@ import commerse.eshop.core.web.dto.requests.CustomerAddr.DTOUpdateCustomerAddres
 import commerse.eshop.core.web.dto.response.CustomerAddr.DTOCustomerAddressResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.UUID;
 

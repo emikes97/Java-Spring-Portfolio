@@ -6,5 +6,5 @@ public record DTOUpdateCustomerAddress(@Size(max=150) String country,
                                        @Size(max=100) String street,
                                        @Size(max=75) String city,
                                        @Size(max=50) String postalCode,
-                                       boolean isDefault) {
+                                       Boolean isDefault) {
 }
