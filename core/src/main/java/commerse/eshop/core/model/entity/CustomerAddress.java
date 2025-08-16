@@ -49,6 +49,16 @@ public class CustomerAddress {
 
     protected CustomerAddress(){}
 
+    public CustomerAddress(Customer customer, String country, String street,
+                           String city, String postalCode, boolean isDefault) {
+        this.customer = customer;
+        this.country = country;
+        this.street = street;
+        this.city = city;
+        this.postalCode = postalCode;
+        this.isDefault = isDefault;
+    }
+
     // == Private Methods ==
 
     // == ToString ==

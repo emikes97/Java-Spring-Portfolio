@@ -2,7 +2,10 @@ package commerse.eshop.core.repository;
 
 import commerse.eshop.core.model.entity.Customer;
 import commerse.eshop.core.model.entity.CustomerAddress;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,9 +22,15 @@ public interface CustomerAddrRepo extends JpaRepository<CustomerAddress, Long> {
     // Fetch all addresses that are bound to customer_id
     List<CustomerAddress> findByCustomerCustomerId(UUID customerId);
 
+    // Fetch all addresses that are bound to customer_id
+    Page<CustomerAddress> findByCustomerCustomerId(UUID customerId, Pageable pageable);
+
     // Fetch all addresses by City - Could be used for Marketing
     List<CustomerAddress> findByCityIgnoreCase(String city);
 
     // Fetch all addresses by Postal code - Could be used for Marketing
     List<CustomerAddress> findByPostalCode(String postalCode);
+
+    // Delete an address via id and customer UUID
+    long deleteByAddressIdAndCustomer_CustomerId(Long addressId, UUID customerId);
 }
