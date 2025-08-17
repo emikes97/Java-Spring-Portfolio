@@ -33,8 +33,6 @@ public class CartItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    //private long Product product;
-
     @Column(name = "product_name", nullable = false)
     private String productName;
 
@@ -52,6 +50,15 @@ public class CartItem {
     // == Constructors ==
 
     protected CartItem(){}
+
+    public CartItem(Cart cart, Product product, String productName, int quantity, BigDecimal priceAt, OffsetDateTime addedAt){
+        this.cart = cart;
+        this.product = product;
+        this.productName = productName;
+        this.quantity = quantity;
+        this.priceAt = priceAt;
+        this.addedAt = addedAt;
+    }
 
     // == Private Methods ==
     // == Public Methods ==

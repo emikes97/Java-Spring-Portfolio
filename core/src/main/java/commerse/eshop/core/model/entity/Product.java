@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -17,6 +18,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+
+@Setter
+@Getter
 @Entity
 @Table(name = "products")
 public class Product {
@@ -27,7 +31,7 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
     @Column(name = "product_id", nullable = false)
-    private long product_id;
+    private long productId;
 
     @NotBlank
     @Column(name = "product_name", nullable = false, length = 200)
@@ -76,7 +80,7 @@ public class Product {
     @Override
     public String toString() {
         return "Product{" +
-                "product_id=" + product_id +
+                "product_id=" + productId +
                 ", productName='" + productName + '\'' +
                 ", description='" + description + '\'' +
                 ", productDetails=" + productDetails +
