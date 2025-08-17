@@ -72,6 +72,16 @@ public class CustomerPaymentMethod {
 
     protected CustomerPaymentMethod(){}
 
+    public CustomerPaymentMethod(Customer customer, String provider, String brand, String last4, short yearExp, short monthExp, boolean isDefault){
+        this.customer = customer;
+        this.provider = provider;
+        this.brand = brand;
+        this.last4 = last4;
+        this.yearExp = yearExp;
+        this.monthExp = monthExp;
+        this.isDefault = isDefault;
+    }
+
     // == Private Methods ==
 
     @PrePersist

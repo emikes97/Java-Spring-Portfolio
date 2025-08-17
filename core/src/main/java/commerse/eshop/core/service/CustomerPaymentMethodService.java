@@ -18,7 +18,7 @@ public interface CustomerPaymentMethodService {
     DTOPaymentMethodResponse addPaymentMethod(UUID customerId, DTOAddPaymentMethod dto);
 
     // == Update Payment Method
-    DTOPaymentMethodResponse updatePaymentMethod(UUID customerId, DTOUpdatePaymentMethod dto);
+    DTOPaymentMethodResponse updatePaymentMethod(UUID customerId, UUID paymentMethodId, DTOUpdatePaymentMethod dto);
 
     // == Retrieve Payment method by ID
     CustomerPaymentMethod retrievePaymentMethod(UUID customerId, UUID paymentMethodId);
