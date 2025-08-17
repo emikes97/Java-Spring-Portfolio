@@ -4,6 +4,7 @@ import commerse.eshop.core.model.entity.CartItem;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,11 +22,12 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     Page<CartItem> findByCart_CartId(UUID cartId, Pageable pageable);
 
     // == Fetch cart_item with ProductId and cartId
-
+    @Query(value = "select * from cart_item where cart_id = :cartId and product_id = :productId", nativeQuery = true)
+    Optional<CartItem> getCartItemByCartIdAndProductId(@Param("cartId")  UUID cartId, @Param("productId") long productId);
 
     // == Find if Cart Item exists in Cart_Id or not
     @Query(value = "select exists (" +
-            "  select 1 from cart_items " +
+            "  select 1 from cart_item " +
             "  where cart_id = :cartId and product_id = :productId" +
             ")", nativeQuery = true)
     boolean findIfItemExists(UUID cartId, long productId);
@@ -33,4 +35,14 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     // == Sum all the total outstanding of cart_items
     @Query(value = "select coalesce(sum(price_at * quantity), 0)::numeric from cart_item where cart_id = :cartId", nativeQuery = true)
     BigDecimal sumCartTotalOutstanding(@Param("cartId") UUID cartId);
+
+    // == Delete by cartId and ProductId
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "delete from cart_item where cart_id = :cartId and product_id = :productId", nativeQuery = true)
+    long deleteItemByCartIdAndProductId(@Param("cartId")UUID cartId, @Param("productId") long productId);
+
+    // == Delete all Cart Items with Cart UUID
+        @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "delete from cart_item where cart_id = :cartId", nativeQuery = true)
+    long clearCart(@Param("cartId") UUID cartId);
 }

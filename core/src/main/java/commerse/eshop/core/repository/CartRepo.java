@@ -14,7 +14,7 @@ public interface CartRepo extends JpaRepository<Cart, UUID> {
     Optional<Cart> findByCartId(UUID cartId);
 
     // Fetch cart by Customer
-    Optional<UUID> findByCustomerCustomerId(UUID customerId);
+    Optional<Cart> findByCustomerCustomerId(UUID customerId);
 
     // Fetch Customer UUID from Cart
     @Query(value = "select customer_id from cart where cart_id = :cartId", nativeQuery = true)

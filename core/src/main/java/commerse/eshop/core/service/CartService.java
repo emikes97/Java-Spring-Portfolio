@@ -13,16 +13,16 @@ public interface CartService {
     Page<DTOCartItemResponse> viewAllCartItems(UUID customerId, Pageable pageable);
 
     // Retrieve an item from cart
-    Optional<DTOCartItemResponse> findItem(UUID customerId, long productId);
+    DTOCartItemResponse findItem(UUID customerId, long productId);
 
     // == Cart add items -- Overloaded methods ==
     DTOCartItemResponse addCartItem(UUID customerId, long productId); // Default Quantity 1 || If product already in cart = cart.qnt +1
     DTOCartItemResponse addCartItem(UUID customerId, long productId, int quantity); // If product already in cart = cart.qnt + quantity
 
     // == Cart Remove Item
-    DTOCartItemResponse removeCartItem(UUID customerId, long productId); // Removes all quantities of the item if no specified quantity is provided
-    DTOCartItemResponse removeCartItem(UUID customerId, long productId, int quantity); // Remove the quantity of product // if < 0 then remove the item altogether
+    void removeCartItem(UUID customerId, long productId); // Removes all quantities of the item if no specified quantity is provided
+    void removeCartItem(UUID customerId, long productId, int quantity); // Remove the quantity of product // if < 0 then remove the item altogether
 
     // == Clear Cart ==
-    DTOCartItemResponse clearCart(UUID customerId);
+    void clearCart(UUID customerId);
 }
