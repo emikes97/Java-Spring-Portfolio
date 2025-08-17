@@ -90,6 +90,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         return toDto(paymentMethod);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public CustomerPaymentMethod retrievePaymentMethod(UUID customerId, UUID paymentMethodId) {
         return customerPaymentMethodRepo.findByCustomer_CustomerIdAndPaymentMethodId(customerId, paymentMethodId).orElseThrow(
@@ -97,6 +98,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         );
     }
 
+    @Transactional
     @Override
     public void deletePaymentMethod(UUID customerId, UUID paymentId) {
         long outcome = customerPaymentMethodRepo.deleteByCustomer_CustomerIdAndPaymentMethodId(customerId, paymentId);
