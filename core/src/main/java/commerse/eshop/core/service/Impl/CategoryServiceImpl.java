@@ -59,6 +59,7 @@ public class CategoryServiceImpl implements CategoryService {
         return toDto(category);
     }
 
+    @Transactional
     @Override
     public void deleteCategory(long categoryId) {
         long deleted = categoryRepo.deleteCategory(categoryId);
