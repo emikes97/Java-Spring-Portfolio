@@ -12,12 +12,24 @@ public interface ProductService {
     // == Add New Product
     DTOProductResponse addProduct(DTOAddProduct dto);
 
-    // == Remove Product
-    void removeProduct(long id);
-
     // == Fetch Product
-    Optional<DTOProductResponse> getProduct(long id);
+    DTOProductResponse getProduct(long id);
 
     // == Fetch all products of a category
-    Page<DTOProductResponse> getAllProducts(String category, long categoryId, Pageable pageable);
+    Page<DTOProductResponse> getAllProducts(long categoryId, Pageable pageable);
+
+    // == Increase quantity of a product
+    void increaseQuantity(long productId, int quantity);
+
+    // == Decrease quantity of a product
+    void decreaseQuantity(long productId, int quantity);
+
+    // == Link Product with Category
+    void linkProduct(long productId, long categoryId);
+
+    // == De-link product from category
+    void delinkProduct(long productId, long categoryId);
+
+    // == Remove Product
+    void removeProduct(long id);
 }

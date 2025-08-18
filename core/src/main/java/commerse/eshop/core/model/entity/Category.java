@@ -1,6 +1,9 @@
 package commerse.eshop.core.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,7 +14,8 @@ import java.util.Set;
 @Setter
 @Getter
 @Entity
-@Table(name = "categories")
+@Table(name = "categories",
+        uniqueConstraints = @UniqueConstraint(columnNames = "category_name"))
 public class Category {
 
     // == Constants ==
@@ -23,13 +27,18 @@ public class Category {
     @Column(name = "category_id", nullable = false)
     private long categoryId;
 
-    @Column(name = "category_name", nullable = false)
+    @NotBlank
+    @Size(max = 50)
+    @Column(name = "category_name", nullable = false, length = 50)
     private String categoryName;
 
-    @Column(name = "category_description", nullable = false)
+    @NotBlank
+    @Size(max = 255)
+    @Column(name = "category_description", nullable = false, length = 255)
     private String categoryDescription;
 
     @OneToMany(mappedBy = "category")
+    @JsonIgnore
     private Set<ProductCategory> productCategories = new HashSet<>();
 
     // == Constructors ==

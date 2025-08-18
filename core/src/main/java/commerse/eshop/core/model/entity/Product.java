@@ -1,7 +1,9 @@
 package commerse.eshop.core.model.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
@@ -49,8 +51,8 @@ public class Product {
     @Column(name = "product_available_stock", nullable = false)
     private int productAvailableStock;
 
-    @Min(0)
-    @Column(name = "product_price", nullable = false)
+    @DecimalMin("0.00")
+    @Column(name = "product_price", nullable = false, precision = 14, scale = 2)
     private BigDecimal price;
 
     @CreationTimestamp
@@ -65,12 +67,23 @@ public class Product {
     private boolean isActive = true;
 
     @OneToMany(mappedBy = "product")
+    @JsonIgnore
     private Set<ProductCategory> productCategories = new HashSet<>();
 
 
     // == Constructors ==
 
     protected Product(){}
+
+    public Product(String productName, String description, Map<String, Object> productDetails, int productAvailableStock,
+    BigDecimal price, boolean isActive){
+        this.productName = productName;
+        this.description = description;
+        this.productDetails = productDetails;
+        this.productAvailableStock = productAvailableStock;
+        this.price = price;
+        this.isActive = isActive;
+    }
 
     // == Private Methods ==
     // == Public Methods ==

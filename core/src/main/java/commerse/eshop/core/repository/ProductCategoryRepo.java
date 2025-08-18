@@ -14,4 +14,10 @@ public interface ProductCategoryRepo extends JpaRepository<ProductCategory, Long
     @Query(value = "select p.* from products p join product_category pc on pc.product_id = p.product_id where pc.category_id = :categoryId" +
             "order by p.created_at desc", nativeQuery = true)
     List<Product> findProductsByCategory(@Param("categoryId") long categoryId);
+
+    // == Check if link already exists ==
+    boolean existsByProduct_ProductIdAndCategory_CategoryId(long productId, long categoryId);
+
+    // == Delete a link if it exists ==
+    int deleteByProduct_ProductIdAndCategory_CategoryId(long productId, long categoryId);
 }

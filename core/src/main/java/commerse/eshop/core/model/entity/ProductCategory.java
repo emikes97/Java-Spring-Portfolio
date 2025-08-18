@@ -2,10 +2,14 @@ package commerse.eshop.core.model.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
-@Table(name = "product_category")
+@Table(name = "product_category",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
 public class ProductCategory {
 
     // == Fields ==
