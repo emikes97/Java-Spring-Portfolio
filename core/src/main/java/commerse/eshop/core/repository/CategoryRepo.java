@@ -2,7 +2,9 @@ package commerse.eshop.core.repository;
 
 import commerse.eshop.core.model.entity.Category;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,4 +24,9 @@ public interface CategoryRepo extends JpaRepository<Category, Long> {
 
     // == Find all ascending
     List<Category> findAllByOrderByCategoryNameAsc();
+
+    // == Delete by ID
+    @Modifying
+    @Query(value = "delete from categories where categories_id = :catId", nativeQuery = true)
+    long deleteCategory(@Param("catId") long catId);
 }

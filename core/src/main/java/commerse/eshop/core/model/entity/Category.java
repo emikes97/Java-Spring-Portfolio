@@ -36,6 +36,11 @@ public class Category {
 
     protected Category(){}
 
+    public Category(String categoryName, String categoryDescription){
+        this.categoryName = categoryName;
+        this.categoryDescription = categoryDescription;
+    }
+
     // == Private Methods ==
     // == Public Methods ==
     // == ToString ==
