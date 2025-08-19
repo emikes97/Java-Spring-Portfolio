@@ -1,5 +1,6 @@
 package commerse.eshop.core.model.entity;
 
+import commerse.eshop.core.model.entity.enums.OrderStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.AccessLevel;
@@ -43,6 +44,10 @@ public class Order {
     @Column(name = "total_outstanding", nullable = false)
     private BigDecimal totalOutstanding;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 32)
+    private OrderStatus status = OrderStatus.PENDING_PAYMENT;
+
     @CreationTimestamp
     @Column(name = "order_created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
@@ -51,9 +56,20 @@ public class Order {
     @Column(name = "order_completed_at")
     private OffsetDateTime completedAt;
 
+    //To be implemented in the new Schema.
+
     // == Constructors ==
 
     protected Order(){}
+
+    public Order(Customer customer, Map<String, Object> addressToSend, BigDecimal totalOutstanding, OffsetDateTime createdAt)
+    {
+        this.customer = customer;
+        this.addressToSend = addressToSend;
+        this.totalOutstanding = totalOutstanding;
+        this.createdAt = createdAt;
+        this.status = OrderStatus.PENDING_PAYMENT;
+    }
 
     // == Private Methods ==
     // == Public Methods ==
