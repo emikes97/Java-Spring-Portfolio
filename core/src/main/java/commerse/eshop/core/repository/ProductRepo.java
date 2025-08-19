@@ -33,5 +33,4 @@ public interface ProductRepo extends JpaRepository<Product, Long> {
     // == Find Product stock by Name ==
     @Query(value = "select product_available_stock from products where product_name = :productName", nativeQuery = true)
     Optional<Integer> findAvailableStock(@Param("productName") String productName);
-
 }
