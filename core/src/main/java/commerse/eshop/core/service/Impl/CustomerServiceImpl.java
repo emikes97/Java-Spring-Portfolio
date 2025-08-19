@@ -1,5 +1,6 @@
 package commerse.eshop.core.service.Impl;
 
+import commerse.eshop.core.model.entity.Cart;
 import commerse.eshop.core.model.entity.CartItem;
 import commerse.eshop.core.model.entity.Customer;
 import commerse.eshop.core.model.entity.Order;
@@ -50,9 +51,9 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public Page<CartItem> getCartItems(UUID customerId, Pageable pageable) {
-        UUID cartId = cartRepo.findByCustomerCustomerId(customerId)
+        Cart cart = cartRepo.findByCustomerCustomerId(customerId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for customer: " + customerId));
-        return cartItemRepo.findByCart_CartId(cartId, pageable);
+        return cartItemRepo.findByCart_CartId(cart.getCartId(), pageable);
     }
 
     @Transactional

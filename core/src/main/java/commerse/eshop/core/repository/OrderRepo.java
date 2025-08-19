@@ -15,6 +15,9 @@ public interface OrderRepo extends JpaRepository<Order, UUID> {
     List<Order> findByCustomer_CustomerId(UUID customerId);
     Page<Order> findByCustomer_CustomerId(UUID customerId, Pageable pageable);
 
+    // Find By CustomerId and OrderId
+    Optional<Order> findByCustomer_CustomerIdAndOrderId(UUID customerId, UUID orderId);
+
     // Open / Completed (newest first)
     List<Order> findByCustomer_CustomerIdAndCompletedAtIsNullOrderByCreatedAtDesc(UUID customerId);
     List<Order> findByCustomer_CustomerIdAndCompletedAtIsNotNullOrderByCreatedAtDesc(UUID customerId);

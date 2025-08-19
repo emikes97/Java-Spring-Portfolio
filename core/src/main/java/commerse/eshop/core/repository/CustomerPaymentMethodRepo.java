@@ -22,7 +22,7 @@ public interface CustomerPaymentMethodRepo extends JpaRepository<CustomerPayment
     List<CustomerPaymentMethod> findByCustomer(Customer customer);
 
     // Fetch PaymentMethod by customer UUID and paymentmethod UUID
-    Optional<CustomerPaymentMethod> findByCustomer_CustomerIdAndPaymentMethodId(UUID customerId, UUID paymentId);
+    Optional<CustomerPaymentMethod> findByCustomer_CustomerIdAndCustomerPaymentId(UUID customerId, UUID paymentId);
 
     // Update default method to false
     @Modifying
@@ -31,7 +31,7 @@ public interface CustomerPaymentMethodRepo extends JpaRepository<CustomerPayment
 
     // Remove the payment method with Customer UUID and payment UUID
     @Modifying
-    long deleteByCustomer_CustomerIdAndPaymentMethodId(UUID customerId, UUID paymentId);
+    long deleteByCustomer_CustomerIdAndCustomerPaymentId(UUID customerId, UUID paymentId);
 
     // Fetch All payment methods by Customer ID pageable
     Page<CustomerPaymentMethod> findByCustomer_CustomerId(UUID customerId, Pageable pageable);

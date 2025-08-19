@@ -19,7 +19,7 @@ public interface CustomerAddrRepo extends JpaRepository<CustomerAddress, Long> {
     Optional<CustomerAddress> findByCustomerCustomerIdAndIsDefaultTrue(UUID customerId);
 
     // == Fetch the address by UUID and ID to ensure its the correct user
-    Optional<CustomerAddress> findByAddressIdAndCustomer_CustomerId(Long addressId, UUID customerId);
+    Optional<CustomerAddress> findByAddrIdAndCustomer_CustomerId(Long addressId, UUID customerId);
 
     // Fetch all the addresses by Customer
     List<CustomerAddress> findByCustomer(Customer customer);
@@ -37,7 +37,7 @@ public interface CustomerAddrRepo extends JpaRepository<CustomerAddress, Long> {
     List<CustomerAddress> findByPostalCode(String postalCode);
 
     // Delete an address via id and customer UUID
-    long deleteByAddressIdAndCustomer_CustomerId(Long addressId, UUID customerId);
+    long deleteByAddrIdAndCustomer_CustomerId(Long addressId, UUID customerId);
 
     // == Set default flag to false
     @Modifying

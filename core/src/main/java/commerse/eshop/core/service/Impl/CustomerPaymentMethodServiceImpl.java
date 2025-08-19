@@ -58,7 +58,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Override
     public DTOPaymentMethodResponse updatePaymentMethod(UUID customerId, UUID paymentMethodId, DTOUpdatePaymentMethod dto) {
 
-        CustomerPaymentMethod paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndPaymentMethodId(
+        CustomerPaymentMethod paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
                 customerId, paymentMethodId).orElseThrow(
                 () -> new RuntimeException("The payment method doesn't exist"));
 
@@ -93,7 +93,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Transactional(readOnly = true)
     @Override
     public CustomerPaymentMethod retrievePaymentMethod(UUID customerId, UUID paymentMethodId) {
-        return customerPaymentMethodRepo.findByCustomer_CustomerIdAndPaymentMethodId(customerId, paymentMethodId).orElseThrow(
+        return customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(customerId, paymentMethodId).orElseThrow(
                 () -> new RuntimeException("The payment method doesn't exist.")
         );
     }
@@ -101,7 +101,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Transactional
     @Override
     public void deletePaymentMethod(UUID customerId, UUID paymentId) {
-        long outcome = customerPaymentMethodRepo.deleteByCustomer_CustomerIdAndPaymentMethodId(customerId, paymentId);
+        long outcome = customerPaymentMethodRepo.deleteByCustomer_CustomerIdAndCustomerPaymentId(customerId, paymentId);
 
         if(outcome == 1){
             log.info("Payment method has been deleted={}", outcome);

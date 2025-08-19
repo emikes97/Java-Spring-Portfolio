@@ -20,10 +20,10 @@ public interface OrderService {
     DTOOrderPlacedResponse placeOrderFromCart(UUID customerId); // Use defaults if not applicable reject the order.
 
     // == Cancel Order ==
-    void cancel(UUID customerId, long orderId);
+    void cancel(UUID customerId, UUID orderId);
 
     // == View Order ==
-    DTOOrderDetailsResponse viewOrder(UUID customerId, long orderId);
+    DTOOrderDetailsResponse viewOrder(UUID customerId, UUID orderId);
 
     // == View all orders ==
     Page<DTOOrderDetailsResponse> viewAllOrders(UUID customerId, Pageable pageable);

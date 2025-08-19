@@ -95,7 +95,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     public DTOCustomerAddressResponse makeDefaultCustomerAddress(UUID customerId, Long id) {
 
-        CustomerAddress customerAddress = customerAddrRepo.findByAddressIdAndCustomer_CustomerId(id, customerId).orElseThrow(
+        CustomerAddress customerAddress = customerAddrRepo.findByAddrIdAndCustomer_CustomerId(id, customerId).orElseThrow(
                 () -> new RuntimeException("Customer or Address doesn't exist.")
         );
 
@@ -111,7 +111,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     @Transactional
     public void deleteCustomerAddress(UUID customerId, Long id) {
-        long deleted = customerAddrRepo.deleteByAddressIdAndCustomer_CustomerId(id, customerId);
+        long deleted = customerAddrRepo.deleteByAddrIdAndCustomer_CustomerId(id, customerId);
 
         if (deleted == 0){
             throw new NoSuchElementException("Address not found");

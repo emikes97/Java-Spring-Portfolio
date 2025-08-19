@@ -10,7 +10,7 @@ import java.util.UUID;
 public interface CustomerRepo extends JpaRepository<Customer, UUID> {
 
     // == Find Customer by ==
-    Optional<Customer> findByPhone(String phoneNumber);
+    Optional<Customer> findByPhoneNumber(String phoneNumber);
     Optional<Customer> findByEmail(String email);
 
     // == Return Accounts with the same Name // SurName == //
