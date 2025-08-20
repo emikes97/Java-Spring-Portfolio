@@ -1,14 +1,14 @@
 package commerse.eshop.core.service.Impl;
 
-import commerse.eshop.core.model.entity.Cart;
-import commerse.eshop.core.model.entity.CartItem;
-import commerse.eshop.core.model.entity.Customer;
-import commerse.eshop.core.model.entity.Order;
+import commerse.eshop.core.model.entity.*;
 import commerse.eshop.core.repository.CartItemRepo;
 import commerse.eshop.core.repository.CartRepo;
 import commerse.eshop.core.repository.CustomerRepo;
 import commerse.eshop.core.repository.OrderRepo;
 import commerse.eshop.core.service.CustomerService;
+import commerse.eshop.core.web.dto.response.Customer.DTOCustomerAdResponse;
+import commerse.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
+import commerse.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -46,16 +48,28 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<Order> getOrders(UUID customerId, Pageable pageable) {
-        return orderRepo.findByCustomer_CustomerId(customerId, pageable);
+    public DTOCustomerResponse getProfile(String phoneOrEmail) {
+
+        if (phoneOrEmail == null)
+            throw new IllegalArgumentException("[Error] You can't request a search without the required identifications.");
+
+        Customer customer = customerRepo.findByPhoneNumberOrEmail(phoneOrEmail).orElseThrow(() ->
+                new NoSuchElementException("Customer not found for given phone/email"));
+        return toDto(customer);
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Page<CartItem> getCartItems(UUID customerId, Pageable pageable) {
+    public Page<DTOCustomerOrderResponse> getOrders(UUID customerId, Pageable pageable) {
+        return orderRepo.findByCustomer_CustomerId(customerId, pageable).map(this::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<DTOCustomerCartItemResponse> getCartItems(UUID customerId, Pageable pageable) {
         Cart cart = cartRepo.findByCustomerCustomerId(customerId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for customer: " + customerId));
-        return cartItemRepo.findByCart_CartId(cart.getCartId(), pageable);
+        return cartItemRepo.findByCart_CartId(cart.getCartId(), pageable).map(this::toDto);
     }
 
     @Transactional
@@ -135,6 +149,8 @@ public class CustomerServiceImpl implements CustomerService {
         customerRepo.save(customer);
     }
 
+    ///  Private methods / Helpers to map to DTOs
+
     private DTOCustomerResponse toDto(Customer c){
         return new DTOCustomerResponse(
                 c.getCustomerId(),
@@ -144,6 +160,39 @@ public class CustomerServiceImpl implements CustomerService {
                 c.getName(),
                 c.getSurname(),
                 c.getCreatedAt()
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private DTOCustomerOrderResponse toDto(Order o){
+        var addrDto = toDtoFromJson((Map<String, Object>) o.getAddressToSend());
+        return new DTOCustomerOrderResponse(
+                o.getOrderId(),
+                o.getCustomer().getCustomerId(),
+                o.getTotalOutstanding(),
+                addrDto,
+                o.getCreatedAt(),
+                o.getCompletedAt()
+        );
+    }
+
+    private DTOCustomerCartItemResponse toDto(CartItem ci){
+        return new DTOCustomerCartItemResponse(
+                ci.getCartItemId(),
+                ci.getCart().getCartId(),
+                ci.getProduct().getProductId(),
+                ci.getProductName(),
+                ci.getQuantity(),
+                ci.getPriceAt(),
+                ci.getAddedAt());
+    }
+
+    private DTOCustomerAdResponse toDtoFromJson(Map<String, Object> a){
+        return new DTOCustomerAdResponse(
+                (String) a.get("country"),
+                (String) a.get("street"),
+                (String) a.get("city"),
+                (String) a.get("postalCode")
         );
     }
 }

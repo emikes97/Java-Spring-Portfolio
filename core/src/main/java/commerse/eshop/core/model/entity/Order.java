@@ -44,8 +44,9 @@ public class Order {
     @Column(name = "total_outstanding", nullable = false)
     private BigDecimal totalOutstanding;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 32)
+//    @Enumerated(EnumType.STRING)
+//    @Column(name = "status", nullable = false, length = 32)
+    @Transient
     private OrderStatus status = OrderStatus.PENDING_PAYMENT;
 
     @CreationTimestamp
