@@ -27,6 +27,6 @@ public interface CategoryRepo extends JpaRepository<Category, Long> {
 
     // == Delete by ID
     @Modifying
-    @Query(value = "delete from categories where categories_id = :catId", nativeQuery = true)
-    long deleteCategory(@Param("catId") long catId);
+    @Query(value = "delete from categories where category_id = :catId", nativeQuery = true)
+    int deleteCategory(@Param("catId") long catId);
 }

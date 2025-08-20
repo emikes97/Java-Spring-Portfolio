@@ -62,7 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     @Override
     public void deleteCategory(long categoryId) {
-        long deleted = categoryRepo.deleteCategory(categoryId);
+        int deleted = categoryRepo.deleteCategory(categoryId);
         log.info("{}, {} was deleted", deleted, categoryId);
     }
 
