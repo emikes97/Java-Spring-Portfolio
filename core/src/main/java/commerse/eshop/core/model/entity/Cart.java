@@ -35,7 +35,7 @@ public class Cart {
     private Customer customer;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp

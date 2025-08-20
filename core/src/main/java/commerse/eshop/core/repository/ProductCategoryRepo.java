@@ -12,7 +12,7 @@ public interface ProductCategoryRepo extends JpaRepository<ProductCategory, Long
 
     // == Fetch all products by category ==
     @Query(value = "select p.* from products p join product_category pc on pc.product_id = p.product_id where pc.category_id = :categoryId" +
-            "order by p.created_at desc", nativeQuery = true)
+            "order by p.createdAt desc", nativeQuery = true)
     List<Product> findProductsByCategory(@Param("categoryId") long categoryId);
 
     // == Check if link already exists ==

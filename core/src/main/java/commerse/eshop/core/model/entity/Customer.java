@@ -49,7 +49,7 @@ public class Customer {
     private String surname;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "createdAt", nullable = false)
     private OffsetDateTime createdAt;
 
     @Column(name = "is_subscribed", nullable = false)
@@ -82,7 +82,7 @@ public class Customer {
                 ", phone_number='" + phoneNumber + '\'' +
                 ", name='" + name + '\'' +
                 ", surname='" + surname + '\'' +
-                ", created_at=" + createdAt +
+                ", createdAt=" + createdAt +
                 ", subscribed=" + isSubscribed +
                 ", username='" + username + '\'' +
                 '}';

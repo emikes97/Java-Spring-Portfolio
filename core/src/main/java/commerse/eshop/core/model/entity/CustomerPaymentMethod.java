@@ -65,7 +65,7 @@ public class CustomerPaymentMethod {
     private boolean isDefault;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "createdAt", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     // == Constructors ==

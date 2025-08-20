@@ -9,6 +9,7 @@ import commerse.eshop.core.repository.CartRepo;
 import commerse.eshop.core.repository.CustomerRepo;
 import commerse.eshop.core.repository.OrderRepo;
 import commerse.eshop.core.service.CustomerService;
+import commerse.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,8 +39,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Transactional(readOnly = true)
     @Override
-    public Customer getProfile(UUID customerId) {
-        return customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
+    public DTOCustomerResponse getProfile(UUID customerId) {
+        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
+        return toDto(customer);
     }
 
     @Transactional(readOnly = true)
@@ -131,5 +133,17 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setPasswordHash(passwordEncoder.encode(newPassword));
         customerRepo.save(customer);
+    }
+
+    private DTOCustomerResponse toDto(Customer c){
+        return new DTOCustomerResponse(
+                c.getCustomerId(),
+                c.getPhoneNumber(),
+                c.getEmail(),
+                c.getUsername(),
+                c.getName(),
+                c.getSurname(),
+                c.getCreatedAt()
+        );
     }
 }
