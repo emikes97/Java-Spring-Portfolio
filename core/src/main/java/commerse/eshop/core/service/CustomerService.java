@@ -1,6 +1,7 @@
 package commerse.eshop.core.service;
 
 import commerse.eshop.core.model.entity.CartItem;
+import commerse.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
@@ -19,6 +20,9 @@ public interface CustomerService {
 
     Page<DTOCustomerOrderResponse> getOrders(UUID customerId, Pageable pageable);
     Page<DTOCustomerCartItemResponse> getCartItems(UUID customerId, Pageable pageable);
+
+    // == Create User //
+    DTOCustomerResponse createUser(DTOCustomerCreateUser dto);
 
     // == Update Profile - @Transaction //
     void updateName(UUID customerId, String password, String name);

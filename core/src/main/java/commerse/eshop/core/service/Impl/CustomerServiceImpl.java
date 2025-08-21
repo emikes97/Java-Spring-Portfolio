@@ -6,6 +6,7 @@ import commerse.eshop.core.repository.CartRepo;
 import commerse.eshop.core.repository.CustomerRepo;
 import commerse.eshop.core.repository.OrderRepo;
 import commerse.eshop.core.service.CustomerService;
+import commerse.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerAdResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -37,6 +39,21 @@ public class CustomerServiceImpl implements CustomerService {
         this.cartRepo = cartRepo;
         this.cartItemRepo = cartItemRepo;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public DTOCustomerResponse createUser(DTOCustomerCreateUser dto) {
+
+        // Hash the password
+        String hashed = passwordEncoder.encode(dto.password());
+
+        /// Create the user,
+        Customer customer = new Customer(dto.phoneNumber(), dto.email(), dto.userName(), hashed, dto.name(), dto.surname());
+        customerRepo.save(customer);
+        Cart cart = new Cart(customer);
+        cartRepo.save(cart);
+
+        return toDto(customer);
     }
 
     @Transactional(readOnly = true)

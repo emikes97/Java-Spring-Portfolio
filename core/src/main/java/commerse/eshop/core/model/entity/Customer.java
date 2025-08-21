@@ -66,6 +66,17 @@ public class Customer {
     // == Constructor ==
     protected Customer(){}
 
+    public Customer(String phoneNumber, String email, String username, String passwordHash, String name, String surname){
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.name = name != null ? name : "";
+        this.surname = surname != null ? surname : "";
+        this.createdAt = OffsetDateTime.now();
+        this.isSubscribed = false;
+    }
+
     // == Normalization ==
     @PrePersist
     @PreUpdate

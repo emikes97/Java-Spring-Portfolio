@@ -50,6 +50,12 @@ public class Cart {
 
     protected Cart(){}
 
+    public Cart(Customer customer){
+        this.customer = customer;
+        this.createdAt = OffsetDateTime.now();
+        attachTo(customer); // Attach to the created customer.
+    }
+
     // == Private Methods ==
 
     // == Public Methods ==

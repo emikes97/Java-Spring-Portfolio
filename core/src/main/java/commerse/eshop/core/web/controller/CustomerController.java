@@ -1,9 +1,7 @@
 package commerse.eshop.core.web.controller;
 
-import commerse.eshop.core.model.entity.Customer;
 import commerse.eshop.core.service.CustomerService;
-import commerse.eshop.core.web.dto.requests.Customer.DTOCustomerUpdateName;
-import commerse.eshop.core.web.dto.requests.Customer.DTOCustomerUpdateSurname;
+import commerse.eshop.core.web.dto.requests.Customer.*;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
@@ -12,12 +10,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.query.Param;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -29,6 +27,17 @@ public class CustomerController {
     @Autowired
     public CustomerController(CustomerService customerService){
         this.customerService = customerService;
+    }
+
+    // Create new user
+    ///curl -i -X POST "http://localhost:8080/api/v1/customers" ^
+    ///-H "Content-Type: application/json" ^
+    ///-d "{\"phoneNumber\":\"+306941234567\",\"email\":\"mike@example.com\",\"userName\":\"mike\",\"password\":\"TempPass123!\",\"name\":\"Mike\",\"surname\":\"Papadopoulos\"}"
+    @PostMapping
+    public ResponseEntity<DTOCustomerResponse> createUser(@RequestBody @Valid DTOCustomerCreateUser dto){
+        DTOCustomerResponse created = customerService.createUser(dto);
+        URI location = URI.create("/api/v1/customers/" + created.customerId());
+        return ResponseEntity.created(location).body(created); // 201 + location
     }
 
     // Get the profile data
@@ -80,5 +89,33 @@ public class CustomerController {
     @PutMapping("/{customerId}/account/surname")
     public void updateSurname(@PathVariable UUID customerId, @RequestBody @Valid DTOCustomerUpdateSurname request){
         customerService.updateSurname(customerId, request.password(), request.lastName());
+    }
+
+    // Update fullname
+    ///curl -i -X PUT "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/account/fullname" ^
+    /// -H "Content-Type: application/json" ^
+    /// -d "{\"password\":\"TempPass123!\",\"name\":\"Mike\",\"surname\":\"Papadopoulos\"}
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PutMapping("/{customerId}/account/fullname")
+    public void updateFullName(@PathVariable UUID customerId, @RequestBody @Valid DTOCustomerUpdateFullname dto){
+        customerService.updateFullName(customerId, dto.password(), dto.name(), dto.surname());
+    }
+
+    // Update Username
+    /// curl -i -X PUT "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/account/username" ^
+    /// -H "Content-Type: application/json" ^
+    /// -d "{\"password\":\"TempPass123!\",\"username\":\"mike_new\"}"
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PutMapping("/{customerId}/account/username")
+    public void updateUsername(@PathVariable UUID customerId, @RequestBody @Valid DTOCustomerUpdateUsername dto){
+        customerService.updateUserName(customerId, dto.password(), dto.username());
+    }
+
+    // Update password
+    ///
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PutMapping("/{customerId}/account/update_password")
+    public void updateUserPassword(@PathVariable UUID customerId, @RequestBody @Valid DTOCustomerUpdatePassword dto){
+        customerService.updateUserPassword(customerId, dto.currentPassword(), dto.newPassword());
     }
 }
