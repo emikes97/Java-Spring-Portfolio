@@ -42,5 +42,5 @@ public interface CustomerAddrRepo extends JpaRepository<CustomerAddress, Long> {
     // == Set default flag to false
     @Modifying
     @Query(value = "update customers_address set is_default = false where customer_id = :custId and is_default = true", nativeQuery = true)
-    long clearDefaultsForCustomer(@Param(value = "custId")UUID customerId);
+    int clearDefaultsForCustomer(@Param(value = "custId")UUID customerId);
 }

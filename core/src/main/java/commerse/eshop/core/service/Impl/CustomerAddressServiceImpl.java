@@ -41,7 +41,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     public DTOCustomerAddressResponse addCustomerAddress(UUID customerId, DTOAddCustomerAddress dto) {
 
         if (dto.isDefault()) {
-            long outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
+            int outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
             log.debug(String.valueOf(outcome));
             if (outcome == 0)
                 log.info("There wasn't a default address");
