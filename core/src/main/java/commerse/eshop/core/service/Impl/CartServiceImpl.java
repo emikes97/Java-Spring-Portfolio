@@ -58,40 +58,8 @@ public class CartServiceImpl implements CartService {
 
     @Transactional
     @Override
-    public DTOCartItemResponse addCartItem(UUID customerId, long productId) {
-        
-        Product product = productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
-        Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist for the provided UUID"));
-        CartItem cartItem;
-
-        if (cartItemRepo.findIfItemExists(cart.getCartId(), productId)){
-            cartItem = cartItemRepo.getCartItemByCartIdAndProductId(cart.getCartId(), productId).orElseThrow(
-                    () -> new NoSuchElementException("The requested product doesn't exist")
-            );
-            cartItem.setQuantity(cartItem.getQuantity() + 1);
-        }
-        else {
-            cartItem = new CartItem(cart, product, product.getProductName(), DEFAULT_QUANTITY, product.getPrice(), OffsetDateTime.now());
-        }
-
-        try{
-            cartItemRepo.save(cartItem);
-        } catch (DataIntegrityViolationException dup){
-            cartItem = cartItemRepo.getCartItemByCartIdAndProductId(cart.getCartId(), productId).orElseThrow();
-            cartItem.setQuantity(Math.min(cartItem.getQuantity() + 1, 99));
-            cartItemRepo.save(cartItem);
-        }
-
-        return toDto(cartItem);
-    }
-
-    @Transactional
-    @Override
     public DTOCartItemResponse addCartItem(UUID customerId, long productId, int quantity) {
-        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive.");
-        if (quantity == 1){
-            return addCartItem(customerId, productId);
-        }
+        if (quantity <= 0 || quantity > 99) throw new IllegalArgumentException("Quantity must be positive, and shouldn't exceed 99");
 
         Product product = productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
         Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist for the provided UUID"));
@@ -120,26 +88,21 @@ public class CartServiceImpl implements CartService {
 
     @Transactional
     @Override
-    public void removeCartItem(UUID customerId, long productId) {
-        Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
-        cartItemRepo.deleteItemByCartIdAndProductId(cart.getCartId(), productId);
-        log.info("Cart Item with productId={} deleted", productId);
-    }
+    public void removeCartItem(UUID customerId, long productId, Integer quantity) {
 
-    @Transactional
-    @Override
-    public void removeCartItem(UUID customerId, long productId, int quantity) {
-        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive.");
         Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
+
         CartItem cartItem = cartItemRepo.getCartItemByCartIdAndProductId(cart.getCartId(), productId).orElseThrow(
                 () -> new NoSuchElementException("Cart Item doesn't exist"));
 
-        if (cartItem.getQuantity() <= quantity) {
-            removeCartItem(customerId, productId);
+        if (quantity == null || cartItem.getQuantity() <= quantity) {
+            cartItemRepo.deleteItemByCartIdAndProductId(cart.getCartId(), productId);
             return;
         }
+        if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive.");
 
         cartItem.setQuantity(cartItem.getQuantity() - quantity);
+
         cartItemRepo.save(cartItem);
     }
 

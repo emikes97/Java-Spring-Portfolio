@@ -39,7 +39,7 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     // == Delete by cartId and ProductId
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "delete from cart_item where cart_id = :cartId and product_id = :productId", nativeQuery = true)
-    long deleteItemByCartIdAndProductId(@Param("cartId")UUID cartId, @Param("productId") long productId);
+    int deleteItemByCartIdAndProductId(@Param("cartId")UUID cartId, @Param("productId") long productId);
 
     // == Decrement quantity of cart_items from products
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -55,5 +55,5 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     // == Delete all Cart Items with Cart UUID
         @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "delete from cart_item where cart_id = :cartId", nativeQuery = true)
-    long clearCart(@Param("cartId") UUID cartId);
+    int clearCart(@Param("cartId") UUID cartId);
 }

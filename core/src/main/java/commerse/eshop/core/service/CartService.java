@@ -16,12 +16,10 @@ public interface CartService {
     DTOCartItemResponse findItem(UUID customerId, long productId);
 
     // == Cart add items -- Overloaded methods ==
-    DTOCartItemResponse addCartItem(UUID customerId, long productId); // Default Quantity 1 || If product already in cart = cart.qnt +1
     DTOCartItemResponse addCartItem(UUID customerId, long productId, int quantity); // If product already in cart = cart.qnt + quantity
 
     // == Cart Remove Item
-    void removeCartItem(UUID customerId, long productId); // Removes all quantities of the item if no specified quantity is provided
-    void removeCartItem(UUID customerId, long productId, int quantity); // Remove the quantity of product // if < 0 then remove the item altogether
+    void removeCartItem(UUID customerId, long productId, Integer quantity); // Remove the quantity of product // if < 0 then remove the item altogether
 
     // == Clear Cart ==
     void clearCart(UUID customerId);
