@@ -105,10 +105,13 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
 
     @Transactional(readOnly = true)
     @Override
-    public CustomerPaymentMethod retrievePaymentMethod(UUID customerId, UUID paymentMethodId) {
-        return customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(customerId, paymentMethodId).orElseThrow(
+    public DTOPaymentMethodResponse retrievePaymentMethod(UUID customerId, UUID paymentMethodId) {
+
+        CustomerPaymentMethod paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(customerId, paymentMethodId).orElseThrow(
                 () -> new RuntimeException("The payment method doesn't exist.")
         );
+
+        return toDto(paymentMethod);
     }
 
     @Transactional
