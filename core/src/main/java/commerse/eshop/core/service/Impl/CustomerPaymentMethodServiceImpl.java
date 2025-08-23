@@ -51,6 +51,8 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
 
         customerPaymentMethodRepo.saveAndFlush(customerPaymentMethod);
 
+        /// Async method to generate the token
+
         return toDto(customerPaymentMethod);
     }
 

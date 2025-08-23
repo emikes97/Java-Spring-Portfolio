@@ -1,5 +1,6 @@
 package commerse.eshop.core.model.entity;
 
+import commerse.eshop.core.model.entity.enums.TokenStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -61,12 +62,16 @@ public class CustomerPaymentMethod {
     @Column(name = "month_exp", nullable = false)
     private short monthExp;
 
-    @Column(name = "is_default", nullable = false)
-    private boolean isDefault;
-
     @CreationTimestamp
     @Column(name = "createdAt", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @Enumerated
+    @Column(name = "tokenStatus", nullable = false)
+    private TokenStatus tokenStatus = TokenStatus.PENDING;
+
+    @Column(name = "is_default", nullable = false)
+    private boolean isDefault;
 
     // == Constructors ==
 

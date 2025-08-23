@@ -91,6 +91,12 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- For AOP proxies (required by @Async, @TransactionalEventListener) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-aop</artifactId>
+		</dependency>
+
 	</dependencies>
 
 	<build>
