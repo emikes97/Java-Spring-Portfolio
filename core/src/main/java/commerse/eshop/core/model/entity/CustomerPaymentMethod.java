@@ -10,6 +10,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -66,8 +68,9 @@ public class CustomerPaymentMethod {
     @Column(name = "createdAt", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    @Enumerated
-    @Column(name = "tokenStatus", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "token_status", columnDefinition = "token_status", nullable = false)
     private TokenStatus tokenStatus = TokenStatus.PENDING;
 
     @Column(name = "is_default", nullable = false)

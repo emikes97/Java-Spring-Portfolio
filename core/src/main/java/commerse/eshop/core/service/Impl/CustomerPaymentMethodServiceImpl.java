@@ -55,6 +55,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
                 dto.provider(), dto.brand(), dto.last4(), dto.yearExp(), dto.monthExp(), makeDefault);
 
         customerPaymentMethod.setTokenStatus(TokenStatus.PENDING);
+        customerPaymentMethod.setProviderPaymentMethodToken("");
 
         customerPaymentMethodRepo.saveAndFlush(customerPaymentMethod);
 
