@@ -1,6 +1,5 @@
 package commerse.eshop.core.service;
 
-import commerse.eshop.core.model.entity.CustomerPaymentMethod;
 import commerse.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import commerse.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOUpdatePaymentMethod;
 import commerse.eshop.core.web.dto.response.PaymentMethod.DTOPaymentMethodResponse;

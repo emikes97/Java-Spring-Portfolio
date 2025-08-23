@@ -89,6 +89,9 @@ public class CartServiceImpl implements CartService {
     @Override
     public DTOCartItemResponse addCartItem(UUID customerId, long productId, int quantity) {
         if (quantity <= 0) throw new IllegalArgumentException("Quantity must be positive.");
+        if (quantity == 1){
+            return addCartItem(customerId, productId);
+        }
 
         Product product = productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
         Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist for the provided UUID"));

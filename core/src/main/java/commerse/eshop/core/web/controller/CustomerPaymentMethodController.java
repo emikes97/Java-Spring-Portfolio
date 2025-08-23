@@ -65,7 +65,7 @@ public class CustomerPaymentMethodController {
     }
 
     // Delete a payment Method
-    ///
+    ///curl -i -X DELETE "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods/44b83e5b-8907-4698-9589-dbba789d1778"
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{paymentId}")
     public void deletePaymentMethod(@PathVariable UUID customerId, @PathVariable UUID paymentId){
