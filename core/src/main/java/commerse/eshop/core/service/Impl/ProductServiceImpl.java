@@ -83,6 +83,7 @@ public class ProductServiceImpl implements ProductService {
         productRepo.save(product);
     }
 
+    // Internal, shouldn't be exposed.
     @Transactional
     @Override
     public void decreaseQuantity(long productId, int quantity) {
