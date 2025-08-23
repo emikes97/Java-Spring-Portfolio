@@ -1,6 +1,8 @@
 package commerse.eshop.core.service.Impl;
 
+import commerse.eshop.core.events.PaymentMethodCreatedEvent;
 import commerse.eshop.core.model.entity.CustomerPaymentMethod;
+import commerse.eshop.core.model.entity.enums.TokenStatus;
 import commerse.eshop.core.repository.CustomerPaymentMethodRepo;
 import commerse.eshop.core.repository.CustomerRepo;
 import commerse.eshop.core.service.CustomerPaymentMethodService;
@@ -9,6 +11,7 @@ import commerse.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOUpd
 import commerse.eshop.core.web.dto.response.PaymentMethod.DTOPaymentMethodResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -22,11 +25,13 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
 
     private final CustomerPaymentMethodRepo customerPaymentMethodRepo;
     private final CustomerRepo customerRepo;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Autowired
-    public CustomerPaymentMethodServiceImpl(CustomerPaymentMethodRepo customerPaymentMethodRepo, CustomerRepo customerRepo){
+    public CustomerPaymentMethodServiceImpl(CustomerPaymentMethodRepo customerPaymentMethodRepo, CustomerRepo customerRepo, ApplicationEventPublisher applicationEventPublisher){
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.customerRepo = customerRepo;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional(readOnly = true)
@@ -49,9 +54,14 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         CustomerPaymentMethod customerPaymentMethod = new CustomerPaymentMethod(customerRepo.getReferenceById(customerId),
                 dto.provider(), dto.brand(), dto.last4(), dto.yearExp(), dto.monthExp(), makeDefault);
 
+        customerPaymentMethod.setTokenStatus(TokenStatus.PENDING);
+
         customerPaymentMethodRepo.saveAndFlush(customerPaymentMethod);
 
-        /// Async method to generate the token
+        // Publish event to start the async progress
+
+        applicationEventPublisher.publishEvent(new PaymentMethodCreatedEvent(customerId, customerPaymentMethod.getCustomerPaymentId(),
+                customerPaymentMethod.getProvider()));
 
         return toDto(customerPaymentMethod);
     }
