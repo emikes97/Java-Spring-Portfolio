@@ -21,21 +21,36 @@ public class ProductController {
     }
 
     // Add new product
-    ///
+    ///curl -i -X POST "http://localhost:8080/api/v1/products" \
+    //  -H "Content-Type: application/json" \
+    //  -d '{
+    //        "productName": "Gaming Laptop",
+    //        "productDescription": "High-performance laptop with RTX GPU",
+    //        "productDetails": {
+    //          "brand": "Asus",
+    //          "model": "ROG Strix",
+    //          "color": "Black"
+    //        },
+    //        "productAvailableStock": 15,
+    //        "productPrice": 1499.99,
+    //        "isActive": true
+    //      }'
     @PostMapping
     public DTOProductResponse addProduct(@RequestBody @Valid DTOAddProduct dto){
         return productService.addProduct(dto);
     }
 
     // Get the product details
-    ///
+    ///curl -i -X GET "http://localhost:8080/api/v1/products/1" \
+    //  -H "Content-Type: application/json"
     @GetMapping("/{productId}")
     public DTOProductResponse getProduct(@PathVariable long productId){
         return productService.getProduct(productId);
     }
 
     // Get all products
-    ///
+    /// curl -i -X GET "http://localhost:8080/api/v1/products/category/1?page=0&size=10" \
+    //  -H "Content-Type: application/json"
     @GetMapping("/category/{categoryId}")
     public Page<DTOProductResponse> getAllProducts(@PathVariable long categoryId, Pageable pageable){
         return productService.getAllProducts(categoryId, pageable);
@@ -43,7 +58,7 @@ public class ProductController {
 
     // Increase Quantity of products
     // @PreAuthorize("hasRole('ADMIN')")
-    ///
+    ///curl -i -X POST "http://localhost:8080/api/v1/products/1?quantity=5"
     @PostMapping("/{productId}")
     public void increaseQuantity(@PathVariable long productId, @RequestParam @Min(1) int quantity){
         productService.increaseQuantity(productId, quantity);
@@ -51,7 +66,7 @@ public class ProductController {
 
     // Link product
     // @PreAuthorize("hasRole('ADMIN')")
-    ///
+    ///curl -i -X PUT "http://localhost:8080/api/v1/products/1/categories/1"
     @PutMapping("/{productId}/categories/{categoryId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void link(@PathVariable long productId, @PathVariable long categoryId){
@@ -60,7 +75,7 @@ public class ProductController {
 
     // Unlink product
     // @PreAuthorize("hasRole('ADMIN')")
-    ///
+    /// curl -i -X DELETE "http://localhost:8080/api/v1/products/2/categories/7"
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{productId}/categories/{categoryId}")
     public void unlink(@PathVariable long productId, @PathVariable long categoryId){
@@ -69,7 +84,7 @@ public class ProductController {
 
     // Delete product
     // @PreAuthorize("hasRole('ADMIN')")
-    ///
+    ///curl -i -X DELETE "http://localhost:8080/api/v1/products/2"
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{productId}")
     public void removeProduct(@PathVariable long productId){
