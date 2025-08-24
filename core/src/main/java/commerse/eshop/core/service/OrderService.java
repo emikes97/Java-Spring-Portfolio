@@ -1,7 +1,5 @@
 package commerse.eshop.core.service;
 
-import commerse.eshop.core.web.dto.requests.CustomerAddr.DTOAddCustomerAddress;
-import commerse.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import commerse.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
 import commerse.eshop.core.web.dto.requests.Order.DTOOrderPaymentMethod;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderDetailsResponse;

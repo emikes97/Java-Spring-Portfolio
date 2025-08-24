@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
 import java.util.HashSet;
@@ -30,7 +31,7 @@ public class Customer {
     private UUID customerId;
     // ------------------------------------------------------------
 
-    @Column(name = "phone_number", length = 20, nullable = false)
+    @Column(name = "phone_number", nullable = false)
     @Pattern(regexp = "^\\+?[1-9]\\d{7,14}$")
     @Size(max = 20)
     private String phoneNumber;
@@ -49,8 +50,12 @@ public class Customer {
     private String surname;
 
     @CreationTimestamp
-    @Column(name = "createdAt", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 
     @Column(name = "is_subscribed", nullable = false)
     private boolean isSubscribed;

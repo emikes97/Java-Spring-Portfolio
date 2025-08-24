@@ -44,10 +44,10 @@ public class Order {
     @Column(name = "total_outstanding", nullable = false)
     private BigDecimal totalOutstanding;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(name = "status", nullable = false, length = 32)
-    @Transient
-    private OrderStatus status = OrderStatus.PENDING_PAYMENT;
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "order_status", nullable = false, columnDefinition = "order_status", length = 32)
+    private OrderStatus orderStatus = OrderStatus.PENDING_PAYMENT;
 
     @CreationTimestamp
     @Column(name = "order_created_at", nullable = false, updatable = false)
@@ -56,8 +56,6 @@ public class Order {
     // set when completed; null while pending
     @Column(name = "order_completed_at")
     private OffsetDateTime completedAt;
-
-    //To be implemented in the new Schema.
 
     // == Constructors ==
 
@@ -69,7 +67,6 @@ public class Order {
         this.addressToSend = addressToSend;
         this.totalOutstanding = totalOutstanding;
         this.createdAt = createdAt;
-        this.status = OrderStatus.PENDING_PAYMENT;
     }
 
     // == Private Methods ==
