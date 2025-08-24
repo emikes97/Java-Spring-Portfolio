@@ -79,6 +79,7 @@ public class OrderServiceImpl implements OrderService {
 
         // Snapshot cart items to order_items
         orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
+        orderItemRepo.clearCart(cart.getCartId());
 
         return toDto(order);
     }
