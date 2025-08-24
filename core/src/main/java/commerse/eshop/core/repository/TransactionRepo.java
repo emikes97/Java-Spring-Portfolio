@@ -1,6 +1,7 @@
 package commerse.eshop.core.repository;
 
 import commerse.eshop.core.model.entity.Transaction;
+import commerse.eshop.core.model.entity.enums.TransactionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -17,5 +18,5 @@ public interface TransactionRepo extends JpaRepository<Transaction, UUID> {
 
     // == Helpers ==
     Optional<Transaction> findByIdempotencyKey(String key);
-    List<Transaction> findByOrder_OrderIdAndStatus(UUID orderId, Transaction.Status status);
+    List<Transaction> findByOrder_OrderIdAndStatus(UUID orderId, TransactionStatus status);
 }

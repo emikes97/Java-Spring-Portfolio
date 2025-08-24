@@ -11,18 +11,12 @@ import java.util.UUID;
 
 public interface OrderService {
 
-    // == Customer Places Order -- CheckOut ==
-    DTOOrderPlacedResponse placeOrderFromCart(UUID customerId, DTOOrderCustomerAddress addressDto, DTOOrderPaymentMethod paymentDto);
-
-    // == Customer Places Order -- CheckOut ==
-    DTOOrderPlacedResponse placeOrderFromCart(UUID customerId); // Use defaults if not applicable reject the order.
+    // == Place Order ==
+    DTOOrderPlacedResponse placeOrder(UUID customerId, DTOOrderCustomerAddress dto);
 
     // == Cancel Order ==
     void cancel(UUID customerId, UUID orderId);
 
     // == View Order ==
     DTOOrderDetailsResponse viewOrder(UUID customerId, UUID orderId);
-
-    // == View all orders ==
-    Page<DTOOrderDetailsResponse> viewAllOrders(UUID customerId, Pageable pageable);
 }

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public record DTOOrderDetailsResponse(@NotBlank UUID orderId,
+public record DTOOrderDetailsResponse(@NotNull UUID orderId,
                                       @NotNull @DecimalMin("0.00") BigDecimal totalOutstanding,
                                       @NotNull DTOOrderCustomerAddress addressToSend,
                                       @NotNull List<OrderItem> orderItems,

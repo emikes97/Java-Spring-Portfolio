@@ -89,13 +89,9 @@ public class Product {
     @PrePersist @PreUpdate
     private void validateDetails() {
         if (productDetails == null) throw new IllegalArgumentException("product_details is required");
-        // Map ensures “object” shape; if you ever switch to String, validate JSON object here.
-    }
-
-    @PrePersist @PreUpdate
-    private void normalize() {
         if (productName != null) productName = productName.trim();
         if (description != null) description = description.trim();
+        // Map ensures “object” shape; if you ever switch to String, validate JSON object here.
     }
 
     // == Public Methods ==

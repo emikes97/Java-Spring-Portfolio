@@ -5,20 +5,13 @@ import commerse.eshop.core.model.entity.enums.OrderStatus;
 import commerse.eshop.core.repository.*;
 import commerse.eshop.core.service.OrderService;
 import commerse.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
-import commerse.eshop.core.web.dto.requests.Order.DTOOrderPaymentMethod;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderDetailsResponse;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderPlacedResponse;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.*;
 
 @Service
@@ -46,95 +39,46 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional
     @Override
-    public DTOOrderPlacedResponse placeOrderFromCart(UUID customerId, DTOOrderCustomerAddress addressDto, DTOOrderPaymentMethod paymentDto) {
+    public DTOOrderPlacedResponse placeOrder(UUID customerId, DTOOrderCustomerAddress addressDto){
 
-        // #0 Get cart_id from customer
+        // Get cart_id from customer
         Cart cart = cartRepo.findByCustomerCustomerId(customerId).orElseThrow(() ->
                 new NoSuchElementException("[ERROR] No cart exists for this customer."));
 
+        // Get a customer Reference
         Customer customer = customerRepo.getReferenceById(customerId);
 
-        // Start
+        // If no address is provided, go for the default. (Default in our case is the one that the customer will pick during
+        // checkout. In case to simulate it for now, is the default from what has been chosen in the db.
+
+        if(addressDto == null){
+
+            CustomerAddress customerAddress = customerAddrRepo.findByCustomerCustomerIdAndIsDefaultTrue(customerId).orElseThrow(
+                    () -> new NoSuchElementException("There isn't any default address"));
+
+            addressDto = new DTOOrderCustomerAddress(customerAddress.getCountry(), customerAddress.getStreet(),
+                    customerAddress.getCity(), customerAddress.getPostalCode());
+        }
 
         // #1 Sum total_outstanding from Cart_Items;
         BigDecimal total_outstanding = cartItemRepo.sumCartTotalOutstanding(cart.getCartId());
         if(Objects.isNull(total_outstanding) || total_outstanding.compareTo(BigDecimal.ZERO) <= 0 )
             throw new IllegalStateException("The cart is empty");
 
-        // #2 Create new order
-        Order order = new Order(customer, toMap(addressDto), total_outstanding, OffsetDateTime.now());
+        // Initiate a new order
+        Order order = new Order(customer, toMap(addressDto), total_outstanding);
 
-        // #3 set status to pending
-        order.setStatus(OrderStatus.PENDING_PAYMENT);
+        // set status to pending
+        order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
 
-        // Mid
-        // #4 Decrement quantity of cart_items
+        // Decrement quantity of cart_items
         cartItemRepo.updateProductStock(cart.getCartId());
 
-        // #5 Save order and flush
+        // Save order and flush
         orderRepo.saveAndFlush(order);
 
-        // #6 Snapshot cart items to order_items
+        // Snapshot cart items to order_items
         orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
-
-        // Event for transaction -> TransactionService.
-
-        return toDto(order);
-    }
-
-    @Transactional
-    @Override
-    public DTOOrderPlacedResponse placeOrderFromCart(UUID customerId) {
-
-        // == take the required fields ==
-
-        // # 0 Get Customer reference
-        Customer customer = customerRepo.getReferenceById(customerId);
-
-        // # 1 Get Cart
-        Cart cart = cartRepo.findByCustomerCustomerId(customerId).orElseThrow(() ->
-                new NoSuchElementException("[ERROR] No cart exists for this customer."));
-
-        // # 2 Get default address
-
-        CustomerAddress customerAddress = customerAddrRepo.findByCustomerCustomerIdAndIsDefaultTrue(customerId).orElseThrow(
-                () -> new NoSuchElementException("There isn't any default address")
-        );
-
-        DTOOrderCustomerAddress dtoOrderCustomerAddress = new DTOOrderCustomerAddress(customerAddress.getCountry(), customerAddress.getStreet(),
-                customerAddress.getCity(), customerAddress.getPostalCode());
-
-        // # 3 Get default PaymentMethod
-
-        CustomerPaymentMethod customerPaymentMethod = customerPaymentMethodRepo.findByCustomerAndIsDefaultTrue(customer).orElseThrow(
-                () -> new NoSuchElementException("There isn't any default payment method")
-        );
-
-        // == Start ==
-
-        // #4 Sum total_outstanding from Cart_Items;
-        BigDecimal total_outstanding  = cartItemRepo.sumCartTotalOutstanding(cart.getCartId());
-        if(Objects.isNull(total_outstanding) || total_outstanding.compareTo(BigDecimal.ZERO) <= 0 )
-            throw new IllegalStateException("The cart is empty");
-
-        // #5 Create new order
-        Order order = new Order(customer, toMap(dtoOrderCustomerAddress), total_outstanding, OffsetDateTime.now());
-
-        // #6 Set status to pending
-        order.setStatus(OrderStatus.PENDING_PAYMENT);
-
-        // == Mid ==
-
-        // #7 Decrement quantity of cart_items
-        cartItemRepo.updateProductStock(cart.getCartId());
-
-        // #8 Save order and flush
-        orderRepo.saveAndFlush(order);
-
-        // #9 Snapshot cart items to order_items
-        orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
-
-        // Event for transaction -> TransactionService.
 
         return toDto(order);
     }
@@ -142,22 +86,27 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     @Override
     public void cancel(UUID customerId, UUID orderId) {
-        // todo once schema is refactored and async is in place.
-        // todo this job should be delegated to an async method, no point to have the customer wait for it to complete.
+        Order order = orderRepo.findById(orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
+
+        if(order.getOrderStatus() != OrderStatus.PENDING_PAYMENT && order.getOrderStatus() != OrderStatus.PAYMENT_FAILED){
+            throw new IllegalStateException("Order can't be canceled as its state is:" + order.getOrderStatus());
+        }
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        orderRepo.restoreProductStockFromOrder(orderId);
+
+        orderRepo.save(order);
     }
 
     @Override
     public DTOOrderDetailsResponse viewOrder(UUID customerId, UUID orderId) {
         Order order = orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow(
-                () -> new NoSuchElementException("The order you requested doesn't exist")
+                () -> new NoSuchElementException("The Order doesn't exist")
         );
-        Object OrderItem = orderItemRepo.findAll();
-        return null;
-    }
 
-    @Override
-    public Page<DTOOrderDetailsResponse> viewAllOrders(UUID customerId, Pageable pageable) {
-        return null;
+        List<OrderItem> orderItems = orderItemRepo.getOrderItems(orderId);
+
+        return toDtoDetails(order, orderItems);
     }
 
     private Map<String,Object> toMap(DTOOrderCustomerAddress dto){

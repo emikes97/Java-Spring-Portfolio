@@ -43,9 +43,14 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
 
     // == Decrement quantity of cart_items from products
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = "update products set product_available_stock = product_available_stock - cart_item.quantity from cart_item" +
-            "where cart_item.cart_id = :cartId and cart_item.product_id = product.product_id and" +
-            "product.product_available_stock >= cart_item.quantity", nativeQuery = true)
+    @Query(value = """
+    UPDATE products p
+    SET product_available_stock = p.product_available_stock - ci.quantity
+    FROM cart_item ci
+    WHERE ci.cart_id = :cartId
+      AND ci.product_id = p.product_id
+      AND p.product_available_stock >= ci.quantity
+    """, nativeQuery = true)
     int updateProductStock(@Param("cartId") UUID cartId);
 
     // == Expected changes

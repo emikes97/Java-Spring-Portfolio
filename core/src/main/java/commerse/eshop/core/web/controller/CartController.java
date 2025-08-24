@@ -40,9 +40,9 @@ public class CartController {
     }
 
     // Add A single quantity or multiple
-    ///curl -i -X POST "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart/items" \
-    ///   -H "Content-Type: application/json" \
-    ///   -d '{"productId":1,"quantity":2}'
+    ///curl -i -X POST "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/cart" ^
+    ///   -H "Content-Type: application/json" ^
+    ///   -d "{\"productId\":1,\"quantity\":2}"
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public DTOCartItemResponse addItem(@PathVariable UUID customerId, @RequestBody @Valid DTOCartAddItemRequest dto){

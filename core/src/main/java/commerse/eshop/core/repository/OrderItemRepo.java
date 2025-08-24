@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public interface OrderItemRepo extends JpaRepository<OrderItem, Long> {
@@ -23,4 +24,8 @@ public interface OrderItemRepo extends JpaRepository<OrderItem, Long> {
     @Modifying
     @Query(value = "delete from cart_item where cart_id = :cartId", nativeQuery = true)
     int clearCart(@Param("cartId") UUID cartId);
+
+    // Get all Items from an order
+    @Query(value = "select * from order_item where order_id = :orderId", nativeQuery = true)
+    List<OrderItem> getOrderItems(@Param("orderId") UUID orderId);
 }
