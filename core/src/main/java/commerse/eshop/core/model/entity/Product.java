@@ -51,12 +51,12 @@ public class Product {
     @Column(name = "product_available_stock", nullable = false)
     private int productAvailableStock;
 
-    @DecimalMin("0.00")
+    @DecimalMin(value = "0.00", inclusive = false)
     @Column(name = "product_price", nullable = false, precision = 14, scale = 2)
     private BigDecimal price;
 
     @CreationTimestamp
-    @Column(name = "createdAt", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
@@ -86,6 +86,18 @@ public class Product {
     }
 
     // == Private Methods ==
+    @PrePersist @PreUpdate
+    private void validateDetails() {
+        if (productDetails == null) throw new IllegalArgumentException("product_details is required");
+        // Map ensures “object” shape; if you ever switch to String, validate JSON object here.
+    }
+
+    @PrePersist @PreUpdate
+    private void normalize() {
+        if (productName != null) productName = productName.trim();
+        if (description != null) description = description.trim();
+    }
+
     // == Public Methods ==
 
     // == ToString ==

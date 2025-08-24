@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
@@ -21,8 +23,6 @@ import java.util.UUID;
 @Table(name = "orders")
 public class Order {
 
-    // == Constants ==
-
     // == Fields ==
 
     // == Auto Generated UUID for the customer
@@ -34,14 +34,15 @@ public class Order {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Customer customer;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "address_to_send", columnDefinition = "jsonb", nullable = false)
     private Map<String, Object> addressToSend;
 
-    @DecimalMin("0.01")
-    @Column(name = "total_outstanding", nullable = false)
+    @DecimalMin("0.00")
+    @Column(name = "total_outstanding", nullable = false, precision = 14, scale = 2)
     private BigDecimal totalOutstanding;
 
     @Enumerated(EnumType.STRING)
@@ -61,16 +62,12 @@ public class Order {
 
     protected Order(){}
 
-    public Order(Customer customer, Map<String, Object> addressToSend, BigDecimal totalOutstanding, OffsetDateTime createdAt)
+    public Order(Customer customer, Map<String, Object> addressToSend, BigDecimal totalOutstanding)
     {
         this.customer = customer;
         this.addressToSend = addressToSend;
         this.totalOutstanding = totalOutstanding;
-        this.createdAt = createdAt;
     }
-
-    // == Private Methods ==
-    // == Public Methods ==
 
     // == ToString ==
     @Override

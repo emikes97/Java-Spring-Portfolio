@@ -97,7 +97,7 @@
 			<artifactId>spring-boot-starter-aop</artifactId>
 		</dependency>
 
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>

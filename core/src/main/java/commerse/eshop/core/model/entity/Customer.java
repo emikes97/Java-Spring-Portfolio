@@ -31,7 +31,7 @@ public class Customer {
     private UUID customerId;
     // ------------------------------------------------------------
 
-    @Column(name = "phone_number", nullable = false)
+    @Column(name = "phone_number", nullable = false, unique = true)
     @Pattern(regexp = "^\\+?[1-9]\\d{7,14}$")
     @Size(max = 20)
     private String phoneNumber;
@@ -43,10 +43,13 @@ public class Customer {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(name = "password_hash", nullable = false, length = 100)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Column(length = 100)
     private String name;
+
+    @Column(length = 100)
     private String surname;
 
     @CreationTimestamp
@@ -78,7 +81,6 @@ public class Customer {
         this.passwordHash = passwordHash;
         this.name = name != null ? name : "";
         this.surname = surname != null ? surname : "";
-        this.createdAt = OffsetDateTime.now();
         this.isSubscribed = false;
     }
 

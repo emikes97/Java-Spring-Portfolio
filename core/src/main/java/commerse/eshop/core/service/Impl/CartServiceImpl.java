@@ -17,9 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -72,7 +70,7 @@ public class CartServiceImpl implements CartService {
             cartItem.setQuantity(cartItem.getQuantity() + quantity);
         }
         else {
-            cartItem = new CartItem(cart, product, product.getProductName(), quantity, product.getPrice(), OffsetDateTime.now());
+            cartItem = new CartItem(cart, product, product.getProductName(), quantity, product.getPrice());
         }
 
         try{

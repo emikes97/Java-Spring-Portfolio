@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -36,7 +37,7 @@ public class CustomerPaymentMethod {
     @Column(name="customer_payment_id", updatable=false, nullable=false)
     private UUID customerPaymentId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
@@ -55,18 +56,21 @@ public class CustomerPaymentMethod {
     @Column(name = "last_4", length = 4, nullable = false) // char(4)
     private String last4;
 
-    @Min(2000)
+    @Min(2000) @Max(2100)
     @Column(name = "year_exp", nullable = false)
     private short yearExp;
 
-    @Min(1)
-    @Max(12)
+    @Min(1) @Max(12)
     @Column(name = "month_exp", nullable = false)
     private short monthExp;
 
     @CreationTimestamp
-    @Column(name = "createdAt", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

@@ -6,6 +6,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
@@ -17,11 +19,14 @@ import java.util.UUID;
 @Setter
 @Getter
 @Entity
-@Table(name = "cart")
+@Table(
+        name = "cart",
+        uniqueConstraints = @UniqueConstraint(columnNames = "customer_id")
+)
 public class Cart {
 
-    // == Constants ==
     // == Fields ==
+
     // == Auto Generated UUID for the cart_id
     @Setter(AccessLevel.NONE)
     @Id
@@ -30,12 +35,13 @@ public class Cart {
     private UUID cartId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "customer_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "customer_id", nullable = false, unique = true)
     @JsonIgnore
     private Customer customer;
 
     @CreationTimestamp
-    @Column(name = "createdAt", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
@@ -52,13 +58,10 @@ public class Cart {
 
     public Cart(Customer customer){
         this.customer = customer;
-        this.createdAt = OffsetDateTime.now();
         attachTo(customer); // Attach to the created customer.
     }
 
     // == Private Methods ==
-
-    // == Public Methods ==
     /// Attach Cart to Customer and Customer to Cart. Only 1 unique Cart per customer ///
     public void attachTo(Customer c){
         this.customer = c;

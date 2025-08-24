@@ -27,14 +27,12 @@ public class Category {
     @Column(name = "category_id", nullable = false)
     private long categoryId;
 
-    @NotBlank
-    @Size(max = 50)
-    @Column(name = "category_name", nullable = false, length = 50)
+    @NotBlank @Size(max = 50)
+    @Column(name = "category_name", nullable = false, columnDefinition = "citext")
     private String categoryName;
 
     @NotBlank
-    @Size(max = 255)
-    @Column(name = "category_description", nullable = false, length = 255)
+    @Column(name = "category_description", nullable = false, columnDefinition = "text")
     private String categoryDescription;
 
     @OneToMany(mappedBy = "category")
@@ -51,6 +49,13 @@ public class Category {
     }
 
     // == Private Methods ==
+
     // == Public Methods ==
+    @PrePersist @PreUpdate
+    private void normalize() {
+        if (categoryName != null) categoryName = categoryName.trim();
+        if (categoryDescription != null) categoryDescription = categoryDescription.trim();
+    }
+
     // == ToString ==
 }

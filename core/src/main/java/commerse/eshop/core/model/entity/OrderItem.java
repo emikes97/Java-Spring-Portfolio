@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -24,20 +26,23 @@ public class OrderItem {
     @Column(name = "order_item_id", nullable = false)
     private long orderItemId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Order order;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Product product;
 
-    @Column(name = "product_name", length = 200)
+    @Column(name = "product_name", length = 200, nullable = false)
     private String productName;
 
+    @Column(nullable = false)
     private int quantity = 1;
 
-    @Column(name = "price_at", nullable = false)
+    @Column(name = "price_at", nullable = false, precision = 14, scale = 2)
     private BigDecimal priceAt;
 
     @CreationTimestamp

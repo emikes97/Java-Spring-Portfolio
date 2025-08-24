@@ -6,6 +6,10 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.OffsetDateTime;
 
 @Entity
 @Setter
@@ -45,6 +49,15 @@ public class CustomerAddress {
     @Column(name = "is_default", nullable = false)
     private boolean isDefault;
 
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+
     // == Constructors ==
 
     protected CustomerAddress(){}
@@ -60,6 +73,14 @@ public class CustomerAddress {
     }
 
     // == Private Methods ==
+
+    @PrePersist @PreUpdate
+    private void normalize() {
+        if (country != null) country = country.trim();
+        if (street  != null) street  = street.trim();
+        if (city    != null) city    = city.trim();
+        if (postalCode != null) postalCode = postalCode.trim();
+    }
 
     // == ToString ==
 
