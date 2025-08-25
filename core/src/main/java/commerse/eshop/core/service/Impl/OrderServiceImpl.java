@@ -6,6 +6,7 @@ import commerse.eshop.core.repository.*;
 import commerse.eshop.core.service.OrderService;
 import commerse.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderDetailsResponse;
+import commerse.eshop.core.web.dto.response.Order.DTOOrderItemsResponse;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderPlacedResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -99,15 +100,23 @@ public class OrderServiceImpl implements OrderService {
         orderRepo.save(order);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public DTOOrderDetailsResponse viewOrder(UUID customerId, UUID orderId) {
         Order order = orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow(
                 () -> new NoSuchElementException("The Order doesn't exist")
         );
 
-        List<OrderItem> orderItems = orderItemRepo.getOrderItems(orderId);
+        var itemDtos = orderItemRepo.getOrderItems(orderId).stream()
+                .map(oi -> new DTOOrderItemsResponse(
+                        oi.getOrderItemId(),     // use snapshot columns on order_item
+                        oi.getProductName(),
+                        oi.getQuantity(),
+                        oi.getPriceAt()
+                ))
+                .toList();
 
-        return toDtoDetails(order, orderItems);
+        return toDtoDetails(order, itemDtos);
     }
 
     private Map<String,Object> toMap(DTOOrderCustomerAddress dto){
@@ -136,7 +145,7 @@ public class OrderServiceImpl implements OrderService {
                 o.getCompletedAt()
         );}
 
-    private DTOOrderDetailsResponse toDtoDetails(Order o, List<OrderItem> orderItems ){
+    private DTOOrderDetailsResponse toDtoDetails(Order o, List<DTOOrderItemsResponse> orderItems ){
 
         return new DTOOrderDetailsResponse(
                 o.getOrderId(),

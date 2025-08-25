@@ -15,6 +15,6 @@ import java.util.UUID;
 public record DTOOrderDetailsResponse(@NotNull UUID orderId,
                                       @NotNull @DecimalMin("0.00") BigDecimal totalOutstanding,
                                       @NotNull DTOOrderCustomerAddress addressToSend,
-                                      @NotNull List<OrderItem> orderItems,
+                                      @NotNull List<DTOOrderItemsResponse> orderItems,
                                       @NotNull OffsetDateTime orderCreatedAt,
                                       OffsetDateTime orderCompletedAt){}
