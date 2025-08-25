@@ -7,6 +7,1016 @@
 	},
 	"item": [
 		{
+			"name": "Customer",
+			"item": [
+				{
+					"name": "POST",
+					"item": [
+						{
+							"name": "CreateNewUser",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"phoneNumber\": \"+306941234567\",\r\n  \"email\": \"mike@example.com\",\r\n  \"username\": \"mike\",\r\n  \"password\": \"TempPass123!\",\r\n  \"name\": \"Mike\",\r\n  \"surname\": \"Papadopoulos\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers"
+									],
+									"query": [
+										{
+											"key": null,
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "GET",
+					"item": [
+						{
+							"name": "getProfile",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000001",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000001"
+									],
+									"query": [
+										{
+											"key": "CustomerId",
+											"value": "",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getProfileByPhoneOrMail",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/search?phoneOrEmail=%2B306987654321",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"search"
+									],
+									"query": [
+										{
+											"key": "phoneOrEmail",
+											"value": "%2B306987654321"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getOrders",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/orders?page=0&size=5&sort=completedAt,desc",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"orders"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "5"
+										},
+										{
+											"key": "sort",
+											"value": "completedAt,desc"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "getCartItems",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart/items?page=0&size=5&sort=addedAt,desc",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"cart",
+										"items"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "5"
+										},
+										{
+											"key": "sort",
+											"value": "addedAt,desc"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "PUT",
+					"item": [
+						{
+							"name": "updateCustomerName",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"password\": \"TempPass123!\",\r\n  \"name\": \"Michael Pap\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/account/name",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"account",
+										"name"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateCustomerSurname",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"password\": \"TempPass123!\",\r\n  \"lastName\": \"Papadopoulos\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/account/surname",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"account",
+										"surname"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateCustomerFullname",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"password\": \"TempPass123!\",\r\n  \"name\": \"Mike\",\r\n  \"surname\": \"Papadopoulos\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/account/fullname",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"account",
+										"fullname"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateUserName",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"password\": \"TempPass123!\",\r\n  \"username\": \"mike_new\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/account/username",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"account",
+										"username"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "updateCustomerPassword",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"newPassword\": \"NewPass123!\",\r\n  \"currentPassword\": \"TempPass123!\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/account/update_password",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"499008e1-13fa-4db8-983f-a6fc175f2445",
+										"account",
+										"update_password"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETE",
+					"item": []
+				}
+			]
+		},
+		{
+			"name": "CustomerAddress",
+			"item": [
+				{
+					"name": "Post",
+					"item": [
+						{
+							"name": "AddNewAddress",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"10 Ermou St\",\r\n  \"city\": \"Athens\",\r\n  \"postalCode\": \"10563\",\r\n  \"isDefault\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/addresses",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"addresses"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"item": [
+						{
+							"name": "GetAllAddresses",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/addresses?page=0&size=5&sort=addrId,asc",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"addresses"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "5"
+										},
+										{
+											"key": "sort",
+											"value": "addrId,asc"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Put",
+					"item": [
+						{
+							"name": "UpdateAddress",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"10 Ermou Updated\",\r\n  \"city\": \"Athens\",\r\n  \"postalCode\": \"10563\",\r\n  \"isDefault\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/addresses/4",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"addresses",
+										"4"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "UpdateDefault",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/addresses/2/default",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"addresses",
+										"2",
+										"default"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Delete",
+					"item": [
+						{
+							"name": "DeleteAddress",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/addresses/4",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"addresses",
+										"4"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "CustomerPaymentMethod",
+			"item": [
+				{
+					"name": "Post",
+					"item": [
+						{
+							"name": "AddNewPaymentMethod",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"provider\": \"Viva\",\r\n  \"brand\": \"VISA\",\r\n  \"last4\": \"4242\",\r\n  \"yearExp\": 2028,\r\n  \"monthExp\": 12,\r\n  \"isDefault\": true\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"03b9d0fb-2a6c-4c9f-997b-3e0fed17465c",
+										"payment-methods"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"item": [
+						{
+							"name": "GetAllPaymentMethods",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/payment-methods?page=0&size=10&sort=createdAt,desc",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"payment-methods"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										},
+										{
+											"key": "sort",
+											"value": "createdAt,desc"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GetPaymentMethod",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods/44b83e5b-8907-4698-9589-dbba789d1778",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"03b9d0fb-2a6c-4c9f-997b-3e0fed17465c",
+										"payment-methods",
+										"44b83e5b-8907-4698-9589-dbba789d1778"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Put",
+					"item": [
+						{
+							"name": "UpdatePaymentMethod",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"brand\": \"MASTERCARD\",\r\n    \"last4\": \"1111\",\r\n    \"yearExp\": 2030,\r\n    \"monthExp\": 6,\r\n    \"isDefault\": false\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods/44b83e5b-8907-4698-9589-dbba789d1778",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"03b9d0fb-2a6c-4c9f-997b-3e0fed17465c",
+										"payment-methods",
+										"44b83e5b-8907-4698-9589-dbba789d1778"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Delete",
+					"item": [
+						{
+							"name": "DeletePaymentMethod",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods/44b83e5b-8907-4698-9589-dbba789d1778",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"03b9d0fb-2a6c-4c9f-997b-3e0fed17465c",
+										"payment-methods",
+										"44b83e5b-8907-4698-9589-dbba789d1778"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Post",
+					"item": [
+						{
+							"name": "AddItemsToCart",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 2\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/cart",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"499008e1-13fa-4db8-983f-a6fc175f2445",
+										"cart"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"item": [
+						{
+							"name": "ViewAllCartItems",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart?page=0&size=10",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"cart"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "ViewSingleCartItem",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart/items/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"cart",
+										"items",
+										"1"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Put",
+					"item": []
+				},
+				{
+					"name": "Delete",
+					"item": [
+						{
+							"name": "DeleteItem",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": null \r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart/items",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"cart",
+										"items"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "DeleteAllItems",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"00000000-0000-0000-0000-000000000101",
+										"cart"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Category",
+			"item": [
+				{
+					"name": "Post",
+					"item": [
+						{
+							"name": "CreateCategory",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"categoryName\": \"Laptops\",\r\n  \"categoryDescription\": \"Portable computers\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/categories",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"categories"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"item": []
+				},
+				{
+					"name": "Put",
+					"item": [
+						{
+							"name": "UpdateCategory",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"packages": {},
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"categoryName\": \"Laptops\",\r\n  \"categoryDescription\": \"Portable computers\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/categories/6",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"categories",
+										"6"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Delete",
+					"item": [
+						{
+							"name": "DeleteCategory",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/categories/6",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"categories",
+										"6"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
 			"name": "Product",
 			"item": [
 				{
@@ -211,6 +1221,60 @@
 							"response": []
 						}
 					]
+				}
+			]
+		},
+		{
+			"name": "Order",
+			"item": [
+				{
+					"name": "Post",
+					"item": [
+						{
+							"name": "PlaceOrder",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"country\": \"GR\",\r\n  \"street\": \"Akadimias 1\",\r\n  \"city\": \"Athens\",\r\n  \"postalCode\": \"10562\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/checkout",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"499008e1-13fa-4db8-983f-a6fc175f2445",
+										"checkout"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get",
+					"item": []
+				},
+				{
+					"name": "Put",
+					"item": []
+				},
+				{
+					"name": "Delete",
+					"item": []
 				}
 			]
 		}

@@ -20,6 +20,10 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    // Place order
+    /// curl -i -X POST "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/checkout" ^
+    ///   -H "Content-Type: application/json" ^
+    ///   -d "{\"country\":\"GR\",\"street\":\"Akadimias 1\",\"city\":\"Athens\",\"postalCode\":\"10562\"}"
     @PostMapping
     public DTOOrderPlacedResponse placeOrder(@PathVariable UUID customerId, @RequestBody(required = false) DTOOrderCustomerAddress dto){
         return orderService.placeOrder(customerId, dto);

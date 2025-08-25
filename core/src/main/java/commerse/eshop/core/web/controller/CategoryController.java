@@ -22,7 +22,8 @@ public class CategoryController {
     }
 
     // Create Category
-    ///url -X POST http://localhost:8080/api/v1/categories -H 'Content-Type: application/json' -d '{"categoryName":"Laptops","categoryDescription":"Portable computers"}'
+    ///curl -X POST http://localhost:8080/api/v1/categories -H 'Content-Type: application/json' ^
+    /// -d '{"categoryName":"Laptops","categoryDescription":"Portable computers"}'
     @PostMapping
     public ResponseEntity<DTOCategoryResponse> addNewCategory(@RequestBody @Valid DTOAddCategory dto){
         DTOCategoryResponse res = categoryService.addNewCategory(dto);

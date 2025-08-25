@@ -25,8 +25,8 @@ public class CustomerPaymentMethodController {
     }
 
     // Get all payment methods
-    /// curl -i -X GET "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/payment-methods?page=0&size=10&sort=createdAt,desc" \
-    //  -H "Content-Type: application/json"
+    /// curl -i -X GET "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/payment-methods?page=0&size=10&sort=createdAt,desc"
+    ///  -H "Content-Type: application/json"
     @GetMapping
     public Page<DTOPaymentMethodResponse> getAllPaymentMethods(@PathVariable UUID customerId, Pageable pageable){
         return customerPaymentMethodService.getAllPaymentMethods(customerId, pageable);

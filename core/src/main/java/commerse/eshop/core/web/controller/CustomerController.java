@@ -112,7 +112,9 @@ public class CustomerController {
     }
 
     // Update password
-    ///
+    ///curl -i -X PUT "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/account/update_password" ^
+    ///   -H "Content-Type: application/json" ^
+    ///   -d "{\"newPassword\":\"NewPass123!\",\"currentPassword\":\"TempPass123!\"}"
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{customerId}/account/update_password")
     public void updateUserPassword(@PathVariable UUID customerId, @RequestBody @Valid DTOCustomerUpdatePassword dto){
