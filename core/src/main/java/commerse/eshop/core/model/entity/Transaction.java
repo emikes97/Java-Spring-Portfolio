@@ -73,6 +73,15 @@ public class Transaction {
 
     protected Transaction(){}
 
+    public Transaction(Order order, String customerId, Map<String, Object> paymentMethod,
+                       BigDecimal totalOutstanding, String idempotencyKey){
+        this.order = order;
+        this.customerId = customerId;
+        this.paymentMethod = paymentMethod;
+        this.totalOutstanding = totalOutstanding;
+        this.idempotencyKey = idempotencyKey;
+    }
+
     // == Private Methods ==
     // == Public Methods ==
     // == ToString ==

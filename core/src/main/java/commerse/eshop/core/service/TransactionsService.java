@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface TransactionsService {
 
     public DTOTransactionResponse pay(UUID customerId, UUID orderId, String idemKey, DTOTransactionRequest dto);
-}
+
+ }
