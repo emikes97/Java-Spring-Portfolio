@@ -1,5 +1,6 @@
 package commerse.eshop.core.service.Impl;
 
+import commerse.eshop.core.events.PaymentExecutionRequestEvent;
 import commerse.eshop.core.model.entity.Customer;
 import commerse.eshop.core.model.entity.Order;
 import commerse.eshop.core.model.entity.Transaction;
@@ -14,6 +15,8 @@ import commerse.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseNewC
 import commerse.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseSavedMethod;
 import commerse.eshop.core.web.dto.response.Transactions.DTOTransactionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,12 +28,14 @@ public class TransactionServiceImpl implements TransactionsService {
     private final CustomerRepo customerRepo;
     private final OrderRepo orderRepo;
     private final TransactionRepo transactionRepo;
+    private final ApplicationEventPublisher publisher;
 
     @Autowired
-    public TransactionServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, TransactionRepo transactionRepo){
+    public TransactionServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, TransactionRepo transactionRepo, ApplicationEventPublisher publisher){
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
         this.transactionRepo = transactionRepo;
+        this.publisher = publisher;
     }
 
     @Transactional
@@ -43,49 +48,56 @@ public class TransactionServiceImpl implements TransactionsService {
 
         Customer customer = customerRepo.getReferenceById(customerId);
 
-        Transaction tx = transactionRepo.findByIdempotencyKey(idemKey).orElse(null);
+        Map<String, Object> snapshot = toSnapShot(dto.instruction());
 
-        if(tx != null){
-            order = tx.getOrder();
+        Transaction transaction = new Transaction(order, customerId.toString(), snapshot, order.getTotalOutstanding(), idemKey);
 
-            if (!Objects.equals(tx.getOrder().getOrderId(), orderId)) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT,
-                        "Idempotency key reused for a different order");
-            }
-
-            if (isTerminal(tx.getStatus()))
-                return toDto(tx);
-
-            // in-flight
-            throw new ResponseStatusException(HttpStatus.ACCEPTED,
-                    "Transaction already processing");
+        try {
+            transactionRepo.saveAndFlush(transaction);
+        } catch (DataIntegrityViolationException duplicate){
+            Transaction winner = transactionRepo.findByIdempotencyKeyForUpdate(idemKey).orElseThrow(
+                    () -> new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency race lost")
+            );
+            return resolveWinner(winner, orderId);
         }
 
-        Transaction transaction = new Transaction(order, customerId.toString(), toMap(card), order.getTotalOutstanding(), idemKey);
-        transactionRepo.findByIdempotencyKeyForUpdate(idemKey);
-
         if(dto.instruction() instanceof UseNewCard card){
-
-            return newCardPay();
+            String paymentMethod = "USE_NEW_CARD";
+            publishEvent(transaction, customerId, paymentMethod, snapshot);
+            return toDto(transaction);
 
         } else if (dto.instruction() instanceof UseSavedMethod saved) {
-
-            return tokenizedPay();
+            String paymentMethod = "USE_SAVED_METHOD";
+            publishEvent(transaction, customerId, paymentMethod, snapshot);
+            return toDto(transaction);
         }
 
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported payment instruction");
     }
 
-    @Transactional
-    private DTOTransactionResponse newCardPay(){
-        return null;
+    private void publishEvent(Transaction transaction, UUID customerId, String paymentMethod, Map<String, Object> snapshot){
+        publisher.publishEvent(new PaymentExecutionRequestEvent(transaction.getTransactionId(),
+                transaction.getOrder().getOrderId(),
+                customerId,
+                paymentMethod,
+                snapshot,
+                transaction.getTotalOutstanding(),
+                transaction.getIdempotencyKey()
+        ));
     }
 
-    @Transactional
-    private DTOTransactionResponse tokenizedPay(){
-        return null;
-    }
+    private DTOTransactionResponse resolveWinner(Transaction winner, UUID expectedOrderId){
+        if (!Objects.equals(winner.getOrder().getOrderId(), expectedOrderId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Idempotency key reused for a different order");
+        }
 
+        if (winner.getStatus() == TransactionStatus.PENDING) {
+            throw new ResponseStatusException(HttpStatus.ACCEPTED, "Transaction already processing");
+        }
+
+        return toDto(winner);
+    }
 
     private Map<String, Object> toSnapShot(PaymentInstruction paymentInstruction){
         Map<String, Object> m = new LinkedHashMap<>();
@@ -114,6 +126,15 @@ public class TransactionServiceImpl implements TransactionsService {
     }
 
     private DTOTransactionResponse toDto(Transaction tr){
-        return new DTOTransactionResponse();
+        return new DTOTransactionResponse(
+                tr.getTransactionId(),
+                tr.getOrder().getOrderId(),
+                tr.getCustomerId(),
+                tr.getPaymentMethod(),
+                tr.getTotalOutstanding(),
+                tr.getStatus(),
+                tr.getSubmittedAt(),
+                tr.getCompletedAt()
+        );
     }
 }
