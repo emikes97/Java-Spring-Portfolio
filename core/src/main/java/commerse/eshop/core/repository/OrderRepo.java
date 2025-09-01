@@ -2,9 +2,11 @@ package commerse.eshop.core.repository;
 
 import commerse.eshop.core.model.entity.Order;
 import commerse.eshop.core.model.entity.OrderItem;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,6 +22,10 @@ public interface OrderRepo extends JpaRepository<Order, UUID> {
 
     // Find By CustomerId and OrderId
     Optional<Order> findByCustomer_CustomerIdAndOrderId(UUID customerId, UUID orderId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.orderId = :orderId")
+    Optional<Order> findByOrderIdForUpdate(@Param("orderId") UUID orderId);
 
     // Update Reserved items back to the products stock after a cancelled order.
     @Modifying(clearAutomatically = true, flushAutomatically = true)
