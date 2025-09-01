@@ -19,7 +19,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"phoneNumber\": \"+306941234567\",\r\n  \"email\": \"mike@example.com\",\r\n  \"username\": \"mike\",\r\n  \"password\": \"TempPass123!\",\r\n  \"name\": \"Mike\",\r\n  \"surname\": \"Papadopoulos\"\r\n}",
+									"raw": "{\r\n  \"phoneNumber\": \"+30647532317\",\r\n  \"email\": \"dib@example.com\",\r\n  \"userName\": \"liakopoulos\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon\",\r\n  \"surname\": \"Dubaious\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -60,7 +60,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000001",
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4 ",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -70,7 +70,7 @@
 										"api",
 										"v1",
 										"customers",
-										"00000000-0000-0000-0000-000000000001"
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4 "
 									],
 									"query": [
 										{
@@ -377,7 +377,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"10 Ermou St\",\r\n  \"city\": \"Athens\",\r\n  \"postalCode\": \"10563\",\r\n  \"isDefault\": false\r\n}",
+									"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"Gkinosati 45\",\r\n  \"city\": \"Athens\",\r\n  \"postalCode\": \"12356\",\r\n  \"isDefault\": true\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -385,7 +385,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/addresses",
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4 /addresses",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -395,7 +395,7 @@
 										"api",
 										"v1",
 										"customers",
-										"00000000-0000-0000-0000-000000000101",
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4 ",
 										"addresses"
 									]
 								}
@@ -561,7 +561,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods",
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/payment-methods",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -571,7 +571,7 @@
 										"api",
 										"v1",
 										"customers",
-										"03b9d0fb-2a6c-4c9f-997b-3e0fed17465c",
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
 										"payment-methods"
 									]
 								}
@@ -728,7 +728,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 2\r\n}",
+									"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 4\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -736,7 +736,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/cart",
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/cart",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -746,7 +746,7 @@
 										"api",
 										"v1",
 										"customers",
-										"499008e1-13fa-4db8-983f-a6fc175f2445",
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
 										"cart"
 									]
 								}
@@ -817,10 +817,6 @@
 							"response": []
 						}
 					]
-				},
-				{
-					"name": "Put",
-					"item": []
 				},
 				{
 					"name": "Delete",
@@ -927,10 +923,6 @@
 							"response": []
 						}
 					]
-				},
-				{
-					"name": "Get",
-					"item": []
 				},
 				{
 					"name": "Put",
@@ -1237,7 +1229,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"country\": \"GR\",\r\n  \"street\": \"Akadimias 1\",\r\n  \"city\": \"Athens\",\r\n  \"postalCode\": \"10562\"\r\n}",
+									"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"Mykonou 12\",\r\n  \"city\": \"Athenistan\",\r\n  \"postalCode\": \"1452\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1245,7 +1237,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/checkout",
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/checkout",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -1255,8 +1247,32 @@
 										"api",
 										"v1",
 										"customers",
-										"499008e1-13fa-4db8-983f-a6fc175f2445",
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
 										"checkout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "CancelOrder",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/orders/c2287bfe-67a1-417e-8cdf-04e4ca78ab0b ",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
+										"orders",
+										"c2287bfe-67a1-417e-8cdf-04e4ca78ab0b "
 									]
 								}
 							},
@@ -1266,15 +1282,67 @@
 				},
 				{
 					"name": "Get",
-					"item": []
-				},
+					"item": [
+						{
+							"name": "ViewOrder",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/orders/c2287bfe-67a1-417e-8cdf-04e4ca78ab0b/view",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
+										"orders",
+										"c2287bfe-67a1-417e-8cdf-04e4ca78ab0b",
+										"view"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Transactions",
+			"item": [
 				{
-					"name": "Put",
-					"item": []
-				},
-				{
-					"name": "Delete",
-					"item": []
+					"name": "Post-Successful",
+					"item": [
+						{
+							"name": "NewCardPay - Successful",
+							"request": {
+								"method": "POST",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "SavedCardPay - Successful",
+							"request": {
+								"method": "POST",
+								"header": []
+							},
+							"response": []
+						},
+						{
+							"name": "NewCardPay - UnSuccessful",
+							"request": {
+								"method": "POST",
+								"header": []
+							},
+							"response": []
+						}
+					]
 				}
 			]
 		}

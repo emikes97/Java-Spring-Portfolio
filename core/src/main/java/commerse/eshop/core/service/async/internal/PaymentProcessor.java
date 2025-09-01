@@ -2,7 +2,6 @@ package commerse.eshop.core.service.async.internal;
 
 import commerse.eshop.core.events.PaymentExecutionRequestEvent;
 import commerse.eshop.core.events.PaymentSucceededOrFailed;
-import commerse.eshop.core.model.entity.Customer;
 import commerse.eshop.core.model.entity.Transaction;
 import commerse.eshop.core.model.entity.enums.OrderStatus;
 import commerse.eshop.core.model.entity.enums.TransactionStatus;
@@ -85,12 +84,14 @@ public class PaymentProcessor {
         if(providerChargeResult.successful()){
             tr.setStatus(TransactionStatus.SUCCESSFUL);
             tr.setCompletedAt(OffsetDateTime.now());
+            tr.setProviderReference(providerChargeResult.providerReference());
             log.info("Transaction: " + tr.getTransactionId() + "was completed");
             transactionRepo.save(tr);
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAID, OffsetDateTime.now(), tr.getOrder().getOrderId()));
         } else {
             tr.setStatus(TransactionStatus.FAILED);
             tr.setCompletedAt(OffsetDateTime.now());
+            tr.setProviderReference(providerChargeResult.providerReference());
             log.info("Transaction: " + tr.getTransactionId() + "failed");
             orderRepo.restoreProductStockFromOrder(tr.getOrder().getOrderId());
             transactionRepo.save(tr);
