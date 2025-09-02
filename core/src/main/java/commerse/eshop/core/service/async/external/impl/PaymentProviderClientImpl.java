@@ -17,7 +17,7 @@ public class PaymentProviderClientImpl implements PaymentProviderClient {
     ///  A basic simulation to a charging method.
     ///  While we will need the id from the db for the customer in case we would have a real simulator for charging,
     ///  currently there is no reason to call the db to fetch the token or tokenize the new card as we will draw the outcome
-    ///  via the idemKey only. In case we add a new module to simulate the 3rd party client we can utilize it to "validate" they payment through that.
+    ///  via the idemKey only. In case we add a new module to simulate the 3rd party client we can utilize it to "validate" the payment through that.
 
     /// idemKey=abc-123 → always SUCCESSFUL
     ///
