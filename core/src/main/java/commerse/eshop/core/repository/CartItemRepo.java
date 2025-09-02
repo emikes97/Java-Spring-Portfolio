@@ -14,10 +14,6 @@ import java.util.UUID;
 
 public interface CartItemRepo extends JpaRepository<CartItem, Long> {
 
-    // == Fetch Cart_id by CartItem ==
-    @Query(value = "select cart_id from cart_item where cart_item_id = :cartItemId", nativeQuery = true)
-    Optional<UUID> findCartIdByCartItem(@Param("cartItemId") long cartItemId);
-
     // == Fetch all Cart_Items from a cart UUID.
     Page<CartItem> findByCart_CartId(UUID cartId, Pageable pageable);
 

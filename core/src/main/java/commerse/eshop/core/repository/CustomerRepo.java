@@ -15,7 +15,4 @@ public interface CustomerRepo extends JpaRepository<Customer, UUID> {
     @Query(value = "select * from customers where phone_number = :input or email = :input", nativeQuery = true)
     Optional<Customer> findByPhoneNumberOrEmail(@Param("input") String phoneOrMail);
 
-    // == Return Accounts with the same Name // SurName == //
-    List<Customer> findByName(String name);
-    List<Customer> findBySurname(String surname);
 }

@@ -21,20 +21,8 @@ public interface CustomerAddrRepo extends JpaRepository<CustomerAddress, Long> {
     // == Fetch the address by UUID and ID to ensure its the correct user
     Optional<CustomerAddress> findByAddrIdAndCustomer_CustomerId(Long addressId, UUID customerId);
 
-    // Fetch all the addresses by Customer
-    List<CustomerAddress> findByCustomer(Customer customer);
-
-    // Fetch all addresses that are bound to customer_id
-    List<CustomerAddress> findByCustomerCustomerId(UUID customerId);
-
     // Fetch all addresses that are bound to customer_id
     Page<CustomerAddress> findByCustomerCustomerId(UUID customerId, Pageable pageable);
-
-    // Fetch all addresses by City - Could be used for Marketing
-    List<CustomerAddress> findByCityIgnoreCase(String city);
-
-    // Fetch all addresses by Postal code - Could be used for Marketing
-    List<CustomerAddress> findByPostalCode(String postalCode);
 
     // Delete an address via id and customer UUID
     long deleteByAddrIdAndCustomer_CustomerId(Long addressId, UUID customerId);

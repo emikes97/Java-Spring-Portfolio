@@ -8,9 +8,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class Conf {
 
+    /// Only purpose is to enable PasswordEncoder.
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(12);
     }
 
 }

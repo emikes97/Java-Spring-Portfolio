@@ -10,15 +10,8 @@ import java.util.UUID;
 
 public interface CartRepo extends JpaRepository<Cart, UUID> {
 
-    // Fetch cart by UUID.
-    Optional<Cart> findByCartId(UUID cartId);
-
     // Fetch cart by Customer
     Optional<Cart> findByCustomerCustomerId(UUID customerId);
-
-    // Fetch Customer UUID from Cart
-    @Query(value = "select customer_id from cart where cart_id = :cartId", nativeQuery = true)
-    Optional<UUID> findCustomerIdByCartId(@Param("cardId") UUID cartId);
 
     // Fetch Cart UUID from Cart from Customer UUID
     @Query(value = "select cart_id from cart where customer_id = :custId", nativeQuery = true)

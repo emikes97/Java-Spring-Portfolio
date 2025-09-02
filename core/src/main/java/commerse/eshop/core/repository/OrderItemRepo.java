@@ -18,9 +18,6 @@ public interface OrderItemRepo extends JpaRepository<OrderItem, Long> {
             "product_id, product_name, price_at, quantity, now() from cart_item where cart_id = :cartId", nativeQuery = true)
     int snapShotFromCart(@Param("orderId") UUID orderId, @Param("cartId") UUID cartId);
 
-    @Query(value = "select coalesce(sum(price_at * quantity), 0) from order_item where order_id = :orderId", nativeQuery = true)
-    BigDecimal sumOrderTotal(@Param("orderId") UUID orderId);
-
     @Modifying
     @Query(value = "delete from cart_item where cart_id = :cartId", nativeQuery = true)
     int clearCart(@Param("cartId") UUID cartId);
