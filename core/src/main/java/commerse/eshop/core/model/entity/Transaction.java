@@ -24,9 +24,7 @@ import java.util.UUID;
 @Table(name = "transactions")
 public class Transaction {
 
-    // == Constants ==
     // == Fields ==
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Setter(AccessLevel.NONE)
@@ -38,6 +36,8 @@ public class Transaction {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Order order;
 
+    /// Added pattern to ensure even in if we preload transactions via csv to match with UUID.
+    /// customerId will be saved as a string here.
     @Pattern(regexp = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$")
     @Column(name="customer_id_snapshot", nullable = false, length = 36)
     private String customerId;
@@ -71,7 +71,7 @@ public class Transaction {
 
     // == Constructors ==
 
-    protected Transaction(){}
+    protected Transaction(){} /// For JPA only
 
     public Transaction(Order order, String customerId, Map<String, Object> paymentMethod,
                        BigDecimal totalOutstanding, String idempotencyKey){
@@ -82,10 +82,7 @@ public class Transaction {
         this.idempotencyKey = idempotencyKey;
     }
 
-    // == Private Methods ==
-    // == Public Methods ==
     // == ToString ==
-
     @Override
     public String toString() {
         return "Transaction{" +

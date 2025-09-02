@@ -17,9 +17,7 @@ import java.time.OffsetDateTime;
 @Table(name = "order_item")
 public class OrderItem {
 
-    // == Constants ==
     // == Fields ==
-
     @Id
     @Setter(AccessLevel.NONE)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,13 +48,9 @@ public class OrderItem {
     private OffsetDateTime createdAt;
 
     // == Constructors ==
+    protected OrderItem(){}  /// For JPA only
 
-    protected OrderItem(){}
-
-    // == Private Methods ==
-    // == Public Methods ==
     // == ToString ==
-
     @Override
     public String toString() {
         return "OrderItem{" +

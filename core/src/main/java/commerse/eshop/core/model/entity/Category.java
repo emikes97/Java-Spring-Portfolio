@@ -18,7 +18,6 @@ import java.util.Set;
         uniqueConstraints = @UniqueConstraint(columnNames = "category_name"))
 public class Category {
 
-    // == Constants ==
     // == Fields ==
 
     @Id
@@ -41,7 +40,7 @@ public class Category {
 
     // == Constructors ==
 
-    protected Category(){}
+    protected Category(){} /// For JPA only
 
     public Category(String categoryName, String categoryDescription){
         this.categoryName = categoryName;
@@ -49,8 +48,8 @@ public class Category {
     }
 
     // == Private Methods ==
-
-    // == Public Methods ==
+    /// Normalize the text for categoryName and categoryDescription to ensure no duplicates and no funny bugs,
+    /// with invisible characters.
     @PrePersist @PreUpdate
     private void normalize() {
         if (categoryName != null) categoryName = categoryName.trim();
@@ -58,4 +57,13 @@ public class Category {
     }
 
     // == ToString ==
+    @Override
+    public String toString() {
+        return "Category{" +
+                "categoryId=" + categoryId +
+                ", categoryName='" + categoryName + '\'' +
+                ", categoryDescription='" + categoryDescription + '\'' +
+                ", productCategories=" + productCategories +
+                '}';
+    }
 }

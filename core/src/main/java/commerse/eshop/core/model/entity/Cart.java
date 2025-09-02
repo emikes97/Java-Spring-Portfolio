@@ -26,8 +26,6 @@ import java.util.UUID;
 public class Cart {
 
     // == Fields ==
-
-    // == Auto Generated UUID for the cart_id
     @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -54,7 +52,7 @@ public class Cart {
 
     // == Constructors ==
 
-    protected Cart(){}
+    protected Cart(){} /// For JPA only
 
     public Cart(Customer customer){
         this.customer = customer;

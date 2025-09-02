@@ -75,7 +75,7 @@ create table customer_payment_methods(
     customer_payment_id UUID PRIMARY KEY,
     customer_id UUID NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
     provider varchar(50) NOT NULL,
-    provider_payment_token TEXT NOT NULL,
+    provider_payment_token TEXT,
     brand varchar(25) NOT NULL,
     last_4 char(4) NOT NULL,
     year_exp SMALLINT NOT NULL,

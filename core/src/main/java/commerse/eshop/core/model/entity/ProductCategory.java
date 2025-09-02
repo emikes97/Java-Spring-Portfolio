@@ -14,6 +14,7 @@ import org.hibernate.annotations.OnDeleteAction;
         uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
 public class ProductCategory {
 
+    /// This Entity it's only meant to link products with categories, serves no other purpose.
     // == Fields ==
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

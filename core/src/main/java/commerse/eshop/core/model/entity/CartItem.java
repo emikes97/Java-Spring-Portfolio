@@ -58,7 +58,7 @@ public class CartItem {
 
     // == Constructors ==
 
-    protected CartItem(){}
+    protected CartItem(){} /// For JPA only
 
     public CartItem(Cart cart, Product product, String productName, int quantity, BigDecimal priceAt){
         this.cart = cart;
@@ -68,13 +68,17 @@ public class CartItem {
         this.priceAt = priceAt;
     }
 
-    // == Private Methods ==
-    // == Public Methods ==
-
-    public void attachTo(Cart c){
-        this.cart = c;
-        c.getCartItems().add(this);
-    }
-
     // == ToString ==
+
+    @Override
+    public String toString() {
+        return "CartItem{" +
+                "cartItemId=" + cartItemId +
+                ", product=" + product +
+                ", quantity=" + quantity +
+                ", productName='" + productName + '\'' +
+                ", priceAt=" + priceAt +
+                ", addedAt=" + addedAt +
+                '}';
+    }
 }

@@ -27,7 +27,6 @@ import java.util.Set;
 @Table(name = "products")
 public class Product {
 
-    // == Constants ==
     // == Fields ==
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -73,7 +72,7 @@ public class Product {
 
     // == Constructors ==
 
-    protected Product(){}
+    protected Product(){} /// For JPA only
 
     public Product(String productName, String description, Map<String, Object> productDetails, int productAvailableStock,
     BigDecimal price, boolean isActive){
@@ -86,6 +85,9 @@ public class Product {
     }
 
     // == Private Methods ==
+    /// To normalize and check for illegal arguments.
+    /// We need to normalize the product/description for invisible characters
+    /// And an extra safe-guard for productDetails.
     @PrePersist @PreUpdate
     private void validateDetails() {
         if (productDetails == null) throw new IllegalArgumentException("product_details is required");
@@ -93,8 +95,6 @@ public class Product {
         if (description != null) description = description.trim();
         // Map ensures “object” shape; if you ever switch to String, validate JSON object here.
     }
-
-    // == Public Methods ==
 
     // == ToString ==
 

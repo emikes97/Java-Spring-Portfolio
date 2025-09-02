@@ -24,7 +24,6 @@ import java.util.UUID;
 public class Order {
 
     // == Fields ==
-
     // == Auto Generated UUID for the customer
     @Setter(AccessLevel.NONE)
     @Id
@@ -60,7 +59,7 @@ public class Order {
 
     // == Constructors ==
 
-    protected Order(){}
+    protected Order(){} /// For JPA only
 
     public Order(Customer customer, Map<String, Object> addressToSend, BigDecimal totalOutstanding)
     {

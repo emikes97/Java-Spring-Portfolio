@@ -22,14 +22,11 @@ import java.util.UUID;
 public class Customer {
 
     // == Fields ==
-
-    // == Auto Generated UUID for the customer
     @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name="customer_id", updatable=false, nullable=false)
     private UUID customerId;
-    // ------------------------------------------------------------
 
     @Column(name = "phone_number", nullable = false, unique = true)
     @Pattern(regexp = "^\\+?[1-9]\\d{7,14}$")
@@ -37,13 +34,13 @@ public class Customer {
     private String phoneNumber;
 
     @Email
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Column(length = 100)
@@ -72,7 +69,7 @@ public class Customer {
     private Cart cart;
 
     // == Constructor ==
-    protected Customer(){}
+    protected Customer(){} /// For JPA only
 
     public Customer(String phoneNumber, String email, String username, String passwordHash, String name, String surname){
         this.phoneNumber = phoneNumber;
@@ -85,6 +82,7 @@ public class Customer {
     }
 
     // == Normalization ==
+    /// Ensure no invisible characters and no duplicate usernames/mails.
     @PrePersist
     @PreUpdate
     private void normalize(){

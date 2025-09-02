@@ -17,7 +17,6 @@ import java.time.OffsetDateTime;
 @Table(name = "customers_address")
 public class CustomerAddress {
 
-    // == Constants ==
     // == Fields ==
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -59,8 +58,7 @@ public class CustomerAddress {
 
 
     // == Constructors ==
-
-    protected CustomerAddress(){}
+    protected CustomerAddress(){} /// For JPA only
 
     public CustomerAddress(Customer customer, String country, String street,
                            String city, String postalCode, boolean isDefault) {
@@ -73,7 +71,7 @@ public class CustomerAddress {
     }
 
     // == Private Methods ==
-
+    /// Normalize the text to ensure no invisible characters exist.
     @PrePersist @PreUpdate
     private void normalize() {
         if (country != null) country = country.trim();
@@ -83,7 +81,6 @@ public class CustomerAddress {
     }
 
     // == ToString ==
-
     @Override
     public String toString() {
         return "CustomerAddress{" +

@@ -29,8 +29,6 @@ public class CustomerPaymentMethod {
     private static final int MAX_FUTURE_YEARS = 30;
 
     // == Fields ==
-
-    // == Auto Generated UUID for the payment Method
     @Setter(AccessLevel.NONE)
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -45,7 +43,7 @@ public class CustomerPaymentMethod {
     @Column(nullable = false, length = 50)
     private String provider;
 
-    @Column(name = "provider_payment_token", nullable = false, columnDefinition = "text")
+    @Column(name = "provider_payment_token", columnDefinition = "text")
     private String providerPaymentMethodToken;
 
     @NotBlank
@@ -82,7 +80,7 @@ public class CustomerPaymentMethod {
 
     // == Constructors ==
 
-    protected CustomerPaymentMethod(){}
+    protected CustomerPaymentMethod(){} /// For JPA only
 
     public CustomerPaymentMethod(Customer customer, String provider, String brand, String last4, short yearExp, short monthExp, boolean isDefault){
         this.customer = customer;
@@ -96,6 +94,7 @@ public class CustomerPaymentMethod {
 
     // == Private Methods ==
 
+    /// Verify if the year  provided is valid and not in the past or far future.
     @PrePersist
     @PreUpdate
     private void validateExpiry(){
