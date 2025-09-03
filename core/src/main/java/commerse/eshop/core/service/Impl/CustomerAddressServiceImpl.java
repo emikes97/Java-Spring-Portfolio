@@ -21,25 +21,29 @@ import java.util.UUID;
 @Service
 public class CustomerAddressServiceImpl implements CustomerAddressService {
 
+    // == Fields ==
     private final CustomerAddrRepo customerAddrRepo;
     private final CustomerRepo customerRepo;
 
+    // == Constructors ==
     @Autowired
     protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo){
         this.customerAddrRepo = customerAddrRepo;
         this.customerRepo = customerRepo;
     }
 
+    // == Public Methods ==
     @Override
     @Transactional(readOnly = true)
     public Page<DTOCustomerAddressResponse> getAllAddresses(UUID customerId, Pageable pageable) {
+        log.debug("GetAllAddresses was run");
         return customerAddrRepo.findByCustomerCustomerId(customerId, pageable).map(this::toDto);
     }
 
     @Override
     @Transactional
     public DTOCustomerAddressResponse addCustomerAddress(UUID customerId, DTOAddCustomerAddress dto) {
-
+        log.debug("addCustomerAddress was run");
         if (dto.isDefault()) {
             int outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
             log.debug(String.valueOf(outcome));
@@ -61,6 +65,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Transactional
     @Override
     public DTOCustomerAddressResponse updateCustomerAddress(UUID customerId, Long id, DTOUpdateCustomerAddress dto) {
+        log.debug("updateCustomerAddress was run");
 
         CustomerAddress addr = customerAddrRepo.findById(id).orElseThrow(() -> new RuntimeException("The address doesn't exist."));
 
@@ -94,6 +99,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Transactional
     @Override
     public DTOCustomerAddressResponse makeDefaultCustomerAddress(UUID customerId, Long id) {
+        log.debug("makeDefaultCustomerAddress was run");
 
         CustomerAddress customerAddress = customerAddrRepo.findByAddrIdAndCustomer_CustomerId(id, customerId).orElseThrow(
                 () -> new RuntimeException("Customer or Address doesn't exist.")
@@ -111,6 +117,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     @Transactional
     public void deleteCustomerAddress(UUID customerId, Long id) {
+        log.debug("deleteCustomerAddress was run");
         long deleted = customerAddrRepo.deleteByAddrIdAndCustomer_CustomerId(id, customerId);
 
         if (deleted == 0){
@@ -120,6 +127,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         log.info("Address was deleted with id = " + id + " and customer id = " + customerId);
     }
 
+    // == Private Methods ==
     private DTOCustomerAddressResponse toDto(CustomerAddress a) {
         return new DTOCustomerAddressResponse(
                 a.getAddrId(),
