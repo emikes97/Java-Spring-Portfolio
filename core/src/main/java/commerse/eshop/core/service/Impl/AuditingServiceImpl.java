@@ -5,7 +5,7 @@ import commerse.eshop.core.events.auditing_events.AuditingMethodEvent;
 import commerse.eshop.core.model.entity.enums.AuditingStatus;
 import commerse.eshop.core.service.AuditingService;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.UUID;
 
@@ -18,13 +18,11 @@ public class AuditingServiceImpl implements AuditingService {
     }
 
     @Override
-    @Transactional
     public void log(UUID customerId, String methodName, AuditingStatus status){
         log(customerId, methodName, status, null);
     }
 
     @Override
-    @Transactional
     public void log(UUID customerId, String methodName, AuditingStatus status, String reason) {
         if (status == AuditingStatus.ERROR){
             publisher.publishEvent(new AuditingImmediateEvent(customerId, methodName, status, reason));
