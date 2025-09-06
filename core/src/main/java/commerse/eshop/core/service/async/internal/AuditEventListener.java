@@ -22,7 +22,7 @@ public class AuditEventListener {
     private final AuditingRepo auditingRepo;
 
     @Autowired
-    public AuditEventListener(AuditingRepo auditingRepo, Auditing auditing){
+    public AuditEventListener(AuditingRepo auditingRepo){
         this.auditingRepo = auditingRepo;
     }
 

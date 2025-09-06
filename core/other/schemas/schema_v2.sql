@@ -10,17 +10,15 @@ CREATE EXTENSION IF NOT EXISTS citext;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Custom Types --
-DROP TYPE IF EXISTS token_status CASCADE;
-CREATE TYPE token_status AS ENUM ('PENDING', 'ACTIVE', 'FAILED');
-
-DROP TYPE IF EXISTS order_status CASCADE;
-CREATE TYPE order_status AS ENUM ('PENDING_PAYMENT','PAID','PAYMENT_FAILED','CANCELLED', 'EXPIRED');
-
+DROP TYPE IF EXISTS token_status       CASCADE;
+DROP TYPE IF EXISTS order_status       CASCADE;
 DROP TYPE IF EXISTS transaction_status CASCADE;
-CREATE TYPE transaction_status AS ENUM('PENDING', 'SUCCESSFUL', 'FAILED');
+DROP TYPE IF EXISTS auditing_status    CASCADE;
 
-DROP TYPE IF EXISTS transaction_status CASCADE;
-CREATE TYPE auditing_status AS ENUM('SUCCESSFUL', 'FAILED', 'ERROR');
+CREATE TYPE token_status       AS ENUM ('PENDING', 'ACTIVE', 'FAILED');
+CREATE TYPE order_status       AS ENUM ('PENDING_PAYMENT','PAID','PAYMENT_FAILED','CANCELLED','EXPIRED');
+CREATE TYPE transaction_status AS ENUM ('PENDING','SUCCESSFUL','FAILED');
+CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR');
 
 -- ====================================
 --         Clear all tables
@@ -36,6 +34,7 @@ DROP TABLE IF EXISTS product_category CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS order_item CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
+DROP TABLE IF EXISTS auditing CASCADE;
 
 -- =====================================
 -- Customers & Addresses & PaymentMethod

@@ -3,9 +3,13 @@ package commerse.eshop.core.service.Impl;
 import commerse.eshop.core.model.entity.Cart;
 import commerse.eshop.core.model.entity.CartItem;
 import commerse.eshop.core.model.entity.Product;
+import commerse.eshop.core.model.entity.consts.EndpointsNameMethods;
+import commerse.eshop.core.model.entity.enums.AuditMessage;
+import commerse.eshop.core.model.entity.enums.AuditingStatus;
 import commerse.eshop.core.repository.CartItemRepo;
 import commerse.eshop.core.repository.CartRepo;
 import commerse.eshop.core.repository.ProductRepo;
+import commerse.eshop.core.service.AuditingService;
 import commerse.eshop.core.service.CartService;
 import commerse.eshop.core.web.dto.response.Cart.DTOCartItemResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -31,19 +35,22 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepo cartItemRepo;
     private final CartRepo cartRepo;
     private final ProductRepo productRepo;
+    private final AuditingService auditingService;
 
     @Autowired
-    public CartServiceImpl(CartItemRepo cartItemRepo, CartRepo cartRepo, ProductRepo productRepo){
+    public CartServiceImpl(CartItemRepo cartItemRepo, CartRepo cartRepo, ProductRepo productRepo, AuditingService auditingService){
         this.cartItemRepo = cartItemRepo;
         this.cartRepo = cartRepo;
         this.productRepo = productRepo;
+        this.auditingService = auditingService;
     }
 
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCartItemResponse> viewAllCartItems(UUID customerId, Pageable pageable) {
+        auditingService.log(customerId, EndpointsNameMethods.CART_VIEW_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.CART_VIEW_ALL_SUCCESS.getMessage());
         return cartItemRepo.findByCart_CartId(cartRepo.findCartIdByCustomerId(customerId).orElseThrow(
-                        () -> new NoSuchElementException("Cart not found for customer " + customerId)) , pageable).map(this::toDto);
+        () -> new NoSuchElementException("Cart not found for customer " + customerId)) , pageable).map(this::toDto);
     }
 
     @Transactional(readOnly = true)
