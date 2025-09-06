@@ -16,6 +16,8 @@ import java.util.UUID;
 @Table(name = "auditing")
 public class Auditing {
 
+    // == Fields ==
+
     @Id
     @Setter(AccessLevel.NONE)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,4 +40,15 @@ public class Auditing {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
+
+    // == Constructors ==
+
+    protected Auditing(){};
+
+    public Auditing(UUID customerId, String methodName, AuditingStatus status, String message){
+        this.customerId = customerId;
+        this.methodName = methodName;
+        this.status = status;
+        this.message = message;
+    };
 }

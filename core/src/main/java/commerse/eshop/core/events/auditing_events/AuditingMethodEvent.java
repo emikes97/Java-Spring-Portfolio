@@ -7,5 +7,6 @@ import java.util.UUID;
 public record AuditingMethodEvent(
         UUID customerId,
         String methodName,
-        AuditingStatus status
+        AuditingStatus status,
+        String message
 ) {}

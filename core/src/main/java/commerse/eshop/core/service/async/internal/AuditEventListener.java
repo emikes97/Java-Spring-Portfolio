@@ -32,7 +32,7 @@ public class AuditEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handle(AuditingMethodEvent event){
         try {
-            Auditing auditing = new Auditing();
+            Auditing auditing = new Auditing(event.customerId(), event.methodName(), event.status(), event.message());
             auditingRepo.save(auditing);
         } catch (DataAccessException exception){
             log.error("Failed to save audit entry: {}", event, exception);
@@ -45,7 +45,7 @@ public class AuditEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handle(AuditingImmediateEvent event){
         try {
-            Auditing auditing = new Auditing();
+            Auditing auditing = new Auditing(event.customerId(), event.methodName(), event.status(), event.reason());
             auditingRepo.save(auditing);
         } catch (DataAccessException exception){
             log.error("Failed to save audit entry: {}", event, exception);
