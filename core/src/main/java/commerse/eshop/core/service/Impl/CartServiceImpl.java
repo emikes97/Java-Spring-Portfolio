@@ -56,9 +56,15 @@ public class CartServiceImpl implements CartService {
     @Transactional(readOnly = true)
     @Override
     public DTOCartItemResponse findItem(UUID customerId, long productId) {
-        UUID cart = cartRepo.findCartIdByCustomerId(customerId).orElseThrow(
-                () -> new NoSuchElementException("Cart doesn't exist"));
-        return toDto(cartItemRepo.getCartItemByCartIdAndProductId(cart, productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist")));
+        try {
+            UUID cart = cartRepo.findCartIdByCustomerId(customerId).orElseThrow(
+                    () -> new NoSuchElementException("Cart doesn't exist"));
+            auditingService.log(customerId, EndpointsNameMethods.CART_FIND_ITEM, AuditingStatus.SUCCESSFUL, AuditMessage.CART_FIND_ITEM_SUCCESS.name());
+            return toDto(cartItemRepo.getCartItemByCartIdAndProductId(cart, productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist")));
+        } catch (NoSuchElementException e){
+            auditingService.log(customerId, EndpointsNameMethods.CART_FIND_ITEM, AuditingStatus.ERROR, e.getMessage());
+            throw e;
+        }
     }
 
     @Transactional
