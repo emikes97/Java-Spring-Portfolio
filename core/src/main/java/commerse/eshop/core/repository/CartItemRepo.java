@@ -1,9 +1,11 @@
 package commerse.eshop.core.repository;
 
 import commerse.eshop.core.model.entity.CartItem;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -48,6 +50,10 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
       AND p.product_available_stock >= ci.quantity
     """, nativeQuery = true)
     int updateProductStock(@Param("cartId") UUID cartId);
+
+    // == Lock row to update it ==
+    @Query(value = "select * from cart_item where cart_id = :cartId and product_id = :productId for update", nativeQuery = true)
+    Optional<CartItem> getCartItemForUpdate(@Param("cartId")UUID cartId, @Param("productId") long productId);
 
     // == Expected changes
     @Query(value = "SELECT COUNT(DISTINCT product_id) FROM cart_item WHERE cart_id = :cartId", nativeQuery = true)

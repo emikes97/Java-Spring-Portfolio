@@ -18,7 +18,7 @@ DROP TYPE IF EXISTS auditing_status    CASCADE;
 CREATE TYPE token_status       AS ENUM ('PENDING', 'ACTIVE', 'FAILED');
 CREATE TYPE order_status       AS ENUM ('PENDING_PAYMENT','PAID','PAYMENT_FAILED','CANCELLED','EXPIRED');
 CREATE TYPE transaction_status AS ENUM ('PENDING','SUCCESSFUL','FAILED');
-CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR');
+CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR', 'WARNING');
 
 -- ====================================
 --         Clear all tables

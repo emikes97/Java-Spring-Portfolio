@@ -1,6 +1,5 @@
 package commerse.eshop.core.service.Impl;
 
-import com.sun.jdi.request.DuplicateRequestException;
 import commerse.eshop.core.model.entity.Category;
 import commerse.eshop.core.repository.CategoryRepo;
 import commerse.eshop.core.service.CategoryService;
