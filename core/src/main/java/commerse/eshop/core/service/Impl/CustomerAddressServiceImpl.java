@@ -1,21 +1,29 @@
 package commerse.eshop.core.service.Impl;
 
+import commerse.eshop.core.model.entity.Customer;
 import commerse.eshop.core.model.entity.CustomerAddress;
+import commerse.eshop.core.model.entity.consts.EndpointsNameMethods;
+import commerse.eshop.core.model.entity.enums.AuditMessage;
+import commerse.eshop.core.model.entity.enums.AuditingStatus;
 import commerse.eshop.core.repository.CustomerAddrRepo;
 import commerse.eshop.core.repository.CustomerRepo;
+import commerse.eshop.core.service.AuditingService;
 import commerse.eshop.core.service.CustomerAddressService;
+import commerse.eshop.core.util.SortSanitizer;
 import commerse.eshop.core.web.dto.requests.CustomerAddr.DTOAddCustomerAddress;
 import commerse.eshop.core.web.dto.requests.CustomerAddr.DTOUpdateCustomerAddress;
 import commerse.eshop.core.web.dto.response.CustomerAddr.DTOCustomerAddressResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -24,54 +32,95 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     // == Fields ==
     private final CustomerAddrRepo customerAddrRepo;
     private final CustomerRepo customerRepo;
+    private final AuditingService auditingService;
+    private final SortSanitizer sortSanitizer;
+
+    // == Constraints - Whitelisting ==
+    private static final Map<String, String> ALLOWED_SORTS = Map.of(
+            "country",     "country",
+            "street",      "street",
+            "city",        "city",
+            "postal_code", "postalCode",  // API → entity
+            "created_at",  "createdAt"    // API → entity
+    );
 
     // == Constructors ==
     @Autowired
-    protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo){
+    protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo,
+                                         AuditingService auditingService, SortSanitizer sortSanitizer){
         this.customerAddrRepo = customerAddrRepo;
         this.customerRepo = customerRepo;
+        this.auditingService = auditingService;
+        this.sortSanitizer = sortSanitizer;
     }
 
     // == Public Methods ==
     @Override
     @Transactional(readOnly = true)
     public Page<DTOCustomerAddressResponse> getAllAddresses(UUID customerId, Pageable pageable) {
-        log.debug("GetAllAddresses was run");
-        return customerAddrRepo.findByCustomerCustomerId(customerId, pageable).map(this::toDto);
+        Pageable p = sortSanitizer.sanitize(pageable, ALLOWED_SORTS, 25);
+
+        Page<CustomerAddress> page = customerAddrRepo.findByCustomerCustomerId(customerId, p);
+
+        auditingService.log(customerId, EndpointsNameMethods.ADDR_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_GET_ALL_SUCCESS.getMessage());
+        return page.map(this::toDto); // empty page is fine
     }
 
     @Override
     @Transactional
     public DTOCustomerAddressResponse addCustomerAddress(UUID customerId, DTOAddCustomerAddress dto) {
-        log.debug("addCustomerAddress was run");
-        if (dto.isDefault()) {
-            int outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
-            log.debug(String.valueOf(outcome));
-            if (outcome == 0)
-                log.info("There wasn't a default address");
+
+        Customer customerRef;
+
+        try {
+            customerRef = customerRepo.findById(customerId).orElseThrow(
+                    () -> new NoSuchElementException("Customer doesn't exist")
+            );
+        } catch (NoSuchElementException e){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.ERROR, e.toString());
+            throw e;
         }
 
-        // get a reference (no DB hit) just to set the FK
-        var customerRef = customerRepo.getReferenceById(customerId);
+        if (dto.isDefault()) {
+            int outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
+            log.debug("Cleared {} previous default addresses for customerId={}", outcome, customerId);
+            if (outcome == 0)
+                log.info("No previous default address for customerId={}", customerId);
+        }
 
         CustomerAddress customerAddress = new CustomerAddress(customerRef, dto.country(), dto.street(), dto.city(),
                 dto.postalCode(),dto.isDefault());
 
-        customerAddrRepo.save(customerAddress);
-
-        return toDto(customerAddress);
+        try {
+            customerAddrRepo.saveAndFlush(customerAddress);
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_ADD_SUCCESS.getMessage());
+            return toDto(customerAddress);
+        } catch (DataIntegrityViolationException dup){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.ERROR, dup.toString());
+            throw dup;
+        }
     }
 
     @Transactional
     @Override
     public DTOCustomerAddressResponse updateCustomerAddress(UUID customerId, Long id, DTOUpdateCustomerAddress dto) {
-        log.debug("updateCustomerAddress was run");
 
-        CustomerAddress addr = customerAddrRepo.findById(id).orElseThrow(() -> new RuntimeException("The address doesn't exist."));
+        CustomerAddress addr;
 
-        if(!(addr.getCustomer().getCustomerId().equals(customerId)))
+        try {
+            addr = customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
+        } catch (NoSuchElementException e){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR, e.toString());
+            throw e;
+        }
+
+        if(!(addr.getCustomer().getCustomerId().equals(customerId))){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR,
+                    "Mentioned address couldn't be found for user " + customerId);
             throw new NoSuchElementException("Mentioned address couldn't be found for user " + customerId);
+        }
 
+        // == Update fields ==
         if (dto.country() != null && !dto.country().isBlank())
             addr.setCountry(dto.country());
         if (dto.city() != null && !dto.city().isBlank())
@@ -91,40 +140,76 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             }
         }
 
-        customerAddrRepo.save(addr);
-
-        return toDto(addr);
+        // == Save & Flush ==
+        try {
+            customerAddrRepo.saveAndFlush(addr);
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_UPDATE_SUCCESS.getMessage());
+            return toDto(addr);
+        } catch (DataIntegrityViolationException dup){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR, dup.toString());
+            throw dup;
+        }
     }
 
     @Transactional
     @Override
     public DTOCustomerAddressResponse makeDefaultCustomerAddress(UUID customerId, Long id) {
-        log.debug("makeDefaultCustomerAddress was run");
 
-        CustomerAddress customerAddress = customerAddrRepo.findByAddrIdAndCustomer_CustomerId(id, customerId).orElseThrow(
-                () -> new RuntimeException("Customer or Address doesn't exist.")
-        );
+        CustomerAddress customerAddress;
 
-        customerAddrRepo.clearDefaultsForCustomer(customerId);
+        try {
+            customerAddress = customerAddrRepo.findByAddrIdAndCustomer_CustomerId(id, customerId).orElseThrow(
+                    () -> new NoSuchElementException("Customer or Address doesn't exist.")
+            );
+        } catch (NoSuchElementException e){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.ERROR, e.toString());
+            throw e;
+        }
 
-        customerAddress.setDefault(true);
+        // Idempotent: already default → no-op
+        if (Boolean.TRUE.equals(customerAddress.isDefault())) {
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT,
+                    AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_MAKE_DEFAULT_SUCCESS.getMessage());
+            return toDto(customerAddress);
+        }
 
-        customerAddrRepo.save(customerAddress);
+        // == Race check ==
+        try {
+            customerAddrRepo.clearDefaultsForCustomer(customerId);
+            customerAddress.setDefault(true);
+            customerAddrRepo.saveAndFlush(customerAddress);
 
-        return toDto(customerAddress);
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.SUCCESSFUL,
+                    AuditMessage.ADDR_MAKE_DEFAULT_SUCCESS.getMessage());
+
+            return toDto(customerAddress);
+        } catch (DataIntegrityViolationException dup){
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.ERROR, dup.toString());
+            throw dup;
+        }
     }
 
     @Override
     @Transactional
     public void deleteCustomerAddress(UUID customerId, Long id) {
-        log.debug("deleteCustomerAddress was run");
-        long deleted = customerAddrRepo.deleteByAddrIdAndCustomer_CustomerId(id, customerId);
 
-        if (deleted == 0){
-            throw new NoSuchElementException("Address not found");
+        try {
+            long deleted = customerAddrRepo.deleteByAddrIdAndCustomer_CustomerId(id, customerId);
+            customerAddrRepo.flush();
+            if (deleted == 0){
+                auditingService.log(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.WARNING, "Address not found");
+                log.warn("No address to delete: id={} customerId={}", id, customerId);
+                return;
+            }
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_DELETE_SUCCESS.getMessage());
+            log.info("Address was deleted with id = " + id + " and customer id = " + customerId);
+        } catch (DataIntegrityViolationException dive){
+            // If address is referenced by something, deletion can fail
+            Throwable most = dive.getMostSpecificCause();
+            String msg = (most.getMessage() != null && !most.getMessage().isBlank()) ? most.getMessage() : dive.toString();
+            auditingService.log(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.ERROR, msg);
+            throw dive;
         }
-
-        log.info("Address was deleted with id = " + id + " and customer id = " + customerId);
     }
 
     // == Private Methods ==
@@ -137,4 +222,5 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
                 a.getPostalCode(),
                 a.isDefault()
         );}
+
 }

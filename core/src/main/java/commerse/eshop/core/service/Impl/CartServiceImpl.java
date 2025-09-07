@@ -107,7 +107,7 @@ public class CartServiceImpl implements CartService {
             auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.SUCCESSFUL, AuditMessage.CART_ADD_ITEM_SUCCESS.getMessage());
             return toDto(cartItem);
         } catch (DataIntegrityViolationException dup){
-            log.warn("Duplicate exception occurred = {}", dup);
+            log.warn("Duplicate exception occurred",dup);
             try{
             cartItem = cartItemRepo.getCartItemForUpdate(cart.getCartId(), productId).orElseThrow(
                     () -> new NoSuchElementException("The requested product doesn't exist")
