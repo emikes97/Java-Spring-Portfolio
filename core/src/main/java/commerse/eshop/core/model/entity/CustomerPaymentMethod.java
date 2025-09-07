@@ -75,6 +75,10 @@ public class CustomerPaymentMethod {
     @Column(name = "token_status", columnDefinition = "token_status", nullable = false)
     private TokenStatus tokenStatus = TokenStatus.PENDING;
 
+    @Version
+    @Column(name = "row_version", nullable = false)
+    private long version;
+
     @Column(name = "is_default", nullable = false)
     private boolean isDefault;
 

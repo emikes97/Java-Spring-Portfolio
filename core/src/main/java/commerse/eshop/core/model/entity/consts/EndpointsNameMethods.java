@@ -67,4 +67,7 @@ public final class EndpointsNameMethods {
 
     // === UpdateOrder ===
     public static final String UPDATE_ORDER_ASYNC = "updateOder";
+
+    // === PaymentMethodTokenization ===
+    public static final String TOKENIZATION_ASYNC = "paymentMethodTokenization";
 }

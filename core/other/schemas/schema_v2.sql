@@ -15,7 +15,7 @@ DROP TYPE IF EXISTS order_status       CASCADE;
 DROP TYPE IF EXISTS transaction_status CASCADE;
 DROP TYPE IF EXISTS auditing_status    CASCADE;
 
-CREATE TYPE token_status       AS ENUM ('PENDING', 'ACTIVE', 'FAILED');
+CREATE TYPE token_status       AS ENUM ('PENDING', 'ACTIVE', 'PROCESSING', 'FAILED');
 CREATE TYPE order_status       AS ENUM ('PENDING_PAYMENT','PAID','PAYMENT_FAILED','CANCELLED','EXPIRED');
 CREATE TYPE transaction_status AS ENUM ('PENDING','SUCCESSFUL','FAILED');
 CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR', 'WARNING');
@@ -85,6 +85,7 @@ create table customer_payment_methods(
     created_at timestamptz NOT NULL DEFAULT NOW(),
     updated_at timestamptz DEFAULT NOW(),
     token_status token_status NOT NULL DEFAULT 'PENDING',
+    row_version BIGINT NOT NULL DEFAULT 0;
     is_default boolean NOT NULL DEFAULT TRUE,
     CONSTRAINT chk_cpm_last4_digits CHECK(last_4 ~ '^[0-9]{4}$'),
     CONSTRAINT chk_cpm_year_exp_reasonable CHECK(year_exp BETWEEN 2000 AND 2100)
