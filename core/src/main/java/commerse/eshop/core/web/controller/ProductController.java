@@ -35,6 +35,7 @@ public class ProductController {
     //        "productPrice": 1499.99,
     //        "isActive": true
     //      }'
+    // @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public DTOProductResponse addProduct(@RequestBody @Valid DTOAddProduct dto){
         return productService.addProduct(dto);

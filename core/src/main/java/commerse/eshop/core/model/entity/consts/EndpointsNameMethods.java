@@ -55,6 +55,7 @@ public final class EndpointsNameMethods {
     public static final String PRODUCT_GET          = "getProduct";
     public static final String PRODUCT_GET_ALL      = "getAllProducts";
     public static final String PRODUCT_INCREASE_QTY = "increaseQuantity";
+    public static final String PRODUCT_DECREASE_QTY = "decreaseQuantity";
     public static final String PRODUCT_LINK         = "link";
     public static final String PRODUCT_UNLINK       = "unlink";
     public static final String PRODUCT_REMOVE       = "removeProduct";
