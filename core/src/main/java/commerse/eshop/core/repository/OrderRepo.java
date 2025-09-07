@@ -38,4 +38,7 @@ public interface OrderRepo extends JpaRepository<Order, UUID> {
     """, nativeQuery = true)
     int restoreProductStockFromOrder(@Param("orderId") UUID orderId);
 
+    @Query(value = "select count(*) from order_item where order_id = :orderId", nativeQuery = true)
+    int countProductRowsToBeUpdated(@Param("orderId") UUID orderId);
+
 }
