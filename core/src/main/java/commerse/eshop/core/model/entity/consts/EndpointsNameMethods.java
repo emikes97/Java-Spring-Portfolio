@@ -62,4 +62,5 @@ public final class EndpointsNameMethods {
 
     // === Transactions ===
     public static final String TRANSACTION_PAY = "pay";
+    public static final String EVENT_PUBLISHED = "publishEvent";
 }
