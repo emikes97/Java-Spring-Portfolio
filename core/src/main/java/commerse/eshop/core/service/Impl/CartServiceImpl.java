@@ -1,6 +1,5 @@
 package commerse.eshop.core.service.Impl;
 
-import aj.org.objectweb.asm.commons.TryCatchBlockSorter;
 import commerse.eshop.core.model.entity.Cart;
 import commerse.eshop.core.model.entity.CartItem;
 import commerse.eshop.core.model.entity.Product;
@@ -173,10 +172,12 @@ public class CartServiceImpl implements CartService {
         try {
             cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
         } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR, e.toString());
+            auditingService.log(customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.ERROR, e.toString());
             throw e;
         }
+
         cartItemRepo.clearCart(cart.getCartId());
+        auditingService.log(customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.SUCCESSFUL, AuditMessage.CART_CLEAR_SUCCESS.getMessage());
     }
 
     private DTOCartItemResponse toDto(CartItem c){
