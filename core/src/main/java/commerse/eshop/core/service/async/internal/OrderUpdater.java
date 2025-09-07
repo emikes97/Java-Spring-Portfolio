@@ -57,6 +57,7 @@ public class OrderUpdater {
         try {
             order.setOrderStatus(paymentSucceededOrFailed.status());
             order.setCompletedAt(paymentSucceededOrFailed.time());
+            orderRepo.restoreProductStockFromOrder(order.getOrderId());
             orderRepo.saveAndFlush(order);
             auditingService.log(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL, order.getOrderStatus().toString());
         } catch (DataIntegrityViolationException err){

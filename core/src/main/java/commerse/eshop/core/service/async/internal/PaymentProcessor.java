@@ -3,10 +3,13 @@ package commerse.eshop.core.service.async.internal;
 import commerse.eshop.core.events.PaymentExecutionRequestEvent;
 import commerse.eshop.core.events.PaymentSucceededOrFailed;
 import commerse.eshop.core.model.entity.Transaction;
+import commerse.eshop.core.model.entity.consts.EndpointsNameMethods;
+import commerse.eshop.core.model.entity.enums.AuditingStatus;
 import commerse.eshop.core.model.entity.enums.OrderStatus;
 import commerse.eshop.core.model.entity.enums.TransactionStatus;
 import commerse.eshop.core.repository.OrderRepo;
 import commerse.eshop.core.repository.TransactionRepo;
+import commerse.eshop.core.service.AuditingService;
 import commerse.eshop.core.service.async.external.PaymentProviderClient;
 import commerse.eshop.core.web.dto.response.Providers.Charging.ProviderChargeResult;
 import lombok.extern.slf4j.Slf4j;
@@ -33,24 +36,44 @@ public class PaymentProcessor {
     private final TransactionRepo transactionRepo;
     private final OrderRepo orderRepo;
     private final ApplicationEventPublisher publisher;
+    private final AuditingService auditingService;
 
     @Autowired
-    public PaymentProcessor(PaymentProviderClient paymentProviderClient, TransactionRepo transactionRepo, OrderRepo orderRepo, ApplicationEventPublisher publisher){
+    public PaymentProcessor(PaymentProviderClient paymentProviderClient, TransactionRepo transactionRepo, OrderRepo orderRepo,
+                            ApplicationEventPublisher publisher, AuditingService auditingService){
         this.paymentProviderClient = paymentProviderClient;
         this.transactionRepo = transactionRepo;
         this.orderRepo = orderRepo;
         this.publisher = publisher;
+        this.auditingService = auditingService;
     }
 
     @Async("asyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processPayment(PaymentExecutionRequestEvent paymentExecutionRequestEvent){
-        Transaction tr = transactionRepo.findByIdempotencyKeyForUpdate(paymentExecutionRequestEvent.idemKey())
-                .orElseThrow(() -> new IllegalArgumentException("No transaction with idemKey = " + paymentExecutionRequestEvent.idemKey()));
 
-        if(!paymentExecutionRequestEvent.orderId().equals(tr.getOrder().getOrderId())) return;
-        if (tr.getStatus() == TransactionStatus.SUCCESSFUL || tr.getStatus() == TransactionStatus.FAILED) return;
+        final Transaction tr;
+
+        try {
+            tr = transactionRepo.findByIdempotencyKeyForUpdate(paymentExecutionRequestEvent.idemKey())
+                    .orElseThrow(() -> new IllegalArgumentException("No transaction with idemKey = " + paymentExecutionRequestEvent.idemKey()));
+        } catch (IllegalArgumentException ex){
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.WARNING, ex.toString());
+            throw ex;
+        }
+
+
+        if(!paymentExecutionRequestEvent.orderId().equals(tr.getOrder().getOrderId())){
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
+                    "Transaction IDs mismatch");
+            return;
+        }
+        if (tr.getStatus() == TransactionStatus.SUCCESSFUL || tr.getStatus() == TransactionStatus.FAILED){
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
+                    "Transaction Status Terminal");
+            return;
+        }
 
         Map<String, Object> snap = Optional.ofNullable(paymentExecutionRequestEvent.snapshot()).orElse(Map.of());
         ProviderChargeResult providerChargeResult = null;
@@ -71,12 +94,20 @@ public class PaymentProcessor {
                     providerChargeResult = paymentProviderClient.tokenizeAndCharge(tr, brand, panMasked, expMonth, expYear, holder);
                 }
 
-                default -> throw new IllegalArgumentException("Unsupported payment method: " + paymentExecutionRequestEvent.methodType());
+                default -> {
+                    auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.WARNING,
+                            "Unsupported payment method");
+                    throw new IllegalArgumentException("Unsupported payment method: " + paymentExecutionRequestEvent.methodType());
+                }
             }
         } catch (DataIntegrityViolationException err){
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
+                    err.toString());
             showErrorMessage(providerChargeResult, err, tr);
             return;
         } catch (Exception ex) {
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
+                    ex.toString());
             showErrorMessage(providerChargeResult, ex, tr);
             return;
         }
@@ -88,13 +119,16 @@ public class PaymentProcessor {
             log.info("Transaction: " + tr.getTransactionId() + "was completed");
             transactionRepo.save(tr);
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAID, OffsetDateTime.now(), tr.getOrder().getOrderId()));
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
+                    "Transaction Succeeded");
         } else {
             tr.setStatus(TransactionStatus.FAILED);
             tr.setCompletedAt(OffsetDateTime.now());
             tr.setProviderReference(providerChargeResult.providerReference());
             log.info("Transaction: " + tr.getTransactionId() + "failed");
-            orderRepo.restoreProductStockFromOrder(tr.getOrder().getOrderId());
             transactionRepo.save(tr);
+            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.FAILED,
+                    "Transaction Failed");
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAYMENT_FAILED, OffsetDateTime.now(), tr.getOrder().getOrderId()));
         }
     }
@@ -108,7 +142,6 @@ public class PaymentProcessor {
         log.info("[ERROR]: " + providerChargeResult.errorCode() + " for transaction " + tr.getTransactionId());
         tr.setStatus(TransactionStatus.FAILED);
         tr.setCompletedAt(OffsetDateTime.now());
-        orderRepo.restoreProductStockFromOrder(tr.getOrder().getOrderId());
         transactionRepo.save(tr);
         publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAYMENT_FAILED, OffsetDateTime.now(), tr.getOrder().getOrderId()));
     }

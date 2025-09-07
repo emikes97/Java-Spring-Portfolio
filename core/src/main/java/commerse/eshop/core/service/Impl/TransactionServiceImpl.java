@@ -76,8 +76,7 @@ public class TransactionServiceImpl implements TransactionsService {
         }
 
         // State gate (mirrors cancel rule)
-        if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT
-                && order.getOrderStatus() != OrderStatus.PAYMENT_FAILED) {
+        if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT) {
             IllegalStateException illegal =
                     new IllegalStateException("INVALID_STATE:" + order.getOrderStatus());
             auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, illegal.toString());

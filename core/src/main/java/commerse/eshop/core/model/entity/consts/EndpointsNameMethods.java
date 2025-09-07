@@ -70,4 +70,7 @@ public final class EndpointsNameMethods {
 
     // === PaymentMethodTokenization ===
     public static final String TOKENIZATION_ASYNC = "paymentMethodTokenization";
+
+    // === PaymentProcessing ===
+    public static final String PAYMENT_PROCESSING_ASYNC = "paymentProcess";
 }

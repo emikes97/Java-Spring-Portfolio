@@ -168,7 +168,7 @@ public class OrderServiceImpl implements OrderService {
             throw e;
         }
 
-        if(order.getOrderStatus() != OrderStatus.PENDING_PAYMENT && order.getOrderStatus() != OrderStatus.PAYMENT_FAILED){
+        if(order.getOrderStatus() != OrderStatus.PENDING_PAYMENT){
             IllegalStateException illegal = new IllegalStateException("INVALID_STATE" + order.getOrderStatus());
             auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, illegal.toString());
             throw illegal;
