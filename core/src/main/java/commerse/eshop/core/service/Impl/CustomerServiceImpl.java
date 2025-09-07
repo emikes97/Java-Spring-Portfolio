@@ -1,172 +1,371 @@
 package commerse.eshop.core.service.Impl;
 
 import commerse.eshop.core.model.entity.*;
+import commerse.eshop.core.model.entity.consts.EndpointsNameMethods;
+import commerse.eshop.core.model.entity.enums.AuditMessage;
+import commerse.eshop.core.model.entity.enums.AuditingStatus;
 import commerse.eshop.core.repository.CartItemRepo;
 import commerse.eshop.core.repository.CartRepo;
 import commerse.eshop.core.repository.CustomerRepo;
 import commerse.eshop.core.repository.OrderRepo;
+import commerse.eshop.core.service.AuditingService;
 import commerse.eshop.core.service.CustomerService;
+import commerse.eshop.core.util.SortSanitizer;
 import commerse.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerAdResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class CustomerServiceImpl implements CustomerService {
 
+    // == Fields ==
     private final CustomerRepo customerRepo;
     private final OrderRepo orderRepo;
     private final CartRepo cartRepo;
     private final CartItemRepo cartItemRepo;
     private final PasswordEncoder passwordEncoder;
+    private final SortSanitizer sortSanitizer;
+    private final AuditingService auditingService;
 
+    // == Whitelisting & Constraints ==
+
+    /** For DTOCustomerResponse */
+    public static final Map<String, String> CUSTOMER_PROFILE_SORT_WHITELIST = Map.ofEntries(
+            Map.entry("username", "username"),
+            Map.entry("name", "name"),
+            Map.entry("surname", "surname"),
+            Map.entry("created_at", "createdAt")
+    );
+
+    /** For DTOCustomerOrderResponse */
+    public static final Map<String, String> CUSTOMER_ORDERS_SORT_WHITELIST = Map.ofEntries(
+            Map.entry("total_outstanding", "totalOutstanding"),
+            Map.entry("created_at", "orderCreatedAt"),
+            Map.entry("completed_at", "orderCompletedAt")
+    );
+
+    /** For DTOCustomerCartItemResponse */
+    public static final Map<String, String> CUSTOMER_CART_ITEMS_SORT_WHITELIST = Map.ofEntries(
+            Map.entry("quantity", "quantity"),
+            Map.entry("price_at", "priceAt"),
+            Map.entry("added_at", "addedAt")
+    );
+
+    /** For DTOCustomerAdResponse */
+    public static final Map<String, String> CUSTOMER_ADDRESS_SORT_WHITELIST = Map.ofEntries(
+            Map.entry("country", "country"),
+            Map.entry("street", "street"),
+            Map.entry("city", "city"),
+            Map.entry("postal_code", "postalCode")
+    );
+
+    // == Constructors ==
     @Autowired
-    public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo, PasswordEncoder passwordEncoder) {
+    public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
+                               PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, AuditingService auditingService) {
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
         this.cartRepo = cartRepo;
         this.cartItemRepo = cartItemRepo;
         this.passwordEncoder = passwordEncoder;
+        this.auditingService = auditingService;
+        this.sortSanitizer = sortSanitizer;
     }
 
+    // == Public Methods ==
+
+    // == Public Methods ==
+
+    @Transactional
     @Override
     public DTOCustomerResponse createUser(DTOCustomerCreateUser dto) {
 
-        // Hash the password
-        String hashed = passwordEncoder.encode(dto.password());
+        // 1) Hash password
+        final String hashed = passwordEncoder.encode(dto.password());
 
-        /// Create the user,
-        Customer customer = new Customer(dto.phoneNumber(), dto.email(), dto.userName(), hashed, dto.name(), dto.surname());
-        customerRepo.save(customer);
-        Cart cart = new Cart(customer);
-        cartRepo.save(cart);
+        // 2) Create aggregate
+        final Customer customer = new Customer(
+                dto.phoneNumber(),
+                dto.email(),
+                dto.userName(),
+                hashed,
+                dto.name(),
+                dto.surname()
+        );
 
+        // 3) Persist customer
+        try {
+            customerRepo.saveAndFlush(customer);
+        } catch (DataIntegrityViolationException dup) {
+            // No stable UUID yet → don't attach a null customerId in audit context
+            auditingService.log(null, EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
+            log.warn("CREATE_USER failed (duplicate/constraint) email={} phone={}", dto.email(), dto.phoneNumber(), dup);
+            throw dup;
+        }
+
+        // 4) Create cart (same TX → atomic)
+        final Cart cart = new Cart(customer);
+        try {
+            cartRepo.saveAndFlush(cart);
+        } catch (DataIntegrityViolationException dup) {
+            auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
+            throw dup;
+        }
+
+        // 5) Success
+        auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
+                AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
         return toDto(customer);
     }
 
     @Transactional(readOnly = true)
     @Override
     public DTOCustomerResponse getProfile(UUID customerId) {
-        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
-        return toDto(customer);
+        if (customerId == null) {
+            IllegalArgumentException bad = new IllegalArgumentException("Missing customerId.");
+            auditingService.log(null, EndpointsNameMethods.GET_PROFILE_BY_ID, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
+            throw bad;
+        }
+        try {
+            Customer customer = customerRepo.findById(customerId)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
+            auditingService.log(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
+                    AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
+            return toDto(customer);
+        } catch (NoSuchElementException e) {
+            auditingService.log(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
+                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
+            throw e;
+        }
     }
 
     @Transactional(readOnly = true)
     @Override
     public DTOCustomerResponse getProfile(String phoneOrEmail) {
+        requireNotBlank(phoneOrEmail, null, EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
+                "MISSING_IDENTIFIER", "Missing phone/email identifier.");
 
-        if (phoneOrEmail == null)
-            throw new IllegalArgumentException("[Error] You can't request a search without the required identifications.");
-
-        Customer customer = customerRepo.findByPhoneNumberOrEmail(phoneOrEmail).orElseThrow(() ->
-                new NoSuchElementException("Customer not found for given phone/email"));
-        return toDto(customer);
+        final String key = phoneOrEmail.trim();
+        try {
+            Customer customer = customerRepo.findByPhoneNumberOrEmail(key)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found for: " + key));
+            auditingService.log(customer.getCustomerId(), EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
+                    AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
+            return toDto(customer);
+        } catch (NoSuchElementException e) {
+            auditingService.log(null, EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
+                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + key);
+            throw e;
+        }
     }
 
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCustomerOrderResponse> getOrders(UUID customerId, Pageable pageable) {
-        return orderRepo.findByCustomer_CustomerId(customerId, pageable).map(this::toDto);
+        Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_ORDERS_SORT_WHITELIST, 25);
+        Page<Order> orders = orderRepo.findByCustomer_CustomerId(customerId, p);
+        auditingService.log(customerId, EndpointsNameMethods.GET_ORDERS,
+                AuditingStatus.SUCCESSFUL, AuditMessage.GET_ORDERS_SUCCESS.getMessage());
+        return orders.map(this::toDto);
     }
 
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCustomerCartItemResponse> getCartItems(UUID customerId, Pageable pageable) {
-        Cart cart = cartRepo.findByCustomerCustomerId(customerId)
-                .orElseThrow(() -> new RuntimeException("Cart not found for customer: " + customerId));
-        return cartItemRepo.findByCart_CartId(cart.getCartId(), pageable).map(this::toDto);
+        final Cart cart;
+        try {
+            cart = cartRepo.findByCustomerCustomerId(customerId)
+                    .orElseThrow(() -> new NoSuchElementException("Cart not found for customer: " + customerId));
+        } catch (NoSuchElementException e) {
+            auditingService.log(customerId, EndpointsNameMethods.GET_CART_ITEMS, AuditingStatus.WARNING, "CART_NOT_FOUND");
+            throw e;
+        }
+
+        Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_CART_ITEMS_SORT_WHITELIST, 25);
+        Page<CartItem> cartItems = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
+
+        auditingService.log(customerId, EndpointsNameMethods.GET_CART_ITEMS,
+                AuditingStatus.SUCCESSFUL, AuditMessage.GET_CART_ITEMS_SUCCESS.getMessage());
+        return cartItems.map(this::toDto);
     }
 
     @Transactional
     @Override
     public void updateName(UUID customerId, String password, String name) {
+        if (customerId == null) {
+            auditingService.log(null, EndpointsNameMethods.UPDATE_NAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
+            throw new IllegalArgumentException("Missing customerId.");
+        }
+        requireNotBlank(name, customerId, EndpointsNameMethods.UPDATE_NAME, "INVALID_NAME", "Name must not be blank.");
 
-        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
+        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_NAME);
+        verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_NAME);
 
-        if(!passwordEncoder.matches(password, customer.getPasswordHash())){
-            throw new RuntimeException("Invalid Password");
+        String trimmed = name.trim();
+        if (trimmed.equals(customer.getName())) {
+            auditingService.log(customerId, EndpointsNameMethods.UPDATE_NAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_NAME");
+            return;
         }
 
-        // Update Name
-        customer.setName(name);
-        customerRepo.save(customer);
+        customer.setName(trimmed);
+        saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_NAME, AuditMessage.UPDATE_NAME_SUCCESS.getMessage());
     }
 
     @Transactional
     @Override
     public void updateSurname(UUID customerId, String password, String lastName) {
+        if (customerId == null) {
+            auditingService.log(null, EndpointsNameMethods.UPDATE_SURNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
+            throw new IllegalArgumentException("Missing customerId.");
+        }
+        requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_SURNAME, "INVALID_SURNAME", "Surname must not be blank.");
 
-        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
+        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_SURNAME);
+        verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_SURNAME);
 
-        if(!passwordEncoder.matches(password, customer.getPasswordHash())){
-            throw new RuntimeException("Invalid Password");
+        String trimmed = lastName.trim();
+        if (trimmed.equals(customer.getSurname())) {
+            auditingService.log(customerId, EndpointsNameMethods.UPDATE_SURNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_SURNAME");
+            return;
         }
 
-        // Update Name
-        customer.setSurname(lastName);
-        customerRepo.save(customer);
+        customer.setSurname(trimmed);
+        saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_SURNAME, AuditMessage.UPDATE_SURNAME_SUCCESS.getMessage());
     }
 
     @Transactional
     @Override
     public void updateFullName(UUID customerId, String password, String name, String lastName) {
-        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
+        if (customerId == null) {
+            auditingService.log(null, EndpointsNameMethods.UPDATE_FULLNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
+            throw new IllegalArgumentException("Missing customerId.");
+        }
+        requireNotBlank(name, customerId, EndpointsNameMethods.UPDATE_FULLNAME, "INVALID_FULLNAME", "Name must not be blank.");
+        requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_FULLNAME, "INVALID_FULLNAME", "Surname must not be blank.");
 
-        if(!passwordEncoder.matches(password, customer.getPasswordHash())){
-            throw new RuntimeException("Invalid Password");
+        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_FULLNAME);
+        verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_FULLNAME);
+
+        String newName = name.trim();
+        String newSurname = lastName.trim();
+
+        boolean changed = false;
+        if (!newName.equals(customer.getName())) { customer.setName(newName); changed = true; }
+        if (!newSurname.equals(customer.getSurname())) { customer.setSurname(newSurname); changed = true; }
+
+        if (!changed) {
+            auditingService.log(customerId, EndpointsNameMethods.UPDATE_FULLNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_FULLNAME");
+            return;
         }
 
-        // Update Name
-        customer.setName(name);
-        customer.setSurname(lastName);
-        customerRepo.save(customer);
+        saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_FULLNAME, AuditMessage.UPDATE_FULLNAME_SUCCESS.getMessage());
     }
 
     @Transactional
     @Override
     public void updateUserName(UUID customerId, String password, String userName) {
-        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer was not found"));
+        if (customerId == null) {
+            auditingService.log(null, EndpointsNameMethods.UPDATE_USERNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
+            throw new IllegalArgumentException("Missing customerId.");
+        }
+        requireNotBlank(userName, customerId, EndpointsNameMethods.UPDATE_USERNAME, "INVALID_USERNAME", "Username must not be blank.");
 
-        if(!passwordEncoder.matches(password, customer.getPasswordHash())){
-            throw new RuntimeException("Invalid Password");
+        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_USERNAME);
+        verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_USERNAME);
+
+        String trimmed = userName.trim();
+        if (trimmed.equals(customer.getUsername())) {
+            auditingService.log(customerId, EndpointsNameMethods.UPDATE_USERNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_USERNAME");
+            return;
         }
 
-        // Update Name
-        customer.setUsername(userName);
-        customerRepo.save(customer);
+        customer.setUsername(trimmed);
+        saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_USERNAME, AuditMessage.UPDATE_USERNAME_SUCCESS.getMessage());
     }
 
     @Transactional
     @Override
     public void updateUserPassword(UUID customerId, String currentPassword, String newPassword) {
+        if (customerId == null) {
+            auditingService.log(null, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
+            throw new IllegalArgumentException("Missing customerId.");
+        }
+        requireNotBlank(currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD, "INVALID_INPUT", "Missing current password.");
+        requireNotBlank(newPassword,     customerId, EndpointsNameMethods.UPDATE_PASSWORD, "INVALID_INPUT", "Missing new password.");
 
-        Customer customer = customerRepo.findById(customerId).orElseThrow(() -> new RuntimeException("Customer not found"));
-
-        if(!passwordEncoder.matches(currentPassword, customer.getPasswordHash())){
-            throw new RuntimeException("Invalid Password");
+        if (newPassword.length() < 8) {
+            auditingService.log(customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "WEAK_PASSWORD");
+            throw new IllegalArgumentException("Password too short.");
         }
 
-        if(passwordEncoder.matches(newPassword, customer.getPasswordHash())){
-            throw new RuntimeException("New password must be different from the current password");
+        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
+        verifyPasswordOrThrow(customer, currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD);
+
+        // Prevent reuse
+        if (passwordEncoder.matches(newPassword, customer.getPasswordHash())) {
+            auditingService.log(customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "REUSED_PASSWORD");
+            throw new IllegalArgumentException("New password must be different from current.");
         }
 
         customer.setPasswordHash(passwordEncoder.encode(newPassword));
-        customerRepo.save(customer);
+        saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditMessage.UPDATE_PASSWORD_SUCCESS.getMessage());
     }
 
-    ///  Private methods / Helpers to map to DTOs
+    // == Private Methods ==
+
+    /** Fail if the value is blank. Audits with WARNING and throws 400 (IllegalArgumentException). */
+    private void requireNotBlank(String val, UUID cid, String endpoint, String code, String msg) {
+        if (val == null || val.isBlank()) {
+            auditingService.log(cid, endpoint, AuditingStatus.WARNING, code);
+            throw new IllegalArgumentException(msg);
+        }
+    }
+
+    /** Load a customer or audit+throw 404 (NoSuchElementException). */
+    private Customer loadCustomerOr404(UUID customerId, String endpoint) {
+        try {
+            return customerRepo.findById(customerId)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
+        } catch (NoSuchElementException e) {
+            auditingService.log(customerId, endpoint, AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
+            throw e;
+        }
+    }
+
+    /** Verify password or audit+throw 401 (BadCredentialsException). */
+    private void verifyPasswordOrThrow(Customer c, String raw, UUID cid, String endpoint) {
+        if (raw == null || !passwordEncoder.matches(raw, c.getPasswordHash())) {
+            auditingService.log(cid, endpoint, AuditingStatus.WARNING, "INVALID_PASSWORD");
+            throw new BadCredentialsException("Invalid password");
+        }
+    }
+
+    /** Save a customer with success/error auditing. */
+    private void saveAndAudit(Customer c, UUID cid, String endpoint, String successMsg) {
+        try {
+            customerRepo.saveAndFlush(c);
+            auditingService.log(cid, endpoint, AuditingStatus.SUCCESSFUL, successMsg);
+        } catch (DataIntegrityViolationException dup) {
+            auditingService.log(cid, endpoint, AuditingStatus.ERROR, dup.toString());
+            throw dup;
+        }
+    }
 
     private DTOCustomerResponse toDto(Customer c){
         return new DTOCustomerResponse(
