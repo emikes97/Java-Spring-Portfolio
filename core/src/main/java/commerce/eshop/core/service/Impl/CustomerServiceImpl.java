@@ -1,16 +1,10 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.model.entity.Cart;
-import commerce.eshop.core.model.entity.CartItem;
-import commerce.eshop.core.model.entity.Customer;
-import commerce.eshop.core.model.entity.Order;
+import commerce.eshop.core.model.entity.*;
+import commerce.eshop.core.repository.*;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
-import commerce.eshop.core.repository.CartItemRepo;
-import commerce.eshop.core.repository.CartRepo;
-import commerce.eshop.core.repository.CustomerRepo;
-import commerce.eshop.core.repository.OrderRepo;
 import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CustomerService;
 import commerce.eshop.core.util.SortSanitizer;
@@ -46,6 +40,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final SortSanitizer sortSanitizer;
     private final AuditingService auditingService;
     private final CustomerServiceMapper customerServiceMapper;
+    private final WishlistRepo wishlistRepo;
 
     // == Whitelisting & Constraints ==
 
@@ -83,7 +78,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
                                PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, AuditingService auditingService,
-                               CustomerServiceMapper customerServiceMapper) {
+                               CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo) {
 
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
@@ -93,6 +88,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.auditingService = auditingService;
         this.sortSanitizer = sortSanitizer;
         this.customerServiceMapper = customerServiceMapper;
+        this.wishlistRepo = wishlistRepo;
     }
 
     // == Public Methods ==
@@ -133,7 +129,16 @@ public class CustomerServiceImpl implements CustomerService {
             throw dup;
         }
 
-        // 5) Success
+        // 5) Create wishlist
+        final  Wishlist wishlist = new Wishlist(customer);
+        try {
+            wishlistRepo.saveAndFlush(wishlist);
+        } catch (DataIntegrityViolationException dup){
+            auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
+            throw dup;
+        }
+
+        // 6) Success
         auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
                 AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
         return customerServiceMapper.toDtoCustomerRes(customer);

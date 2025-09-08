@@ -68,6 +68,10 @@ public class Customer {
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
 
+    /// Link Wishlist to Customer -- Reverse ///
+    @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+    private Wishlist wishlist;
+
     // == Constructor ==
     protected Customer(){} /// For JPA only
 

@@ -8,6 +8,7 @@ import org.springframework.beans.TypeMismatchException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,7 +40,7 @@ public class GlobalApiErrorHandler {
     @ExceptionHandler(ResponseStatusException.class)
     public ProblemDetail handle(ResponseStatusException ex, HttpServletRequest req){
         var problemDetail = ProblemDetail.forStatusAndDetail(ex.getStatusCode(), ex.getReason());
-        problemDetail.setTitle(defaultTitle((HttpStatus) ex.getStatusCode()));
+        problemDetail.setTitle(defaultTitle(ex.getStatusCode()));
         enrich(problemDetail, req);
         audit(req, AuditingStatus.WARNING, ex.getStatusCode().value() + ":" + ex.getReason());
         return problemDetail;
@@ -163,15 +164,19 @@ public class GlobalApiErrorHandler {
         }
     }
 
-    private static String defaultTitle(HttpStatus status) {
-        return switch (status.value()) {
+    private static String defaultTitle(HttpStatusCode status) {
+        return defaultTitle(status.value());
+    }
+
+    private static String defaultTitle(int status) {
+        return switch (status) {
             case 400 -> "Bad request";
             case 401 -> "Unauthorized";
             case 403 -> "Forbidden";
             case 404 -> "Not found";
             case 409 -> "Conflict";
             case 422 -> "Unprocessable entity";
-            default -> status.getReasonPhrase();
+            default -> "Error";
         };
     }
 

@@ -11,26 +11,21 @@ import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
-
 
 @Setter
 @Getter
 @Entity
-@Table(
-        name = "cart",
-        uniqueConstraints = @UniqueConstraint(columnNames = "customer_id")
-)
-public class Cart {
+@Table(name = "wishlist", uniqueConstraints = @UniqueConstraint(columnNames = "customer_id"))
+public class Wishlist {
 
     // == Fields ==
-    @Setter(AccessLevel.NONE)
+
     @Id
+    @Setter(AccessLevel.NONE)
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name="cart_id", updatable=false, nullable=false)
-    private UUID cartId;
+    @Column(name = "wishlist_id", nullable = false, updatable = false)
+    private UUID wishlistId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -46,34 +41,18 @@ public class Cart {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    /// Link Cart_Item to Cart -- Reverse ///
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<CartItem> cartItems = new HashSet<>();
-
     // == Constructors ==
+    protected Wishlist(){}
 
-    protected Cart(){} /// For JPA only
-
-    public Cart(Customer customer){
-        this.customer = customer;
-        attachTo(customer); // Attach to the created customer.
+    public Wishlist(Customer c){
+        this.customer = c;
+        attachTo(c);
     }
 
     // == Private Methods ==
-    /// Attach Cart to Customer and Customer to Cart. Only 1 unique Cart per customer ///
+    /// Attach Wishlist to Customer and Customer to Wishlist. Only 1 unique Wishlist per customer ///
     private void attachTo(Customer c){
         this.customer = c;
-        c.setCart(this);
-    }
-
-    // == ToString ==
-
-    @Override
-    public String toString() {
-        return "Cart{" +
-                "cartId=" + cartId +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
+        c.setWishlist(this);
     }
 }
