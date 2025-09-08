@@ -1,0 +1,30 @@
+package commerce.eshop.core.repository;
+
+import commerce.eshop.core.model.entity.CustomerPaymentMethod;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface CustomerPaymentMethodRepo extends JpaRepository<CustomerPaymentMethod, UUID> {
+
+    // Fetch PaymentMethod by customer UUID and paymentmethod UUID
+    Optional<CustomerPaymentMethod> findByCustomer_CustomerIdAndCustomerPaymentId(UUID customerId, UUID paymentId);
+
+    // Update default method to false
+    @Modifying
+    @Query(value = "update customer_payment_methods set is_default = false where customer_id = :custId and is_default = true", nativeQuery = true)
+    int updateDefaultMethodToFalse(@Param("custId") UUID customerId);
+
+    // Remove the payment method with Customer UUID and payment UUID
+    @Modifying
+    long deleteByCustomer_CustomerIdAndCustomerPaymentId(UUID customerId, UUID paymentId);
+
+    // Fetch All payment methods by Customer ID pageable
+    Page<CustomerPaymentMethod> findByCustomer_CustomerId(UUID customerId, Pageable pageable);
+}

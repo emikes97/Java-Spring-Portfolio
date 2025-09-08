@@ -1,0 +1,16 @@
+package commerce.eshop.core.web.mapper;
+
+import commerce.eshop.core.model.entity.Category;
+import commerce.eshop.core.web.dto.response.Category.DTOCategoryResponse;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CategoryServiceMapper {
+
+    public DTOCategoryResponse toDto(Category c){
+        return new DTOCategoryResponse(
+                c.getCategoryName(),
+                c.getCategoryDescription()
+        );
+    }
+}

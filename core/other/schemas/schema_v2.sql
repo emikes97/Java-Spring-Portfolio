@@ -85,7 +85,7 @@ create table customer_payment_methods(
     created_at timestamptz NOT NULL DEFAULT NOW(),
     updated_at timestamptz DEFAULT NOW(),
     token_status token_status NOT NULL DEFAULT 'PENDING',
-    row_version BIGINT NOT NULL DEFAULT 0;
+    row_version BIGINT NOT NULL DEFAULT 0,
     is_default boolean NOT NULL DEFAULT TRUE,
     CONSTRAINT chk_cpm_last4_digits CHECK(last_4 ~ '^[0-9]{4}$'),
     CONSTRAINT chk_cpm_year_exp_reasonable CHECK(year_exp BETWEEN 2000 AND 2100)
