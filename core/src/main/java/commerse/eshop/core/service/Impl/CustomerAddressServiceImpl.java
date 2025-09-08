@@ -13,6 +13,7 @@ import commerse.eshop.core.util.SortSanitizer;
 import commerse.eshop.core.web.dto.requests.CustomerAddr.DTOAddCustomerAddress;
 import commerse.eshop.core.web.dto.requests.CustomerAddr.DTOUpdateCustomerAddress;
 import commerse.eshop.core.web.dto.response.CustomerAddr.DTOCustomerAddressResponse;
+import commerse.eshop.core.web.mapper.CustomerAddressServiceMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,6 +35,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     private final CustomerRepo customerRepo;
     private final AuditingService auditingService;
     private final SortSanitizer sortSanitizer;
+    private final CustomerAddressServiceMapper customerAddressServiceMapper;
 
     // == Constraints - Whitelisting ==
     private static final Map<String, String> ALLOWED_SORTS = Map.of(
@@ -47,11 +49,13 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     // == Constructors ==
     @Autowired
     protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo,
-                                         AuditingService auditingService, SortSanitizer sortSanitizer){
+                                         AuditingService auditingService, SortSanitizer sortSanitizer,
+                                         CustomerAddressServiceMapper customerAddressServiceMapper){
         this.customerAddrRepo = customerAddrRepo;
         this.customerRepo = customerRepo;
         this.auditingService = auditingService;
         this.sortSanitizer = sortSanitizer;
+        this.customerAddressServiceMapper = customerAddressServiceMapper;
     }
 
     // == Public Methods ==
@@ -63,7 +67,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         Page<CustomerAddress> page = customerAddrRepo.findByCustomerCustomerId(customerId, p);
 
         auditingService.log(customerId, EndpointsNameMethods.ADDR_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_GET_ALL_SUCCESS.getMessage());
-        return page.map(this::toDto); // empty page is fine
+        return page.map(customerAddressServiceMapper::toDto); // empty page is fine
     }
 
     @Override
@@ -94,7 +98,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         try {
             customerAddrRepo.saveAndFlush(customerAddress);
             auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_ADD_SUCCESS.getMessage());
-            return toDto(customerAddress);
+            return customerAddressServiceMapper.toDto(customerAddress);
         } catch (DataIntegrityViolationException dup){
             auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.ERROR, dup.toString());
             throw dup;
@@ -144,7 +148,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         try {
             customerAddrRepo.saveAndFlush(addr);
             auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_UPDATE_SUCCESS.getMessage());
-            return toDto(addr);
+            return customerAddressServiceMapper.toDto(addr);
         } catch (DataIntegrityViolationException dup){
             auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR, dup.toString());
             throw dup;
@@ -170,7 +174,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         if (Boolean.TRUE.equals(customerAddress.isDefault())) {
             auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT,
                     AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_MAKE_DEFAULT_SUCCESS.getMessage());
-            return toDto(customerAddress);
+            return customerAddressServiceMapper.toDto(customerAddress);
         }
 
         // == Race check ==
@@ -182,7 +186,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.SUCCESSFUL,
                     AuditMessage.ADDR_MAKE_DEFAULT_SUCCESS.getMessage());
 
-            return toDto(customerAddress);
+            return customerAddressServiceMapper.toDto(customerAddress);
         } catch (DataIntegrityViolationException dup){
             auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.ERROR, dup.toString());
             throw dup;
@@ -211,16 +215,4 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             throw dive;
         }
     }
-
-    // == Private Methods ==
-    private DTOCustomerAddressResponse toDto(CustomerAddress a) {
-        return new DTOCustomerAddressResponse(
-                a.getAddrId(),
-                a.getCountry(),
-                a.getStreet(),
-                a.getCity(),
-                a.getPostalCode(),
-                a.isDefault()
-        );}
-
 }

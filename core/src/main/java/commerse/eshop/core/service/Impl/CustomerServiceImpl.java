@@ -16,6 +16,7 @@ import commerse.eshop.core.web.dto.response.Customer.DTOCustomerAdResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
 import commerse.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
+import commerse.eshop.core.web.mapper.CustomerServiceMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -42,6 +43,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final PasswordEncoder passwordEncoder;
     private final SortSanitizer sortSanitizer;
     private final AuditingService auditingService;
+    private final CustomerServiceMapper customerServiceMapper;
 
     // == Whitelisting & Constraints ==
 
@@ -78,7 +80,9 @@ public class CustomerServiceImpl implements CustomerService {
     // == Constructors ==
     @Autowired
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
-                               PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, AuditingService auditingService) {
+                               PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, AuditingService auditingService,
+                               CustomerServiceMapper customerServiceMapper) {
+
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
         this.cartRepo = cartRepo;
@@ -86,9 +90,8 @@ public class CustomerServiceImpl implements CustomerService {
         this.passwordEncoder = passwordEncoder;
         this.auditingService = auditingService;
         this.sortSanitizer = sortSanitizer;
+        this.customerServiceMapper = customerServiceMapper;
     }
-
-    // == Public Methods ==
 
     // == Public Methods ==
 
@@ -131,7 +134,7 @@ public class CustomerServiceImpl implements CustomerService {
         // 5) Success
         auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
                 AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
-        return toDto(customer);
+        return customerServiceMapper.toDtoCustomerRes(customer);
     }
 
     @Transactional(readOnly = true)
@@ -147,7 +150,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
             auditingService.log(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
                     AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
-            return toDto(customer);
+            return customerServiceMapper.toDtoCustomerRes(customer);
         } catch (NoSuchElementException e) {
             auditingService.log(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
                     AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
@@ -167,7 +170,7 @@ public class CustomerServiceImpl implements CustomerService {
                     .orElseThrow(() -> new NoSuchElementException("Customer not found for: " + key));
             auditingService.log(customer.getCustomerId(), EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
                     AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
-            return toDto(customer);
+            return customerServiceMapper.toDtoCustomerRes(customer);
         } catch (NoSuchElementException e) {
             auditingService.log(null, EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
                     AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + key);
@@ -182,7 +185,7 @@ public class CustomerServiceImpl implements CustomerService {
         Page<Order> orders = orderRepo.findByCustomer_CustomerId(customerId, p);
         auditingService.log(customerId, EndpointsNameMethods.GET_ORDERS,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_ORDERS_SUCCESS.getMessage());
-        return orders.map(this::toDto);
+        return orders.map(customerServiceMapper::toDtoCustomerOrder);
     }
 
     @Transactional(readOnly = true)
@@ -202,7 +205,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         auditingService.log(customerId, EndpointsNameMethods.GET_CART_ITEMS,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_CART_ITEMS_SUCCESS.getMessage());
-        return cartItems.map(this::toDto);
+        return cartItems.map(customerServiceMapper::toDtoCartItem);
     }
 
     @Transactional
@@ -365,50 +368,5 @@ public class CustomerServiceImpl implements CustomerService {
             auditingService.log(cid, endpoint, AuditingStatus.ERROR, dup.toString());
             throw dup;
         }
-    }
-
-    private DTOCustomerResponse toDto(Customer c){
-        return new DTOCustomerResponse(
-                c.getCustomerId(),
-                c.getPhoneNumber(),
-                c.getEmail(),
-                c.getUsername(),
-                c.getName(),
-                c.getSurname(),
-                c.getCreatedAt()
-        );
-    }
-
-    @SuppressWarnings("unchecked")
-    private DTOCustomerOrderResponse toDto(Order o){
-        var addrDto = toDtoFromJson((Map<String, Object>) o.getAddressToSend());
-        return new DTOCustomerOrderResponse(
-                o.getOrderId(),
-                o.getCustomer().getCustomerId(),
-                o.getTotalOutstanding(),
-                addrDto,
-                o.getCreatedAt(),
-                o.getCompletedAt()
-        );
-    }
-
-    private DTOCustomerCartItemResponse toDto(CartItem ci){
-        return new DTOCustomerCartItemResponse(
-                ci.getCartItemId(),
-                ci.getCart().getCartId(),
-                ci.getProduct().getProductId(),
-                ci.getProductName(),
-                ci.getQuantity(),
-                ci.getPriceAt(),
-                ci.getAddedAt());
-    }
-
-    private DTOCustomerAdResponse toDtoFromJson(Map<String, Object> a){
-        return new DTOCustomerAdResponse(
-                (String) a.get("country"),
-                (String) a.get("street"),
-                (String) a.get("city"),
-                (String) a.get("postalCode")
-        );
     }
 }

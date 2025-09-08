@@ -10,6 +10,7 @@ import commerse.eshop.core.service.CategoryService;
 import commerse.eshop.core.web.dto.requests.Category.DTOAddCategory;
 import commerse.eshop.core.web.dto.requests.Category.DTOUpdateCategory;
 import commerse.eshop.core.web.dto.response.Category.DTOCategoryResponse;
+import commerse.eshop.core.web.mapper.CategoryServiceMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,13 +28,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepo categoryRepo;
     private final AuditingService auditingService;
+    private final CategoryServiceMapper categoryServiceMapper;
 
     // == Constructors ==
 
     @Autowired
-    public CategoryServiceImpl(CategoryRepo categoryRepo, AuditingService auditingService){
+    public CategoryServiceImpl(CategoryRepo categoryRepo, AuditingService auditingService, CategoryServiceMapper categoryServiceMapper){
         this.categoryRepo = categoryRepo;
         this.auditingService = auditingService;
+        this.categoryServiceMapper = categoryServiceMapper;
     }
 
     // == Public Methods ==
@@ -63,7 +66,7 @@ public class CategoryServiceImpl implements CategoryService {
             throw new DuplicateKeyException("Category already exists");
         }
         auditingService.log(null, EndpointsNameMethods.CATEGORY_CREATE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_CREATE_SUCCESS.getMessage());
-        return toDto(category);
+        return categoryServiceMapper.toDto(category);
     }
 
     @Transactional
@@ -95,7 +98,7 @@ public class CategoryServiceImpl implements CategoryService {
         try{
             categoryRepo.saveAndFlush(category);
             auditingService.log(null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_UPDATE_SUCCESS.getMessage());
-            return toDto(category);
+            return categoryServiceMapper.toDto(category);
         } catch (DataIntegrityViolationException dup){
             Throwable most = dup.getMostSpecificCause();
 
@@ -135,14 +138,4 @@ public class CategoryServiceImpl implements CategoryService {
         auditingService.log(null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_DELETE_SUCCESS.getMessage());
         log.info("Deleted categories count={}, categoryId={}", deleted, categoryId);
     }
-
-    // == Private Methods ==
-
-    private DTOCategoryResponse toDto(Category c){
-        return new DTOCategoryResponse(
-                c.getCategoryName(),
-                c.getCategoryDescription()
-        );
-    }
-
 }

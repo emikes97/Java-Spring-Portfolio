@@ -12,6 +12,7 @@ import commerse.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderDetailsResponse;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderItemsResponse;
 import commerse.eshop.core.web.dto.response.Order.DTOOrderPlacedResponse;
+import commerse.eshop.core.web.mapper.OrderServiceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,12 +38,13 @@ public class OrderServiceImpl implements OrderService {
     private final CustomerAddrRepo customerAddrRepo;
     private final CustomerPaymentMethodRepo customerPaymentMethodRepo;
     private final AuditingService auditingService;
+    private final OrderServiceMapper orderServiceMapper;
 
     // == Constructors ==
     @Autowired
     public OrderServiceImpl(CustomerRepo customerRepo, CartItemRepo cartItemRepo, CartRepo cartRepo, OrderItemRepo orderItemRepo,
                             OrderRepo orderRepo, CustomerAddrRepo customerAddrRepo, CustomerPaymentMethodRepo customerPaymentMethodRepo,
-                            AuditingService auditingService){
+                            AuditingService auditingService, OrderServiceMapper orderServiceMapper){
 
         this.customerRepo = customerRepo;
         this.cartItemRepo = cartItemRepo;
@@ -52,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
         this.customerAddrRepo = customerAddrRepo;
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.auditingService = auditingService;
-
+        this.orderServiceMapper = orderServiceMapper;
     }
 
     // == Public Methods ==
@@ -115,7 +117,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Initiate a new order
-        Order order = new Order(customer, toMap(addressDto), total_outstanding);
+        Order order = new Order(customer, orderServiceMapper.toMap(addressDto), total_outstanding);
 
         // set status to pending
         order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
@@ -142,7 +144,7 @@ public class OrderServiceImpl implements OrderService {
             orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
             orderItemRepo.clearCart(cart.getCartId());
             auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_PLACE_SUCCESS.getMessage());
-            return toDto(order);
+            return orderServiceMapper.toDto(order);
         } catch (DataIntegrityViolationException dub){
             auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, dub.toString());
             throw dub;
@@ -224,44 +226,6 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
 
         auditingService.log(customerId, EndpointsNameMethods.ORDER_VIEW, AuditingStatus.SUCCESSFUL, "ORDER_VIEW_SUCCESS");
-        return toDtoDetails(order, itemDtos);
-    }
-
-    private Map<String,Object> toMap(DTOOrderCustomerAddress dto){
-        Map<String, Object> map = new HashMap<>();
-        map.put("country", dto.country());
-        map.put("street", dto.street());
-        map.put("city", dto.city());
-        map.put("postalCode", dto.postalCode());
-        return map;
-    }
-
-    private DTOOrderCustomerAddress toAdDto(Map<String, Object> addr){
-        return new DTOOrderCustomerAddress(
-                (String) addr.get("country"),
-                (String) addr.get("street"),
-                (String) addr.get("city"),
-                (String) addr.get("postalCode"));
-    }
-
-    private DTOOrderPlacedResponse toDto(Order o){
-        return new DTOOrderPlacedResponse(
-                o.getOrderId(),
-                o.getTotalOutstanding(),
-                toAdDto(o.getAddressToSend()),
-                o.getCreatedAt(),
-                o.getCompletedAt()
-        );}
-
-    private DTOOrderDetailsResponse toDtoDetails(Order o, List<DTOOrderItemsResponse> orderItems ){
-
-        return new DTOOrderDetailsResponse(
-                o.getOrderId(),
-                o.getTotalOutstanding(),
-                toAdDto(o.getAddressToSend()),
-                orderItems,
-                o.getCreatedAt(),
-                o.getCompletedAt()
-        );
+        return orderServiceMapper.toDtoDetails(order, itemDtos);
     }
 }

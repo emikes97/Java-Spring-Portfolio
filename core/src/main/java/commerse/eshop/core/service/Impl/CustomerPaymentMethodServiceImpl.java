@@ -14,6 +14,7 @@ import commerse.eshop.core.util.SortSanitizer;
 import commerse.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import commerse.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOUpdatePaymentMethod;
 import commerse.eshop.core.web.dto.response.PaymentMethod.DTOPaymentMethodResponse;
+import commerse.eshop.core.web.mapper.CustomerPaymentMethodServiceMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,6 +38,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     private final ApplicationEventPublisher applicationEventPublisher;
     private final AuditingService auditingService;
     private final SortSanitizer sortSanitizer;
+    private final CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper;
 
     // == Whitelist & Constraints ==
 
@@ -56,12 +58,13 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Autowired
     public CustomerPaymentMethodServiceImpl(CustomerPaymentMethodRepo customerPaymentMethodRepo, CustomerRepo customerRepo,
                                             ApplicationEventPublisher applicationEventPublisher, AuditingService auditingService,
-                                            SortSanitizer sortSanitizer){
+                                            SortSanitizer sortSanitizer, CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper){
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.customerRepo = customerRepo;
         this.applicationEventPublisher = applicationEventPublisher;
         this.auditingService = auditingService;
         this.sortSanitizer = sortSanitizer;
+        this.customerPaymentMethodServiceMapper = customerPaymentMethodServiceMapper;
     }
 
     // == Public Methods ==
@@ -74,7 +77,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         Page<CustomerPaymentMethod> customerPayment = customerPaymentMethodRepo.findByCustomer_CustomerId(customerId, p);
 
         auditingService.log(customerId, EndpointsNameMethods.PM_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.PM_ADD_SUCCESS.getMessage());
-        return customerPayment.map(this::toDto);
+        return customerPayment.map(customerPaymentMethodServiceMapper::toDto);
     }
 
     @Transactional
@@ -105,7 +108,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
             applicationEventPublisher.publishEvent(new PaymentMethodCreatedEvent(customerId, customerPaymentMethod.getCustomerPaymentId(),
                     customerPaymentMethod.getProvider()));
             auditingService.log(customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PM_ADD_SUCCESS.getMessage());
-            return toDto(customerPaymentMethod);
+            return customerPaymentMethodServiceMapper.toDto(customerPaymentMethod);
         } catch (DataIntegrityViolationException dup){
             auditingService.log(customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.ERROR, dup.toString());
             throw dup;
@@ -154,7 +157,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         try {
             customerPaymentMethodRepo.saveAndFlush(paymentMethod);
             auditingService.log(customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_UPDATE_SUCCESS.getMessage());
-            return toDto(paymentMethod);
+            return customerPaymentMethodServiceMapper.toDto(paymentMethod);
         } catch (DataIntegrityViolationException dup){
             auditingService.log(customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.ERROR, dup.toString());
             throw dup;
@@ -172,7 +175,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
                     () -> new NoSuchElementException("The payment method doesn't exist.")
             );
             auditingService.log(customerId, EndpointsNameMethods.PM_RETRIEVE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_RETRIEVE_SUCCESS.getMessage());
-            return toDto(paymentMethod);
+            return customerPaymentMethodServiceMapper.toDto(paymentMethod);
         } catch (NoSuchElementException e){
             auditingService.log(customerId, EndpointsNameMethods.PM_RETRIEVE, AuditingStatus.ERROR, e.toString());
             throw e;
@@ -208,16 +211,4 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
             throw dup;
         }
     }
-
-    private DTOPaymentMethodResponse toDto(CustomerPaymentMethod p){
-        return new DTOPaymentMethodResponse(
-                p.getProvider(),
-                p.getBrand(),
-                p.getLast4(),
-                p.getYearExp(),
-                p.getMonthExp(),
-                p.getTokenStatus(),
-                p.isDefault(),
-                p.getCreatedAt()
-        );}
 }

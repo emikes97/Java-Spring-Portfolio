@@ -19,6 +19,7 @@ import commerse.eshop.core.web.dto.requests.Transactions.PaymentVariants.Payment
 import commerse.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseNewCard;
 import commerse.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseSavedMethod;
 import commerse.eshop.core.web.dto.response.Transactions.DTOTransactionResponse;
+import commerse.eshop.core.web.mapper.TransactionServiceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -31,23 +32,29 @@ import java.util.*;
 
 @Service
 public class TransactionServiceImpl implements TransactionsService {
-    
+
+    // == Fields ==
     private final CustomerRepo customerRepo;
     private final OrderRepo orderRepo;
     private final TransactionRepo transactionRepo;
     private final ApplicationEventPublisher publisher;
     private final AuditingService auditingService;
+    private final TransactionServiceMapper transactionServiceMapper;
 
+    // == Constructors ==
     @Autowired
     public TransactionServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, TransactionRepo transactionRepo,
-                                  ApplicationEventPublisher publisher, AuditingService auditingService){
+                                  ApplicationEventPublisher publisher, AuditingService auditingService,
+                                  TransactionServiceMapper transactionServiceMapper){
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
         this.transactionRepo = transactionRepo;
         this.publisher = publisher;
         this.auditingService = auditingService;
+        this.transactionServiceMapper = transactionServiceMapper;
     }
 
+    // == Public Methods ==
     @Transactional
     @Override
     public DTOTransactionResponse pay(UUID customerId, UUID orderId, String idemKey, DTOTransactionRequest dto) {
@@ -100,7 +107,7 @@ public class TransactionServiceImpl implements TransactionsService {
             throw e;
         }
 
-        Map<String, Object> snapshot = toSnapShot(dto.instruction());
+        Map<String, Object> snapshot = transactionServiceMapper.toSnapShot(dto.instruction());
 
         Transaction transaction = new Transaction(order, customerId.toString(), snapshot, order.getTotalOutstanding(), idemKey);
 
@@ -121,19 +128,20 @@ public class TransactionServiceImpl implements TransactionsService {
             String paymentMethod = "USE_NEW_CARD";
             publishEvent(transaction, customerId, paymentMethod, snapshot);
             auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL, "Payment by -> USE_NEW_CARD");
-            return toDto(transaction);
+            return transactionServiceMapper.toDto(transaction);
 
         } else if (dto.instruction() instanceof UseSavedMethod saved) {
             String paymentMethod = "USE_SAVED_METHOD";
             publishEvent(transaction, customerId, paymentMethod, snapshot);
             auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL, "Payment by -> USE_SAVED_METHOD");
-            return toDto(transaction);
+            return transactionServiceMapper.toDto(transaction);
         }
 
         auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "Unsupported payment instruction");
         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported payment instruction");
     }
 
+    // == Private Methods ==
     private void publishEvent(Transaction transaction, UUID customerId, String paymentMethod, Map<String, Object> snapshot){
         publisher.publishEvent(new PaymentExecutionRequestEvent(transaction.getTransactionId(),
                 transaction.getOrder().getOrderId(),
@@ -156,45 +164,10 @@ public class TransactionServiceImpl implements TransactionsService {
             throw new ResponseStatusException(HttpStatus.ACCEPTED, "Transaction already processing");
         }
 
-        return toDto(winner);
-    }
-
-    private Map<String, Object> toSnapShot(PaymentInstruction paymentInstruction){
-        Map<String, Object> m = new LinkedHashMap<>();
-
-        if (paymentInstruction instanceof UseNewCard card){
-            m.put("type", "USE_NEW_CARD");
-            m.put("brand", card.brand());
-            m.put("panMasked", card.panMasked());     // masked only
-            m.put("expMonth", card.expMonth());
-            m.put("expYear", card.expYear());
-            m.put("holderName", card.holderName());
-            return m;
-        }
-        if (paymentInstruction instanceof UseSavedMethod saved) {
-            m.put("type", "USE_SAVED_METHOD");
-            m.put("customerPaymentMethodId", saved.customerPaymentMethodId());
-            return m;
-        }
-
-        m.put("type", "UNKNOWN");
-        return m;
+        return transactionServiceMapper.toDto(winner);
     }
 
     private boolean isTerminal(TransactionStatus s) {
         return s == TransactionStatus.SUCCESSFUL || s == TransactionStatus.FAILED;
-    }
-
-    private DTOTransactionResponse toDto(Transaction tr){
-        return new DTOTransactionResponse(
-                tr.getTransactionId(),
-                tr.getOrder().getOrderId(),
-                tr.getCustomerId(),
-                tr.getPaymentMethod(),
-                tr.getTotalOutstanding(),
-                tr.getStatus(),
-                tr.getSubmittedAt(),
-                tr.getCompletedAt()
-        );
     }
 }

@@ -13,6 +13,7 @@ import commerse.eshop.core.service.ProductService;
 import commerse.eshop.core.util.SortSanitizer;
 import commerse.eshop.core.web.dto.requests.Products.DTOAddProduct;
 import commerse.eshop.core.web.dto.response.Product.DTOProductResponse;
+import commerse.eshop.core.web.mapper.ProductServiceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductCategoryRepo productCategoryRepo;
     private final SortSanitizer sortSanitizer;
     private final AuditingService auditingService;
+    private final ProductServiceMapper productServiceMapper;
 
     // == Whitelisting & Constraints
     /** For DTOProductResponse */
@@ -44,12 +46,13 @@ public class ProductServiceImpl implements ProductService {
     // == Constructors ==
     @Autowired
     public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ProductCategoryRepo productCategoryRepo,
-                              SortSanitizer sortSanitizer, AuditingService auditingService){
+                              SortSanitizer sortSanitizer, AuditingService auditingService, ProductServiceMapper productServiceMapper){
         this.productRepo = productRepo;
         this.categoryRepo = categoryRepo;
         this.productCategoryRepo = productCategoryRepo;
         this.sortSanitizer = sortSanitizer;
         this.auditingService = auditingService;
+        this.productServiceMapper = productServiceMapper;
     }
 
 
@@ -79,7 +82,7 @@ public class ProductServiceImpl implements ProductService {
         try{
             productRepo.saveAndFlush(productToAdd);
             auditingService.log(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PRODUCT_ADD_SUCCESS.getMessage());
-            return toDto(productToAdd);
+            return productServiceMapper.toDto(productToAdd);
         } catch (DataIntegrityViolationException dup) {
             auditingService.log(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.ERROR, dup.toString());
             throw dup;
@@ -95,7 +98,7 @@ public class ProductServiceImpl implements ProductService {
         try {
             product = productRepo.findById(id).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
             auditingService.log(null, EndpointsNameMethods.PRODUCT_GET, AuditingStatus.SUCCESSFUL, AuditMessage.PRODUCT_GET_SUCCESS.getMessage());
-            return toDto(product);
+            return productServiceMapper.toDto(product);
         } catch (NoSuchElementException e){
             auditingService.log(null, EndpointsNameMethods.PRODUCT_GET, AuditingStatus.WARNING, e.toString());
             throw e;
@@ -109,7 +112,7 @@ public class ProductServiceImpl implements ProductService {
         Page<Product> products = productRepo.findAllByCategoryId(categoryId, p);
         auditingService.log(null, EndpointsNameMethods.PRODUCT_GET_ALL, AuditingStatus.SUCCESSFUL,
                 AuditMessage.PRODUCT_GET_ALL_SUCCESS.getMessage());
-        return products.map(this::toDto);
+        return products.map(productServiceMapper::toDto);
     }
 
     @Transactional
@@ -264,16 +267,4 @@ public class ProductServiceImpl implements ProductService {
             throw dup;
         }
     }
-
-    // Private Methods
-
-    private DTOProductResponse toDto(Product p){
-        return new DTOProductResponse(
-                p.getProductId(),
-                p.getProductName(),
-                p.getDescription(),
-                p.getProductDetails(),
-                p.getProductAvailableStock(),
-                p.getPrice()
-        );}
 }
