@@ -73,4 +73,11 @@ public final class EndpointsNameMethods {
 
     // === PaymentProcessing ===
     public static final String PAYMENT_PROCESSING_ASYNC = "paymentProcess";
+
+    // === Wishlist ===
+    public static final String ADD_NEW_WISH = "addNewWish";
+    public static final String FIND_ALL_WISHES = "findAllWishes";
+    public static final String FIND_WISH = "findWish";
+    public static final String REMOVE_WISH = "removeWish";
+    public static final String CLEAR_WISHLIST = "clearWishlist";
 }

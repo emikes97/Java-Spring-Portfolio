@@ -55,7 +55,15 @@ public enum AuditMessage {
     PRODUCT_REMOVE_SUCCESS("Product removed successfully"),
 
     // === Transactions ===
-    TRANSACTION_PAY_SUCCESS("Transaction payment executed successfully");
+    TRANSACTION_PAY_SUCCESS("Transaction payment executed successfully"),
+
+    // === Wishlist ===
+    WISHLIST_ADD_NEW_WISH_SUCCESS("New wish added successfully"),
+    WISHLIST_FIND_ALL_WISHES_SUCCESS("All wishes retrieved successfully"),
+    WISHLIST_FIND_A_WISH_SUCCESS("Wish retrieved successfully"),
+    WISHLIST_REMOVE_A_WISH_SUCCESS("Wish removed successfully"),
+    WISHLIST_CLEARED_SUCCESS("Wishlist cleared successfully");
+
 
     private final String message;
 

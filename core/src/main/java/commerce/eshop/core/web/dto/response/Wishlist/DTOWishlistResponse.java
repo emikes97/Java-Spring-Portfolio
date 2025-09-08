@@ -1,4 +1,10 @@
 package commerce.eshop.core.web.dto.response.Wishlist;
 
-public record DTOWishlistResponse() {
-}
+import java.time.OffsetDateTime;
+
+public record DTOWishlistResponse(
+        long wishId,
+        long productId,
+        String productName,
+        OffsetDateTime addedAt
+) {}
