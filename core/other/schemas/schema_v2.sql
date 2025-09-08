@@ -189,7 +189,7 @@ create table transactions(
     submitted_at timestamptz NOT NULL DEFAULT NOW(),
     completed_at timestamptz,
     status transaction_status NOT NULL DEFAULT 'PENDING',
-    idempotency_key varchar(100),
+    idempotency_key varchar (100),
     provider_reference varchar(100),
     CONSTRAINT uq_transactions_idem UNIQUE (idempotency_key)
 );
