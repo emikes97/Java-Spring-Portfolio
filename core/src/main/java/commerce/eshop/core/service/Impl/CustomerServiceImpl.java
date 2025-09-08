@@ -4,7 +4,6 @@ import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.CartItem;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
-import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
