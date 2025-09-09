@@ -2,6 +2,7 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
@@ -31,7 +32,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     // == Fields ==
     private final CustomerAddrRepo customerAddrRepo;
     private final CustomerRepo customerRepo;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final SortSanitizer sortSanitizer;
     private final CustomerAddressServiceMapper customerAddressServiceMapper;
 
@@ -47,11 +48,11 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     // == Constructors ==
     @Autowired
     protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo,
-                                         AuditingService auditingService, SortSanitizer sortSanitizer,
+                                         CentralAudit centralAudit, SortSanitizer sortSanitizer,
                                          CustomerAddressServiceMapper customerAddressServiceMapper){
         this.customerAddrRepo = customerAddrRepo;
         this.customerRepo = customerRepo;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.sortSanitizer = sortSanitizer;
         this.customerAddressServiceMapper = customerAddressServiceMapper;
     }
@@ -64,7 +65,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
 
         Page<CustomerAddress> page = customerAddrRepo.findByCustomerCustomerId(customerId, p);
 
-        auditingService.log(customerId, EndpointsNameMethods.ADDR_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_GET_ALL_SUCCESS.getMessage());
+        centralAudit.info(customerId, EndpointsNameMethods.ADDR_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_GET_ALL_SUCCESS.getMessage());
         return page.map(customerAddressServiceMapper::toDto); // empty page is fine
     }
 
@@ -72,16 +73,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Transactional
     public DTOCustomerAddressResponse addCustomerAddress(UUID customerId, DTOAddCustomerAddress dto) {
 
-        Customer customerRef;
-
-        try {
-            customerRef = customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("Customer doesn't exist")
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.ADDR_ADD);
 
         if (dto.isDefault()) {
             int outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
@@ -90,16 +82,15 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
                 log.info("No previous default address for customerId={}", customerId);
         }
 
-        CustomerAddress customerAddress = new CustomerAddress(customerRef, dto.country(), dto.street(), dto.city(),
+        CustomerAddress customerAddress = new CustomerAddress(customer, dto.country(), dto.street(), dto.city(),
                 dto.postalCode(),dto.isDefault());
 
         try {
             customerAddrRepo.saveAndFlush(customerAddress);
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_ADD_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_ADD_SUCCESS.getMessage());
             return customerAddressServiceMapper.toDto(customerAddress);
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.ADDR_ADD, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -107,19 +98,12 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     public DTOCustomerAddressResponse updateCustomerAddress(UUID customerId, Long id, DTOUpdateCustomerAddress dto) {
 
-        CustomerAddress addr;
-
-        try {
-            addr = customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        final CustomerAddress addr = getCustomerAddrOrThrow(customerId, id, EndpointsNameMethods.ADDR_UPDATE);
 
         if(!(addr.getCustomer().getCustomerId().equals(customerId))){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR,
+            throw centralAudit.audit(new NoSuchElementException("Mentioned address couldn't be found for user " + customerId),
+                    customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR,
                     "Mentioned address couldn't be found for user " + customerId);
-            throw new NoSuchElementException("Mentioned address couldn't be found for user " + customerId);
         }
 
         // == Update fields ==
@@ -145,11 +129,10 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
         // == Save & Flush ==
         try {
             customerAddrRepo.saveAndFlush(addr);
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_UPDATE_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_UPDATE_SUCCESS.getMessage());
             return customerAddressServiceMapper.toDto(addr);
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.ADDR_UPDATE, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -157,20 +140,11 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     public DTOCustomerAddressResponse makeDefaultCustomerAddress(UUID customerId, Long id) {
 
-        CustomerAddress customerAddress;
-
-        try {
-            customerAddress = customerAddrRepo.findByAddrIdAndCustomer_CustomerId(id, customerId).orElseThrow(
-                    () -> new NoSuchElementException("Customer or Address doesn't exist.")
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        final CustomerAddress customerAddress = getCustomerAddrOrThrow(customerId, id, EndpointsNameMethods.ADDR_MAKE_DEFAULT);
 
         // Idempotent: already default → no-op
         if (Boolean.TRUE.equals(customerAddress.isDefault())) {
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT,
+            centralAudit.info(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT,
                     AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_MAKE_DEFAULT_SUCCESS.getMessage());
             return customerAddressServiceMapper.toDto(customerAddress);
         }
@@ -181,13 +155,12 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             customerAddress.setDefault(true);
             customerAddrRepo.saveAndFlush(customerAddress);
 
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.SUCCESSFUL,
                     AuditMessage.ADDR_MAKE_DEFAULT_SUCCESS.getMessage());
 
             return customerAddressServiceMapper.toDto(customerAddress);
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -199,18 +172,38 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             long deleted = customerAddrRepo.deleteByAddrIdAndCustomer_CustomerId(id, customerId);
             customerAddrRepo.flush();
             if (deleted == 0){
-                auditingService.log(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.WARNING, "Address not found");
+                centralAudit.warn(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.WARNING, "Address not found");
                 log.warn("No address to delete: id={} customerId={}", id, customerId);
                 return;
             }
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_DELETE_SUCCESS.getMessage());
-            log.info("Address was deleted with id = " + id + " and customer id = " + customerId);
+            centralAudit.info(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.ADDR_DELETE_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dive){
             // If address is referenced by something, deletion can fail
             Throwable most = dive.getMostSpecificCause();
             String msg = (most.getMessage() != null && !most.getMessage().isBlank()) ? most.getMessage() : dive.toString();
-            auditingService.log(customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.ERROR, msg);
-            throw dive;
+            throw centralAudit.audit(dive, customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.ERROR, msg);
+        }
+    }
+
+    // == Private Methods ==
+
+    private Customer getCustomerOrThrow(UUID customerId, String method){
+        try {
+            final Customer customer = customerRepo.findById(customerId).orElseThrow(
+                    () -> new NoSuchElementException("Customer doesn't exist")
+            );
+            return customer;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    private CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method){
+        try {
+           final CustomerAddress addr = customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
+           return addr;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
         }
     }
 }

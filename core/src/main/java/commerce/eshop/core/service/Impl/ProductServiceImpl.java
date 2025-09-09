@@ -2,6 +2,7 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.Category;
 import commerce.eshop.core.model.entity.Product;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
@@ -32,7 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepo categoryRepo;
     private final ProductCategoryRepo productCategoryRepo;
     private final SortSanitizer sortSanitizer;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final ProductServiceMapper productServiceMapper;
 
     // == Whitelisting & Constraints
@@ -46,12 +47,12 @@ public class ProductServiceImpl implements ProductService {
     // == Constructors ==
     @Autowired
     public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ProductCategoryRepo productCategoryRepo,
-                              SortSanitizer sortSanitizer, AuditingService auditingService, ProductServiceMapper productServiceMapper){
+                              SortSanitizer sortSanitizer, CentralAudit centralAudit, ProductServiceMapper productServiceMapper){
         this.productRepo = productRepo;
         this.categoryRepo = categoryRepo;
         this.productCategoryRepo = productCategoryRepo;
         this.sortSanitizer = sortSanitizer;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.productServiceMapper = productServiceMapper;
     }
 
@@ -63,8 +64,7 @@ public class ProductServiceImpl implements ProductService {
 
         if(dto == null){
             IllegalArgumentException illegal = new IllegalArgumentException("Product Details can't be empty");
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.WARNING, illegal.toString());
         }
 
         String normalizedName = dto.productName().trim();
@@ -72,8 +72,7 @@ public class ProductServiceImpl implements ProductService {
 
         if (productRepo.existsByProductNameIgnoreCase(normalizedName)){
             IllegalStateException illegal = new IllegalStateException("Product already exists");
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.WARNING, illegal.toString());
         }
 
         Product productToAdd = new Product(normalizedName, normalizedDesc, dto.productDetails(),
@@ -81,28 +80,18 @@ public class ProductServiceImpl implements ProductService {
 
         try{
             productRepo.saveAndFlush(productToAdd);
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PRODUCT_ADD_SUCCESS.getMessage());
+            centralAudit.info(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PRODUCT_ADD_SUCCESS.getMessage());
             return productServiceMapper.toDto(productToAdd);
         } catch (DataIntegrityViolationException dup) {
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup,null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.ERROR, dup.toString());
         }
     }
 
     @Transactional(readOnly = true)
     @Override
     public DTOProductResponse getProduct(long id) {
-
-        final Product product;
-
-        try {
-            product = productRepo.findById(id).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_GET, AuditingStatus.SUCCESSFUL, AuditMessage.PRODUCT_GET_SUCCESS.getMessage());
-            return productServiceMapper.toDto(product);
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_GET, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Product product = getProductOrThrow(id, EndpointsNameMethods.PRODUCT_GET);
+        return productServiceMapper.toDto(product);
     }
 
     @Transactional(readOnly = true)
@@ -110,7 +99,7 @@ public class ProductServiceImpl implements ProductService {
     public Page<DTOProductResponse> getAllProducts(long categoryId, Pageable pageable) {
         Pageable p = sortSanitizer.sanitize(pageable, PRODUCT_SORT_WHITELIST, 25);
         Page<Product> products = productRepo.findAllByCategoryId(categoryId, p);
-        auditingService.log(null, EndpointsNameMethods.PRODUCT_GET_ALL, AuditingStatus.SUCCESSFUL,
+        centralAudit.info(null, EndpointsNameMethods.PRODUCT_GET_ALL, AuditingStatus.SUCCESSFUL,
                 AuditMessage.PRODUCT_GET_ALL_SUCCESS.getMessage());
         return products.map(productServiceMapper::toDto);
     }
@@ -121,34 +110,24 @@ public class ProductServiceImpl implements ProductService {
 
         if (quantity <= 0){
             IllegalArgumentException illegal = new IllegalArgumentException("Quantity can't be negative/or zero for increasing the stock");
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.WARNING, illegal.toString());
         }
 
-        final  Product product;
-        try {
-            product = productRepo.findById(productId).orElseThrow(
-                    () -> new NoSuchElementException("Product couldn't be found"));
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
-
+        final  Product product = getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_INCREASE_QTY);
 
         try {
             int newStock = Math.addExact(product.getProductAvailableStock(), quantity); // overflow-safe
             product.setProductAvailableStock(newStock);
 
             productRepo.saveAndFlush(product);
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.SUCCESSFUL,
                     AuditMessage.PRODUCT_INCREASE_QTY_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup,null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.ERROR, dup.toString());
         } catch (ArithmeticException overflow){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_INCREASE_QTY,
-                    AuditingStatus.ERROR, "STOCK_OVERFLOW id=" + productId + " by=" + quantity);
-            throw new IllegalStateException("Stock overflow for product id=" + productId);
+            throw centralAudit.audit(new ArithmeticException("Stock overflow for product id=" + productId), null,
+                    EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.ERROR,
+                    "STOCK_OVERFLOW id=" + productId + " by=" + quantity);
         }
     }
 
@@ -157,32 +136,22 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void decreaseQuantity(long productId, int quantity) {
 
-        final  Product product;
-
-        try {
-            product = productRepo.findById(productId).orElseThrow( () ->
-                    new NoSuchElementException("Product couldn't be found"));
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final  Product product = getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_DECREASE_QTY);
 
         if (product.getProductAvailableStock() < quantity){
             IllegalStateException illegal = new IllegalStateException("Insufficient stock: available="
                     + product.getProductAvailableStock() + ", requested=" + quantity);
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+           throw centralAudit.audit(illegal, null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.WARNING, illegal.toString());
         }
 
         try {
             int newStock = Math.subtractExact(product.getProductAvailableStock(), quantity);
             product.setProductAvailableStock(newStock);
             productRepo.saveAndFlush(product);
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.SUCCESSFUL,
                     AuditMessage.PRODUCT_DECREASE_QTY_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, null, EndpointsNameMethods.PRODUCT_DECREASE_QTY, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -190,38 +159,21 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void linkProduct(long productId, long categoryId) {
 
-        final Product product;
+        final Product product = getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_LINK);
 
-        try {
-            product = productRepo.findById(productId).orElseThrow(() ->
-                    new NoSuchElementException("Product with product ID = " + productId + " doesn't exist."));
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
-
-        final Category category;
-
-        try {
-            category = categoryRepo.findById((categoryId)).orElseThrow(() ->
-                    new NoSuchElementException("Category with Category ID " + categoryId + " doesn't exists"));
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Category category = getCategoryOrThrow(categoryId, EndpointsNameMethods.PRODUCT_LINK);
 
         try {
             int inserted = productCategoryRepo.linkIfAbsent(productId, categoryId);
             if (inserted == 1) {
-                auditingService.log(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.SUCCESSFUL,
+                centralAudit.info(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.SUCCESSFUL,
                         "LINKED productId=" + productId + " categoryId=" + categoryId);
             } else {
-                auditingService.log(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.SUCCESSFUL,
+                centralAudit.warn(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.WARNING,
                         "ALREADY_LINKED productId=" + productId + " categoryId=" + categoryId);
             }
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup,null, EndpointsNameMethods.PRODUCT_LINK, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -233,38 +185,47 @@ public class ProductServiceImpl implements ProductService {
             int removed = productCategoryRepo.deleteByProduct_ProductIdAndCategory_CategoryId(productId, categoryId);
             if (removed == 0) {
                 NoSuchElementException illegal = new NoSuchElementException("LINK_NOT_FOUND productId=" + productId + " categoryId=" + categoryId);
-                auditingService.log(null, EndpointsNameMethods.PRODUCT_UNLINK, AuditingStatus.WARNING, illegal.toString());
-                throw illegal;
+                throw centralAudit.audit(illegal,null, EndpointsNameMethods.PRODUCT_UNLINK, AuditingStatus.WARNING, illegal.toString());
             }
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_UNLINK, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(null, EndpointsNameMethods.PRODUCT_UNLINK, AuditingStatus.SUCCESSFUL,
                     AuditMessage.PRODUCT_UNLINK_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_UNLINK, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, null, EndpointsNameMethods.PRODUCT_UNLINK, AuditingStatus.ERROR, dup.toString());
         }
     }
 
     @Transactional
     @Override
     public void removeProduct(long id) {
-        Product product;
-        try {
-            product = productRepo.findById(id).orElseThrow(
-                    () -> new NoSuchElementException("The product doesn't exist.")
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_REMOVE, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+
+        final Product product = getProductOrThrow(id, EndpointsNameMethods.PRODUCT_REMOVE);
 
         try {
             productRepo.delete(product);
             productRepo.flush();              // fail fast on FK constraints
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_REMOVE, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(null, EndpointsNameMethods.PRODUCT_REMOVE, AuditingStatus.SUCCESSFUL,
                     AuditMessage.PRODUCT_REMOVE_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(null, EndpointsNameMethods.PRODUCT_REMOVE, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            centralAudit.audit(dup, null, EndpointsNameMethods.PRODUCT_REMOVE, AuditingStatus.ERROR, dup.toString());
+        }
+    }
+
+    // == Private Methods ==
+
+    private Product getProductOrThrow(long productId, String method){
+        try {
+            return productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, null, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    private Category getCategoryOrThrow(long categoryId, String method){
+        try {
+            return categoryRepo.findById((categoryId)).orElseThrow(() ->
+                    new NoSuchElementException("Category with Category ID " + categoryId + " doesn't exists"));
+        } catch (NoSuchElementException e){
+           throw centralAudit.audit(e,null, method, AuditingStatus.WARNING, e.toString());
         }
     }
 }

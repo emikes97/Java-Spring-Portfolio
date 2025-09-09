@@ -1,11 +1,11 @@
 package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.Category;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.repository.CategoryRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CategoryService;
 import commerce.eshop.core.web.dto.requests.Category.DTOAddCategory;
 import commerce.eshop.core.web.dto.requests.Category.DTOUpdateCategory;
@@ -27,15 +27,15 @@ public class CategoryServiceImpl implements CategoryService {
     // == Fields ==
 
     private final CategoryRepo categoryRepo;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final CategoryServiceMapper categoryServiceMapper;
 
     // == Constructors ==
 
     @Autowired
-    public CategoryServiceImpl(CategoryRepo categoryRepo, AuditingService auditingService, CategoryServiceMapper categoryServiceMapper){
+    public CategoryServiceImpl(CategoryRepo categoryRepo, CentralAudit centralAudit, CategoryServiceMapper categoryServiceMapper){
         this.categoryRepo = categoryRepo;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.categoryServiceMapper = categoryServiceMapper;
     }
 
@@ -49,9 +49,8 @@ public class CategoryServiceImpl implements CategoryService {
 
         // First duplicate check
         if (duplicate){
-            log.warn("The provided category name was duplicate: {} ", dto.categoryName());
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_CREATE, AuditingStatus.ERROR,"Category already exists");
-            throw new DuplicateKeyException("Category already exists");
+            throw centralAudit.audit(new DuplicateKeyException("Category already exists"), null,
+                    EndpointsNameMethods.CATEGORY_CREATE, AuditingStatus.ERROR,"Category already exists");
         }
 
         Category category = new Category(dto.categoryName(), dto.categoryDescription());
@@ -59,29 +58,19 @@ public class CategoryServiceImpl implements CategoryService {
         // Race condition check
         try {
             categoryRepo.saveAndFlush(category);
-            log.info("New category saved: {}", category.getCategoryName());
+            centralAudit.info(null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.SUCCESSFUL,
+                    AuditMessage.CATEGORY_UPDATE_SUCCESS.getMessage());
+            return categoryServiceMapper.toDto(category);
         } catch (DataIntegrityViolationException e) {
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_CREATE, AuditingStatus.ERROR,"Category already exists");
-            log.warn("Duplicate category on insert (constraint hit): {}", dto.categoryName());
-            throw new DuplicateKeyException("Category already exists");
+            throw centralAudit.audit(e,null, EndpointsNameMethods.CATEGORY_CREATE, AuditingStatus.ERROR,"Category already exists");
         }
-        auditingService.log(null, EndpointsNameMethods.CATEGORY_CREATE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_CREATE_SUCCESS.getMessage());
-        return categoryServiceMapper.toDto(category);
     }
 
     @Transactional
     @Override
     public DTOCategoryResponse updateCategory(DTOUpdateCategory dto, long categoryId) {
 
-        Category category;
-
-        try{
-            category = categoryRepo.findById(categoryId).orElseThrow(
-                    () -> new NoSuchElementException("The requested category doesn't exist"));
-        } catch (NoSuchElementException e){
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        Category category = getCategoryOrThrow(categoryId, EndpointsNameMethods.CATEGORY_UPDATE);
 
         if (dto.categoryName() != null && !dto.categoryName().isBlank()){
             String temp_catName = category.getCategoryName();
@@ -97,7 +86,8 @@ public class CategoryServiceImpl implements CategoryService {
         // Race condition check
         try{
             categoryRepo.saveAndFlush(category);
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_UPDATE_SUCCESS.getMessage());
+            centralAudit.info(null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.SUCCESSFUL,
+                    AuditMessage.CATEGORY_UPDATE_SUCCESS.getMessage());
             return categoryServiceMapper.toDto(category);
         } catch (DataIntegrityViolationException dup){
             Throwable most = dup.getMostSpecificCause();
@@ -106,8 +96,7 @@ public class CategoryServiceImpl implements CategoryService {
                     ? most.getMessage()
                     : dup.toString();
 
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.ERROR, msg);
-            throw dup;
+            throw centralAudit.audit(dup, null, EndpointsNameMethods.CATEGORY_UPDATE, AuditingStatus.ERROR, msg);
         }
     }
 
@@ -125,17 +114,26 @@ public class CategoryServiceImpl implements CategoryService {
             String msg = (most.getMessage() != null && !most.getMessage().isBlank())
                     ? most.getMessage()
                     : dive.toString();
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.ERROR, msg);
-            throw dive;
+            throw centralAudit.audit(dive,null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.ERROR, msg);
         }
 
         if (deleted == 0){
             NoSuchElementException ex = new NoSuchElementException("The requested category doesn't exist");
-            auditingService.log(null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.WARNING, ex.toString());
-            throw ex;
+            throw centralAudit.audit(ex, null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.WARNING, ex.toString());
         }
 
-        auditingService.log(null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_DELETE_SUCCESS.getMessage());
-        log.info("Deleted categories count={}, categoryId={}", deleted, categoryId);
+        centralAudit.info(null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_DELETE_SUCCESS.getMessage());
+    }
+
+    // == Private Methods ==
+
+    private Category getCategoryOrThrow(long categoryId, String method){
+        try{
+           final Category category = categoryRepo.findById(categoryId).orElseThrow(
+                    () -> new NoSuchElementException("The requested category doesn't exist"));
+           return category;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, null, method, AuditingStatus.ERROR);
+        }
     }
 }

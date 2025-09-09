@@ -14,7 +14,6 @@ import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.web.dto.response.Wishlist.DTOWishlistResponse;
 import commerce.eshop.core.web.mapper.WishlistServiceMapper;
-import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -2,13 +2,13 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.events.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.util.enums.TokenStatus;
 import commerce.eshop.core.repository.CustomerPaymentMethodRepo;
 import commerce.eshop.core.repository.CustomerRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CustomerPaymentMethodService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
@@ -36,7 +36,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     private final CustomerPaymentMethodRepo customerPaymentMethodRepo;
     private final CustomerRepo customerRepo;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final SortSanitizer sortSanitizer;
     private final CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper;
 
@@ -57,12 +57,12 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
 
     @Autowired
     public CustomerPaymentMethodServiceImpl(CustomerPaymentMethodRepo customerPaymentMethodRepo, CustomerRepo customerRepo,
-                                            ApplicationEventPublisher applicationEventPublisher, AuditingService auditingService,
+                                            ApplicationEventPublisher applicationEventPublisher, CentralAudit centralAudit,
                                             SortSanitizer sortSanitizer, CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper){
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.customerRepo = customerRepo;
         this.applicationEventPublisher = applicationEventPublisher;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.sortSanitizer = sortSanitizer;
         this.customerPaymentMethodServiceMapper = customerPaymentMethodServiceMapper;
     }
@@ -73,10 +73,8 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Override
     public Page<DTOPaymentMethodResponse> getAllPaymentMethods(UUID customerId, Pageable pageable) {
         Pageable p = sortSanitizer.sanitize(pageable, PAYMENT_METHOD_SORT_WHITELIST, 25);
-
         Page<CustomerPaymentMethod> customerPayment = customerPaymentMethodRepo.findByCustomer_CustomerId(customerId, p);
-
-        auditingService.log(customerId, EndpointsNameMethods.PM_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.PM_ADD_SUCCESS.getMessage());
+        centralAudit.info(customerId, EndpointsNameMethods.PM_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.PM_GET_ALL_SUCCESS.getMessage());
         return customerPayment.map(customerPaymentMethodServiceMapper::toDto);
     }
 
@@ -89,10 +87,8 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         if (makeDefault){
             try {
                 int outcome = customerPaymentMethodRepo.updateDefaultMethodToFalse(customerId);
-                log.info("Updated tables={}", outcome);
             } catch (DataIntegrityViolationException dup){
-                auditingService.log(customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.ERROR, dup.toString());
-                throw dup;
+                throw centralAudit.audit(dup, customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.ERROR, dup.toString());
             }
         }
 
@@ -107,11 +103,10 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
             // Publish event to start the async progress
             applicationEventPublisher.publishEvent(new PaymentMethodCreatedEvent(customerId, customerPaymentMethod.getCustomerPaymentId(),
                     customerPaymentMethod.getProvider()));
-            auditingService.log(customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PM_ADD_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PM_ADD_SUCCESS.getMessage());
             return customerPaymentMethodServiceMapper.toDto(customerPaymentMethod);
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+           throw centralAudit.audit(dup, customerId, EndpointsNameMethods.PM_ADD, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -119,16 +114,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Override
     public DTOPaymentMethodResponse updatePaymentMethod(UUID customerId, UUID paymentMethodId, DTOUpdatePaymentMethod dto) {
 
-        CustomerPaymentMethod paymentMethod;
-
-        try {
-            paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
-                    customerId, paymentMethodId).orElseThrow(
-                    () -> new NoSuchElementException("The payment method doesn't exist"));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        final CustomerPaymentMethod paymentMethod = getPaymentMethodOrThrow(customerId, paymentMethodId, EndpointsNameMethods.PM_UPDATE);
 
         // == Update fields ==
         if(dto.provider() != null && !dto.provider().isBlank())
@@ -156,11 +142,10 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
         // == Race check ==
         try {
             customerPaymentMethodRepo.saveAndFlush(paymentMethod);
-            auditingService.log(customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_UPDATE_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_UPDATE_SUCCESS.getMessage());
             return customerPaymentMethodServiceMapper.toDto(paymentMethod);
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.PM_UPDATE, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -168,18 +153,9 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Override
     public DTOPaymentMethodResponse retrievePaymentMethod(UUID customerId, UUID paymentMethodId) {
 
-        CustomerPaymentMethod paymentMethod;
-        
-        try {
-            paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(customerId, paymentMethodId).orElseThrow(
-                    () -> new NoSuchElementException("The payment method doesn't exist.")
-            );
-            auditingService.log(customerId, EndpointsNameMethods.PM_RETRIEVE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_RETRIEVE_SUCCESS.getMessage());
-            return customerPaymentMethodServiceMapper.toDto(paymentMethod);
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.PM_RETRIEVE, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        CustomerPaymentMethod paymentMethod = getPaymentMethodOrThrow(customerId, paymentMethodId, EndpointsNameMethods.PM_RETRIEVE);
+        centralAudit.info(customerId, EndpointsNameMethods.PM_RETRIEVE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_RETRIEVE_SUCCESS.getMessage());
+        return customerPaymentMethodServiceMapper.toDto(paymentMethod);
     }
 
     @Transactional
@@ -194,21 +170,29 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
                 // Not found case
                 NoSuchElementException notFound =
                         new NoSuchElementException("Payment method not found: " + paymentId);
-                auditingService.log(customerId, EndpointsNameMethods.PM_DELETE,
+                throw centralAudit.audit(notFound, customerId, EndpointsNameMethods.PM_DELETE,
                         AuditingStatus.WARNING, notFound.toString());
-                throw notFound;
             }
 
             // Success case
-            auditingService.log(customerId, EndpointsNameMethods.PM_DELETE,
+            centralAudit.info(customerId, EndpointsNameMethods.PM_DELETE,
                     AuditingStatus.SUCCESSFUL, AuditMessage.PM_DELETE_SUCCESS.getMessage());
-            log.info("Payment method {} deleted for customer {}", paymentId, customerId);
 
         } catch (DataIntegrityViolationException dup) {
             // Constraint violation case
-            auditingService.log(customerId, EndpointsNameMethods.PM_DELETE,
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.PM_DELETE,
                     AuditingStatus.ERROR, dup.toString());
-            throw dup;
+        }
+    }
+
+    private CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method){
+        try {
+            final CustomerPaymentMethod paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
+                    customerId, paymentMethodId).orElseThrow(
+                    () -> new NoSuchElementException("The payment method doesn't exist"));
+            return paymentMethod;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
         }
     }
 }

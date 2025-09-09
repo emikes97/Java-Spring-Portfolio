@@ -3,13 +3,13 @@ package commerce.eshop.core.service.Impl;
 import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.CartItem;
 import commerce.eshop.core.model.entity.Product;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.repository.CartItemRepo;
 import commerce.eshop.core.repository.CartRepo;
 import commerce.eshop.core.repository.ProductRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CartService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.web.dto.response.Cart.DTOCartItemResponse;
@@ -37,7 +37,7 @@ public class CartServiceImpl implements CartService {
     private final CartItemRepo cartItemRepo;
     private final CartRepo cartRepo;
     private final ProductRepo productRepo;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final CartServiceMapper cartServiceMapper;
     private final SortSanitizer sortSanitizer;
 
@@ -51,12 +51,12 @@ public class CartServiceImpl implements CartService {
 
     // == Constructors ==
     @Autowired
-    public CartServiceImpl(CartItemRepo cartItemRepo, CartRepo cartRepo, ProductRepo productRepo, AuditingService auditingService,
+    public CartServiceImpl(CartItemRepo cartItemRepo, CartRepo cartRepo, ProductRepo productRepo, CentralAudit centralAudit,
                            CartServiceMapper cartServiceMapper, SortSanitizer sortSanitizer){
         this.cartItemRepo = cartItemRepo;
         this.cartRepo = cartRepo;
         this.productRepo = productRepo;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.cartServiceMapper = cartServiceMapper;
         this.sortSanitizer = sortSanitizer;
     }
@@ -65,30 +65,22 @@ public class CartServiceImpl implements CartService {
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCartItemResponse> viewAllCartItems(UUID customerId, Pageable pageable) {
-        try{
-            Pageable p = sortSanitizer.sanitize(pageable, CART_ITEMS_SORT_WHITELIST, 25);
-            Page<CartItem> items = cartItemRepo.findByCart_CartId(cartRepo.findCartIdByCustomerId(customerId).orElseThrow(() ->
-                    new NoSuchElementException("Cart not found for customer " + customerId)),p);
-            auditingService.log(customerId, EndpointsNameMethods.CART_VIEW_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.CART_VIEW_ALL_SUCCESS.getMessage());
-            return items.map(cartServiceMapper::toDto);
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_VIEW_ALL, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+
+        Pageable p = sortSanitizer.sanitize(pageable, CART_ITEMS_SORT_WHITELIST, 25);
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_VIEW_ALL);
+        Page<CartItem> items = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
+        centralAudit.info(customerId, EndpointsNameMethods.CART_VIEW_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.CART_VIEW_ALL_SUCCESS.getMessage());
+        return items.map(cartServiceMapper::toDto);
     }
 
     @Transactional(readOnly = true)
     @Override
     public DTOCartItemResponse findItem(UUID customerId, long productId) {
-        try {
-            UUID cart = cartRepo.findCartIdByCustomerId(customerId).orElseThrow(
-                    () -> new NoSuchElementException("Cart doesn't exist"));
-            auditingService.log(customerId, EndpointsNameMethods.CART_FIND_ITEM, AuditingStatus.SUCCESSFUL, AuditMessage.CART_FIND_ITEM_SUCCESS.name());
-            return cartServiceMapper.toDto(cartItemRepo.getCartItemByCartIdAndProductId(cart, productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist")));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_FIND_ITEM, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_FIND_ITEM);
+        final CartItem cartItem = getCartItemOrThrow(cart.getCartId(), productId, customerId, EndpointsNameMethods.CART_FIND_ITEM);
+        centralAudit.info(customerId, EndpointsNameMethods.CART_FIND_ITEM, AuditingStatus.SUCCESSFUL, AuditMessage.CART_FIND_ITEM_SUCCESS.getMessage());
+        return cartServiceMapper.toDto(cartItem);
     }
 
     @Transactional
@@ -96,116 +88,108 @@ public class CartServiceImpl implements CartService {
     public DTOCartItemResponse addCartItem(UUID customerId, long productId, int quantity) {
 
         if (quantity <= 0 || quantity > MAX_QTY){
-            auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR,"Quantity must be positive, and shouldn't exceed 99");
-            throw new IllegalArgumentException("Quantity must be positive, and shouldn't exceed 99");
+            throw centralAudit.audit(new IllegalArgumentException("Quantity must be positive, and shouldn't exceed 99"), customerId,
+                    EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR);
         }
 
-        final Product product;
+        final Product product = getProductOrThrow(productId, customerId, EndpointsNameMethods.CART_ADD_ITEM);
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_ADD_ITEM);
 
-        try {
-            product = productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        int updated = cartItemRepo.bumpQuantity(cart.getCartId(), productId, quantity, MAX_QTY);
 
-        final Cart cart;
+        CartItem item;
 
-        try {
-            cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist for the provided UUID"));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
-
-        CartItem cartItem;
-
-        try{
-            cartItem = new CartItem(cart, product, product.getProductName(), Math.min(quantity, MAX_QTY), product.getPrice());
-            cartItemRepo.saveAndFlush(cartItem); // forcing constraint check
-            auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.SUCCESSFUL, AuditMessage.CART_ADD_ITEM_SUCCESS.getMessage());
-            return cartServiceMapper.toDto(cartItem);
-        } catch (DataIntegrityViolationException dup){
-            log.warn("Duplicate exception occurred",dup);
-            try{
-            cartItem = cartItemRepo.getCartItemForUpdate(cart.getCartId(), productId).orElseThrow(
-                    () -> new NoSuchElementException("The requested product doesn't exist")
-            );
-            } catch(NoSuchElementException e){
-                auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR, e.toString());
-                log.error("[ERROR] No cart_item found for cartId={}, productId={}", cart.getCartId(), productId, e);
-                throw e;
+        if (updated == 0) {
+            // no row existed → insert
+            item = new CartItem(cart, product, product.getProductName(), quantity, product.getPrice());
+            try {
+                cartItemRepo.saveAndFlush(item);
+            } catch (DataIntegrityViolationException dup) {
+                // another thread inserted first → bump again
+                cartItemRepo.bumpQuantity(cart.getCartId(), productId, quantity, MAX_QTY);
+                item = cartItemRepo.getCartItemByCartIdAndProductId(cart.getCartId(), productId).orElseThrow();
             }
-            cartItem.setQuantity(Math.min(cartItem.getQuantity() + quantity, 99));
-            cartItemRepo.save(cartItem);
-            auditingService.log(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.WARNING, dup.toString() + "Added + Quantity = " +quantity);
-            return cartServiceMapper.toDto(cartItem);
+        } else {
+            item = cartItemRepo.getCartItemByCartIdAndProductId(cart.getCartId(), productId).orElseThrow();
         }
+
+        centralAudit.info(customerId, EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.SUCCESSFUL,
+                AuditMessage.CART_ADD_ITEM_SUCCESS.getMessage());
+
+        return cartServiceMapper.toDto(item);
     }
 
     @Transactional
     @Override
     public void removeCartItem(UUID customerId, long productId, Integer quantity) {
 
-        final Cart cart;
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_REMOVE);
 
-        try {
-            cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
-
-        final CartItem cartItem;
-
-        try{
-            cartItem = cartItemRepo.getCartItemByCartIdAndProductId(cart.getCartId(), productId).orElseThrow(
-                    () -> new NoSuchElementException("Cart Item doesn't exist"));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+        final CartItem cartItem = getCartItemOrThrow(cart.getCartId(), productId, customerId, EndpointsNameMethods.CART_REMOVE);
 
         if (quantity == null || cartItem.getQuantity() <= quantity) {
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.SUCCESSFUL, AuditMessage.CART_REMOVE_SUCCESS.getMessage());
             cartItemRepo.deleteItemByCartIdAndProductId(cart.getCartId(), productId);
+            centralAudit.info(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.SUCCESSFUL, AuditMessage.CART_REMOVE_SUCCESS.getMessage());
             return;
         }
 
         if (quantity <= 0) {
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR, "Quantity must be positive.");
-            throw new IllegalArgumentException("Quantity must be positive.");
+            throw centralAudit.audit(new IllegalArgumentException("Quantity must be positive."), customerId,
+                    EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR);
         }
 
         cartItem.setQuantity(cartItem.getQuantity() - quantity);
 
         try {
-            cartItemRepo.save(cartItem);
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.SUCCESSFUL, AuditMessage.CART_REMOVE_SUCCESS.getMessage());
+            cartItemRepo.saveAndFlush(cartItem);
+            centralAudit.info(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.SUCCESSFUL, AuditMessage.CART_REMOVE_SUCCESS.getMessage());
         }catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.CART_REMOVE, AuditingStatus.ERROR);
         }
     }
 
     @Transactional
     @Override
     public void clearCart(UUID customerId) {
-        final Cart cart;
-        try {
-            cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.ERROR, e.toString());
-            throw e;
-        }
+
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_CLEAR);
 
         try {
             cartItemRepo.clearCart(cart.getCartId());
-            auditingService.log(customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.SUCCESSFUL, AuditMessage.CART_CLEAR_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.SUCCESSFUL, AuditMessage.CART_CLEAR_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.ERROR, dup.toString());
         }
 
+    }
+
+    // == Private Methods ==
+
+    private Cart getCartOrThrow(UUID customerId, String method){
+        try {
+            final Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
+            return cart;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e,customerId, method, AuditingStatus.ERROR, e.toString());
+        }
+    }
+
+    private Product getProductOrThrow(long productId, UUID customerId, String method){
+        try {
+            final Product product = productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
+            return product;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
+        }
+    }
+
+    private CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method ){
+        try{
+           final CartItem cartItem = cartItemRepo.getCartItemByCartIdAndProductId(cartId, productId).orElseThrow(
+                    () -> new NoSuchElementException("Cart Item doesn't exist"));
+           return cartItem;
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
+        }
     }
 }

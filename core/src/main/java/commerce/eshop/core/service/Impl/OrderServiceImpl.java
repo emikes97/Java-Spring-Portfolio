@@ -5,11 +5,11 @@ import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.repository.*;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.util.enums.OrderStatus;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.OrderService;
 import commerce.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
 import commerce.eshop.core.web.dto.response.Order.DTOOrderDetailsResponse;
@@ -40,14 +40,14 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepo orderRepo;
     private final CustomerAddrRepo customerAddrRepo;
     private final CustomerPaymentMethodRepo customerPaymentMethodRepo;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final OrderServiceMapper orderServiceMapper;
 
     // == Constructors ==
     @Autowired
     public OrderServiceImpl(CustomerRepo customerRepo, CartItemRepo cartItemRepo, CartRepo cartRepo, OrderItemRepo orderItemRepo,
                             OrderRepo orderRepo, CustomerAddrRepo customerAddrRepo, CustomerPaymentMethodRepo customerPaymentMethodRepo,
-                            AuditingService auditingService, OrderServiceMapper orderServiceMapper){
+                            CentralAudit centralAudit, OrderServiceMapper orderServiceMapper){
 
         this.customerRepo = customerRepo;
         this.cartItemRepo = cartItemRepo;
@@ -56,7 +56,7 @@ public class OrderServiceImpl implements OrderService {
         this.orderRepo = orderRepo;
         this.customerAddrRepo = customerAddrRepo;
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.orderServiceMapper = orderServiceMapper;
     }
 
@@ -68,45 +68,20 @@ public class OrderServiceImpl implements OrderService {
         // Validation of customerId
         if(customerId == null){
             IllegalArgumentException illegal = new IllegalArgumentException("The identification key can't be empty");
-            auditingService.log(null, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, illegal.toString());
         }
 
         // Get cart_id from customer
-        final Cart cart;
-        try {
-            cart = cartRepo.findByCustomerCustomerId(customerId).orElseThrow(() ->
-                    new NoSuchElementException("[ERROR] No cart exists for this customer."));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
 
         // Get customer reference
-        final Customer customer;
-        try {
-            customer = customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("Customer account couldn't be found with the provided identification key= " + customerId)
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
 
         // If no address is provided, go for the default. (Default in our case is the one that the customer will pick during
         // checkout. In case to simulate it for now, is the default from what has been chosen in the db.
 
         if(addressDto == null){
-            final CustomerAddress customerAddress;
-            try {
-                customerAddress = customerAddrRepo.findByCustomerCustomerIdAndIsDefaultTrue(customerId).orElseThrow(
-                        () -> new NoSuchElementException("The customer = " + customerId + " doesn't have a default address and " +
-                                "no address has been provided for the order"));
-            } catch (NoSuchElementException e){
-                auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, e.toString());
-                throw e;
-            }
-
+            final CustomerAddress customerAddress = getCustomerAddrOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
             addressDto = new DTOOrderCustomerAddress(customerAddress.getCountry(), customerAddress.getStreet(),
                     customerAddress.getCity(), customerAddress.getPostalCode());
         }
@@ -115,8 +90,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal total_outstanding = cartItemRepo.sumCartTotalOutstanding(cart.getCartId());
         if(Objects.isNull(total_outstanding) || total_outstanding.compareTo(BigDecimal.ZERO) <= 0 ){
             IllegalStateException illegal = new IllegalStateException("The cart is empty");
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, illegal.toString());
         }
 
         // Initiate a new order
@@ -132,12 +106,10 @@ public class OrderServiceImpl implements OrderService {
            if(updated != expected){
                /// Client error, The product was out-of-stock when order was placed.
                ResponseStatusException err = new ResponseStatusException(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK");
-               auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, "INSUFFICIENT_STOCK");
-               throw err;
+               throw centralAudit.audit(err, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, "INSUFFICIENT_STOCK");
            }
         } catch (TransientDataAccessResourceException | CannotCreateTransactionException ex){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, ex.toString());
-            throw ex;
+           throw centralAudit.audit(ex, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, ex.toString());
         }
 
         // Save order and flush
@@ -146,11 +118,10 @@ public class OrderServiceImpl implements OrderService {
             // Snapshot cart items to order_items
             orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
             orderItemRepo.clearCart(cart.getCartId());
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_PLACE_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_PLACE_SUCCESS.getMessage());
             return orderServiceMapper.toDto(order);
         } catch (DataIntegrityViolationException dub){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, dub.toString());
-            throw dub;
+           throw centralAudit.audit(dub, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, dub.toString());
         }
     }
 
@@ -160,31 +131,22 @@ public class OrderServiceImpl implements OrderService {
 
         if (customerId == null || orderId == null) {
             IllegalArgumentException bad = new IllegalArgumentException("Missing customerId/orderId.");
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "MISSING_IDS");
-            throw bad;
+            throw centralAudit.audit(bad, customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "MISSING_IDS");
         }
 
-        final Order order;
-
-        try {
-            order = orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Order order = getOrderOrThrow(customerId, orderId, EndpointsNameMethods.ORDER_CANCEL);
 
         if(order.getOrderStatus() != OrderStatus.PENDING_PAYMENT){
             IllegalStateException illegal = new IllegalStateException("INVALID_STATE" + order.getOrderStatus());
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, illegal.toString());
         }
 
         try {
             int expected = orderRepo.countProductRowsToBeUpdated(orderId);
 
             if (expected == 0) {
-                auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "ORDER_ITEMS_EMPTY_OR_MISSING");
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "ORDER_ITEMS_EMPTY_OR_MISSING");
+                throw centralAudit.audit(new ResponseStatusException(HttpStatus.CONFLICT, "ORDER_ITEMS_EMPTY_OR_MISSING"), customerId,
+                        EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "ORDER_ITEMS_EMPTY_OR_MISSING");
             }
 
             int updated = orderRepo.restoreProductStockFromOrder(orderId);
@@ -192,15 +154,13 @@ public class OrderServiceImpl implements OrderService {
             if (updated != expected){
                 /// Client error, The product was out-of-stock when order was placed.
                 ResponseStatusException err = new ResponseStatusException(HttpStatus.CONFLICT, "ORDER_ITEMS_EMPTY_OR_MISSING");
-                auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "ORDER_ITEMS_EMPTY_OR_MISSING");
-                throw err;
+                throw centralAudit.audit(err, customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "ORDER_ITEMS_EMPTY_OR_MISSING");
             }
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepo.saveAndFlush(order);
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_CANCEL_SUCCESS.getMessage());
+            centralAudit.info(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_CANCEL_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.ERROR, dup.toString());
         }
     }
 
@@ -208,16 +168,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public DTOOrderDetailsResponse viewOrder(UUID customerId, UUID orderId) {
 
-        final Order order;
-
-        try {
-            order = orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow(
-                    () -> new NoSuchElementException("The Order doesn't exist")
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.ORDER_VIEW, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Order order = getOrderOrThrow(customerId, orderId, EndpointsNameMethods.ORDER_VIEW);
 
         var itemDtos = orderItemRepo.getOrderItems(orderId).stream()
                 .map(oi -> new DTOOrderItemsResponse(
@@ -228,7 +179,46 @@ public class OrderServiceImpl implements OrderService {
                 ))
                 .toList();
 
-        auditingService.log(customerId, EndpointsNameMethods.ORDER_VIEW, AuditingStatus.SUCCESSFUL, "ORDER_VIEW_SUCCESS");
+        centralAudit.info(customerId, EndpointsNameMethods.ORDER_VIEW, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_VIEW_SUCCESS.getMessage());
         return orderServiceMapper.toDtoDetails(order, itemDtos);
+    }
+
+    // == Private Methods ==
+
+    private Cart getCartOrThrow(UUID customerId, String method){
+        try {
+            return cartRepo.findByCustomerCustomerId(customerId).orElseThrow(() ->
+                    new NoSuchElementException("[ERROR] No cart exists for this customer."));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    private Customer getCustomerOrThrow(UUID customerId, String method){
+        try {
+            return customerRepo.findById(customerId).orElseThrow(
+                    () -> new NoSuchElementException("Customer account couldn't be found with the provided identification key= " + customerId)
+            );
+        } catch (NoSuchElementException e){
+           throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    private CustomerAddress getCustomerAddrOrThrow(UUID customerId, String method){
+        try {
+            return  customerAddrRepo.findByCustomerCustomerIdAndIsDefaultTrue(customerId).orElseThrow(
+                    () -> new NoSuchElementException("The customer = " + customerId + " doesn't have a default address and " +
+                            "no address has been provided for the order"));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    private Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
+        try {
+            return orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
     }
 }

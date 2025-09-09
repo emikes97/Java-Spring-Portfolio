@@ -57,6 +57,18 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     @Query(value = "SELECT COUNT(DISTINCT product_id) FROM cart_item WHERE cart_id = :cartId", nativeQuery = true)
     long countDistinctCartProducts(@Param("cartId") UUID cartId);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+                UPDATE cart_item
+                SET quantity = LEAST(quantity + :inc, :maxQty)
+                WHERE cart_id = :cartId
+                  AND product_id = :productId
+                """, nativeQuery = true)
+    int bumpQuantity(@Param("cartId") UUID cartId,
+                     @Param("productId") long productId,
+                     @Param("inc") int inc,
+                     @Param("maxQty") int maxQty);
+
     // == Delete all Cart Items with Cart UUID
         @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "delete from cart_item where cart_id = :cartId", nativeQuery = true)

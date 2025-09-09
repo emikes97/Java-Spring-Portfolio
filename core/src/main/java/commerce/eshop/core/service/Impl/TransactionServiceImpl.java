@@ -2,8 +2,10 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.events.PaymentExecutionRequestEvent;
 import commerce.eshop.core.model.entity.Customer;
+import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
@@ -37,19 +39,19 @@ public class TransactionServiceImpl implements TransactionsService {
     private final OrderRepo orderRepo;
     private final TransactionRepo transactionRepo;
     private final ApplicationEventPublisher publisher;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final TransactionServiceMapper transactionServiceMapper;
 
     // == Constructors ==
     @Autowired
     public TransactionServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, TransactionRepo transactionRepo,
-                                  ApplicationEventPublisher publisher, AuditingService auditingService,
+                                  ApplicationEventPublisher publisher, CentralAudit centralAudit,
                                   TransactionServiceMapper transactionServiceMapper){
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
         this.transactionRepo = transactionRepo;
         this.publisher = publisher;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.transactionServiceMapper = transactionServiceMapper;
     }
 
@@ -61,50 +63,28 @@ public class TransactionServiceImpl implements TransactionsService {
         // Input validation
         if (idemKey == null || idemKey.isBlank()) {
             ResponseStatusException bad = new ResponseStatusException(HttpStatus.BAD_REQUEST, "MISSING_IDEM_KEY");
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "MISSING_IDEM_KEY");
-            throw bad;
+            throw centralAudit.audit(bad, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "MISSING_IDEM_KEY");
         }
         if (dto == null || dto.instruction() == null) {
             ResponseStatusException bad = new ResponseStatusException(HttpStatus.BAD_REQUEST, "MISSING_INSTRUCTION");
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "MISSING_INSTRUCTION");
-            throw bad;
+            throw centralAudit.audit(bad, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "MISSING_INSTRUCTION");
         }
 
-        final Order order;
-
-        try{
-            order = orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow(
-                    () -> new NoSuchElementException("The order doesn't exist")
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Order order = getOrderOrThrow(customerId, orderId, EndpointsNameMethods.TRANSACTION_PAY);
 
         // State gate (mirrors cancel rule)
         if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT) {
             IllegalStateException illegal =
                     new IllegalStateException("INVALID_STATE:" + order.getOrderStatus());
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, illegal.toString());
-            throw illegal;
+            throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, illegal.toString());
         }
 
         if (order.getTotalOutstanding() == null || order.getTotalOutstanding().signum() <= 0) {
             ResponseStatusException bad = new ResponseStatusException(HttpStatus.CONFLICT, "ZERO_OR_NEGATIVE_TOTAL");
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "ZERO_OR_NEGATIVE_TOTAL");
-            throw bad;
+            throw centralAudit.audit(bad, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "ZERO_OR_NEGATIVE_TOTAL");
         }
 
-        final Customer customer;
-
-        try{
-            customer = customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("The customer with customer_id= " + customerId + " doesn't exist.")
-            );
-        } catch (NoSuchElementException e){
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, e.toString());
-            throw e;
-        }
+        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.TRANSACTION_PAY);
 
         Map<String, Object> snapshot = transactionServiceMapper.toSnapShot(dto.instruction());
 
@@ -112,13 +92,13 @@ public class TransactionServiceImpl implements TransactionsService {
 
         try {
             transactionRepo.saveAndFlush(transaction);
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL,
                     AuditMessage.TRANSACTION_PAY_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException duplicate){
             Transaction winner = transactionRepo.findByIdempotencyKeyForUpdate(idemKey).orElseThrow(
                     () -> new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency race lost")
             );
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL,
+            centralAudit.warn(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING,
                     "IDEMPOTENT_HIT txn=" + winner.getTransactionId() + " key=" + winner.getIdempotencyKey());
             return resolveWinner(winner, orderId);
         }
@@ -126,21 +106,22 @@ public class TransactionServiceImpl implements TransactionsService {
         if(dto.instruction() instanceof UseNewCard card){
             String paymentMethod = "USE_NEW_CARD";
             publishEvent(transaction, customerId, paymentMethod, snapshot);
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL, "Payment by -> USE_NEW_CARD");
+            centralAudit.info(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL, "Payment by -> USE_NEW_CARD");
             return transactionServiceMapper.toDto(transaction);
 
         } else if (dto.instruction() instanceof UseSavedMethod saved) {
             String paymentMethod = "USE_SAVED_METHOD";
             publishEvent(transaction, customerId, paymentMethod, snapshot);
-            auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL, "Payment by -> USE_SAVED_METHOD");
+            centralAudit.info(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.SUCCESSFUL, "Payment by -> USE_SAVED_METHOD");
             return transactionServiceMapper.toDto(transaction);
         }
 
-        auditingService.log(customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "Unsupported payment instruction");
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported payment instruction");
+        throw centralAudit.audit(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported payment instruction"),
+                customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "Unsupported payment instruction");
     }
 
     // == Private Methods ==
+
     private void publishEvent(Transaction transaction, UUID customerId, String paymentMethod, Map<String, Object> snapshot){
         publisher.publishEvent(new PaymentExecutionRequestEvent(transaction.getTransactionId(),
                 transaction.getOrder().getOrderId(),
@@ -150,7 +131,27 @@ public class TransactionServiceImpl implements TransactionsService {
                 transaction.getTotalOutstanding(),
                 transaction.getIdempotencyKey()
         ));
-        auditingService.log(customerId, EndpointsNameMethods.EVENT_PUBLISHED, AuditingStatus.SUCCESSFUL, "Transaction_Event_Published");
+        centralAudit.info(customerId, EndpointsNameMethods.EVENT_PUBLISHED, AuditingStatus.SUCCESSFUL, "Transaction_Event_Published");
+    }
+
+    private Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
+        try{
+            return orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow(
+                    () -> new NoSuchElementException("The order doesn't exist")
+            );
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    private Customer getCustomerOrThrow(UUID customerId, String method){
+        try{
+            return customerRepo.findById(customerId).orElseThrow(
+                    () -> new NoSuchElementException("The customer with customer_id= " + customerId + " doesn't exist.")
+            );
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
     }
 
     private DTOTransactionResponse resolveWinner(Transaction winner, UUID expectedOrderId){

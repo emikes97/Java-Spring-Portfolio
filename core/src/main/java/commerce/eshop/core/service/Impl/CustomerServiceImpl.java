@@ -2,10 +2,10 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CustomerService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
@@ -38,7 +38,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final CartItemRepo cartItemRepo;
     private final PasswordEncoder passwordEncoder;
     private final SortSanitizer sortSanitizer;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
     private final CustomerServiceMapper customerServiceMapper;
     private final WishlistRepo wishlistRepo;
 
@@ -66,7 +66,7 @@ public class CustomerServiceImpl implements CustomerService {
             Map.entry("added_at", "addedAt")
     );
 
-    /** For DTOCustomerAdResponse */
+    /** For DTOCustomerAddressResponse */
     public static final Map<String, String> CUSTOMER_ADDRESS_SORT_WHITELIST = Map.ofEntries(
             Map.entry("country", "country"),
             Map.entry("street", "street"),
@@ -77,7 +77,7 @@ public class CustomerServiceImpl implements CustomerService {
     // == Constructors ==
     @Autowired
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
-                               PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, AuditingService auditingService,
+                               PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, CentralAudit centralAudit,
                                CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo) {
 
         this.customerRepo = customerRepo;
@@ -85,7 +85,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.cartRepo = cartRepo;
         this.cartItemRepo = cartItemRepo;
         this.passwordEncoder = passwordEncoder;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
         this.sortSanitizer = sortSanitizer;
         this.customerServiceMapper = customerServiceMapper;
         this.wishlistRepo = wishlistRepo;
@@ -115,9 +115,8 @@ public class CustomerServiceImpl implements CustomerService {
             customerRepo.saveAndFlush(customer);
         } catch (DataIntegrityViolationException dup) {
             // No stable UUID yet → don't attach a null customerId in audit context
-            auditingService.log(null, EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
             log.warn("CREATE_USER failed (duplicate/constraint) email={} phone={}", dto.email(), dto.phoneNumber(), dup);
-            throw dup;
+            throw centralAudit.audit(dup, null, EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
         }
 
         // 4) Create cart (same TX → atomic)
@@ -125,8 +124,7 @@ public class CustomerServiceImpl implements CustomerService {
         try {
             cartRepo.saveAndFlush(cart);
         } catch (DataIntegrityViolationException dup) {
-            auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
         }
 
         // 5) Create wishlist
@@ -134,12 +132,11 @@ public class CustomerServiceImpl implements CustomerService {
         try {
             wishlistRepo.saveAndFlush(wishlist);
         } catch (DataIntegrityViolationException dup){
-            auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
         }
 
         // 6) Success
-        auditingService.log(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
+        centralAudit.info(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
                 AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
         return customerServiceMapper.toDtoCustomerRes(customer);
     }
@@ -147,22 +144,16 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public DTOCustomerResponse getProfile(UUID customerId) {
+
         if (customerId == null) {
             IllegalArgumentException bad = new IllegalArgumentException("Missing customerId.");
-            auditingService.log(null, EndpointsNameMethods.GET_PROFILE_BY_ID, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-            throw bad;
+            throw centralAudit.audit(bad, null, EndpointsNameMethods.GET_PROFILE_BY_ID, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
-        try {
-            Customer customer = customerRepo.findById(customerId)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
-            auditingService.log(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
-                    AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
-            return customerServiceMapper.toDtoCustomerRes(customer);
-        } catch (NoSuchElementException e) {
-            auditingService.log(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
-                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
-            throw e;
-        }
+
+        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID);
+        centralAudit.info(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
+                AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
+        return customerServiceMapper.toDtoCustomerRes(customer);
     }
 
     @Transactional(readOnly = true)
@@ -172,17 +163,12 @@ public class CustomerServiceImpl implements CustomerService {
                 "MISSING_IDENTIFIER", "Missing phone/email identifier.");
 
         final String key = phoneOrEmail.trim();
-        try {
-            Customer customer = customerRepo.findByPhoneNumberOrEmail(key)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found for: " + key));
-            auditingService.log(customer.getCustomerId(), EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
-                    AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
-            return customerServiceMapper.toDtoCustomerRes(customer);
-        } catch (NoSuchElementException e) {
-            auditingService.log(null, EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
-                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + key);
-            throw e;
-        }
+        final Customer customer = getCustomerByPhoneOrEmailOrThrow(key, EndpointsNameMethods.GET_PROFILE_BY_SEARCH);
+
+        centralAudit.info(customer.getCustomerId(), EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
+                AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
+
+        return customerServiceMapper.toDtoCustomerRes(customer);
     }
 
     @Transactional(readOnly = true)
@@ -190,7 +176,7 @@ public class CustomerServiceImpl implements CustomerService {
     public Page<DTOCustomerOrderResponse> getOrders(UUID customerId, Pageable pageable) {
         Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_ORDERS_SORT_WHITELIST, 25);
         Page<Order> orders = orderRepo.findByCustomer_CustomerId(customerId, p);
-        auditingService.log(customerId, EndpointsNameMethods.GET_ORDERS,
+        centralAudit.info(customerId, EndpointsNameMethods.GET_ORDERS,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_ORDERS_SUCCESS.getMessage());
         return orders.map(customerServiceMapper::toDtoCustomerOrder);
     }
@@ -198,19 +184,12 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCustomerCartItemResponse> getCartItems(UUID customerId, Pageable pageable) {
-        final Cart cart;
-        try {
-            cart = cartRepo.findByCustomerCustomerId(customerId)
-                    .orElseThrow(() -> new NoSuchElementException("Cart not found for customer: " + customerId));
-        } catch (NoSuchElementException e) {
-            auditingService.log(customerId, EndpointsNameMethods.GET_CART_ITEMS, AuditingStatus.WARNING, "CART_NOT_FOUND");
-            throw e;
-        }
+        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.GET_CART_ITEMS);
 
         Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_CART_ITEMS_SORT_WHITELIST, 25);
         Page<CartItem> cartItems = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
 
-        auditingService.log(customerId, EndpointsNameMethods.GET_CART_ITEMS,
+        centralAudit.info(customerId, EndpointsNameMethods.GET_CART_ITEMS,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_CART_ITEMS_SUCCESS.getMessage());
         return cartItems.map(customerServiceMapper::toDtoCartItem);
     }
@@ -219,17 +198,18 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void updateName(UUID customerId, String password, String name) {
         if (customerId == null) {
-            auditingService.log(null, EndpointsNameMethods.UPDATE_NAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-            throw new IllegalArgumentException("Missing customerId.");
+            IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.UPDATE_NAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
+
         requireNotBlank(name, customerId, EndpointsNameMethods.UPDATE_NAME, "INVALID_NAME", "Name must not be blank.");
 
-        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_NAME);
+        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_NAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_NAME);
 
         String trimmed = name.trim();
         if (trimmed.equals(customer.getName())) {
-            auditingService.log(customerId, EndpointsNameMethods.UPDATE_NAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_NAME");
+            centralAudit.info(customerId, EndpointsNameMethods.UPDATE_NAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_NAME");
             return;
         }
 
@@ -241,17 +221,17 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void updateSurname(UUID customerId, String password, String lastName) {
         if (customerId == null) {
-            auditingService.log(null, EndpointsNameMethods.UPDATE_SURNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-            throw new IllegalArgumentException("Missing customerId.");
+            IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.UPDATE_SURNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
-        requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_SURNAME, "INVALID_SURNAME", "Surname must not be blank.");
 
-        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_SURNAME);
+        requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_SURNAME, "INVALID_SURNAME", "Surname must not be blank.");
+        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_SURNAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_SURNAME);
 
         String trimmed = lastName.trim();
         if (trimmed.equals(customer.getSurname())) {
-            auditingService.log(customerId, EndpointsNameMethods.UPDATE_SURNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_SURNAME");
+            centralAudit.info(customerId, EndpointsNameMethods.UPDATE_SURNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_SURNAME");
             return;
         }
 
@@ -263,13 +243,14 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void updateFullName(UUID customerId, String password, String name, String lastName) {
         if (customerId == null) {
-            auditingService.log(null, EndpointsNameMethods.UPDATE_FULLNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-            throw new IllegalArgumentException("Missing customerId.");
+            IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
+            throw centralAudit.audit(illegal,null, EndpointsNameMethods.UPDATE_FULLNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
+
         requireNotBlank(name, customerId, EndpointsNameMethods.UPDATE_FULLNAME, "INVALID_FULLNAME", "Name must not be blank.");
         requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_FULLNAME, "INVALID_FULLNAME", "Surname must not be blank.");
 
-        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_FULLNAME);
+        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_FULLNAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_FULLNAME);
 
         String newName = name.trim();
@@ -280,7 +261,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (!newSurname.equals(customer.getSurname())) { customer.setSurname(newSurname); changed = true; }
 
         if (!changed) {
-            auditingService.log(customerId, EndpointsNameMethods.UPDATE_FULLNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_FULLNAME");
+            centralAudit.info(customerId, EndpointsNameMethods.UPDATE_FULLNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_FULLNAME");
             return;
         }
 
@@ -291,17 +272,17 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void updateUserName(UUID customerId, String password, String userName) {
         if (customerId == null) {
-            auditingService.log(null, EndpointsNameMethods.UPDATE_USERNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-            throw new IllegalArgumentException("Missing customerId.");
+            IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.UPDATE_USERNAME, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
         requireNotBlank(userName, customerId, EndpointsNameMethods.UPDATE_USERNAME, "INVALID_USERNAME", "Username must not be blank.");
 
-        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_USERNAME);
+        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_USERNAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_USERNAME);
 
         String trimmed = userName.trim();
         if (trimmed.equals(customer.getUsername())) {
-            auditingService.log(customerId, EndpointsNameMethods.UPDATE_USERNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_USERNAME");
+            centralAudit.info(customerId, EndpointsNameMethods.UPDATE_USERNAME, AuditingStatus.SUCCESSFUL, "NO_CHANGE_SAME_USERNAME");
             return;
         }
 
@@ -313,24 +294,26 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public void updateUserPassword(UUID customerId, String currentPassword, String newPassword) {
         if (customerId == null) {
-            auditingService.log(null, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-            throw new IllegalArgumentException("Missing customerId.");
+            IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
+            throw centralAudit.audit(illegal, null, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
+
         requireNotBlank(currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD, "INVALID_INPUT", "Missing current password.");
         requireNotBlank(newPassword,     customerId, EndpointsNameMethods.UPDATE_PASSWORD, "INVALID_INPUT", "Missing new password.");
 
+        // Reject easy passwords
         if (newPassword.length() < 8) {
-            auditingService.log(customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "WEAK_PASSWORD");
-            throw new IllegalArgumentException("Password too short.");
+            IllegalArgumentException illegal = new IllegalArgumentException("Password too short.");
+            throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "WEAK_PASSWORD");
         }
 
-        Customer customer = loadCustomerOr404(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
+        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
         verifyPasswordOrThrow(customer, currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD);
 
         // Prevent reuse
         if (passwordEncoder.matches(newPassword, customer.getPasswordHash())) {
-            auditingService.log(customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "REUSED_PASSWORD");
-            throw new IllegalArgumentException("New password must be different from current.");
+            IllegalArgumentException illegal = new IllegalArgumentException("New password must be different from current.");
+            throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "REUSED_PASSWORD");
         }
 
         customer.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -342,38 +325,56 @@ public class CustomerServiceImpl implements CustomerService {
     /** Fail if the value is blank. Audits with WARNING and throws 400 (IllegalArgumentException). */
     private void requireNotBlank(String val, UUID cid, String endpoint, String code, String msg) {
         if (val == null || val.isBlank()) {
-            auditingService.log(cid, endpoint, AuditingStatus.WARNING, code);
-            throw new IllegalArgumentException(msg);
+            throw centralAudit.audit(new IllegalArgumentException(msg), cid, endpoint, AuditingStatus.WARNING, code);
         }
     }
 
     /** Load a customer or audit+throw 404 (NoSuchElementException). */
-    private Customer loadCustomerOr404(UUID customerId, String endpoint) {
+    private Customer getCustomerOrThrow(UUID customerId, String method) {
         try {
             return customerRepo.findById(customerId)
                     .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
         } catch (NoSuchElementException e) {
-            auditingService.log(customerId, endpoint, AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
-            throw e;
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
+        }
+    }
+
+    /** Load a customer or audit+throw 404 (NoSuchElementException). */
+    private Customer getCustomerByPhoneOrEmailOrThrow(String key, String method){
+        try {
+            return customerRepo.findByPhoneNumberOrEmail(key)
+                    .orElseThrow(() -> new NoSuchElementException("Customer not found for: " + key));
+        } catch (NoSuchElementException e) {
+            throw centralAudit.audit(e,null, method,
+                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + key);
+        }
+    }
+
+    /** Load a cart or audit+throw 404 (NoSuchElementException). */
+
+    private Cart getCartOrThrow(UUID customerId, String method){
+        try {
+            return cartRepo.findByCustomerCustomerId(customerId)
+                    .orElseThrow(() -> new NoSuchElementException("Cart not found for customer: " + customerId));
+        } catch (NoSuchElementException e) {
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, "CART_NOT_FOUND");
         }
     }
 
     /** Verify password or audit+throw 401 (BadCredentialsException). */
-    private void verifyPasswordOrThrow(Customer c, String raw, UUID cid, String endpoint) {
+    private void verifyPasswordOrThrow(Customer c, String raw, UUID cid, String method) {
         if (raw == null || !passwordEncoder.matches(raw, c.getPasswordHash())) {
-            auditingService.log(cid, endpoint, AuditingStatus.WARNING, "INVALID_PASSWORD");
-            throw new BadCredentialsException("Invalid password");
+            throw centralAudit.audit(new BadCredentialsException("Invalid password"), cid, method, AuditingStatus.WARNING, "INVALID_PASSWORD");
         }
     }
 
     /** Save a customer with success/error auditing. */
-    private void saveAndAudit(Customer c, UUID cid, String endpoint, String successMsg) {
+    private void saveAndAudit(Customer c, UUID cid, String method, String successMsg) {
         try {
             customerRepo.saveAndFlush(c);
-            auditingService.log(cid, endpoint, AuditingStatus.SUCCESSFUL, successMsg);
+            centralAudit.info(cid, method, AuditingStatus.SUCCESSFUL, successMsg);
         } catch (DataIntegrityViolationException dup) {
-            auditingService.log(cid, endpoint, AuditingStatus.ERROR, dup.toString());
-            throw dup;
+            throw centralAudit.audit(dup, cid, method, AuditingStatus.ERROR, dup.toString());
         }
     }
 }
