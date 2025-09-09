@@ -13,6 +13,7 @@ import commerce.eshop.core.repository.CartRepo;
 import commerce.eshop.core.repository.ProductRepo;
 import commerce.eshop.core.service.CartService;
 import commerce.eshop.core.util.SortSanitizer;
+import commerce.eshop.core.util.sort.CartSort;
 import commerce.eshop.core.web.dto.response.Cart.DTOCartItemResponse;
 import commerce.eshop.core.web.mapper.CartServiceMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -43,14 +44,6 @@ public class CartServiceImpl implements CartService {
     private final SortSanitizer sortSanitizer;
     private final DomainLookupService domainLookupService;
 
-    // == Whitelisting & Constraints
-    public static final Map<String, String> CART_ITEMS_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("added_at",   "addedAt"),
-            Map.entry("quantity",   "quantity"),
-            Map.entry("unit_price", "priceAt"),
-            Map.entry("product_name","productName")
-    );
-
     // == Constructors ==
     @Autowired
     public CartServiceImpl(CartItemRepo cartItemRepo, CartRepo cartRepo, ProductRepo productRepo, CentralAudit centralAudit,
@@ -69,7 +62,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public Page<DTOCartItemResponse> viewAllCartItems(UUID customerId, Pageable pageable) {
 
-        Pageable p = sortSanitizer.sanitize(pageable, CART_ITEMS_SORT_WHITELIST, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, CartSort.CART_ITEMS_SORT_WHITELIST, CartSort.MAX_PAGE_SIZE);
         final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_VIEW_ALL);
         Page<CartItem> items = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
         centralAudit.info(customerId, EndpointsNameMethods.CART_VIEW_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.CART_VIEW_ALL_SUCCESS.getMessage());

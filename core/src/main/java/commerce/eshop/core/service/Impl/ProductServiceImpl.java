@@ -12,6 +12,7 @@ import commerce.eshop.core.repository.ProductCategoryRepo;
 import commerce.eshop.core.repository.ProductRepo;
 import commerce.eshop.core.service.ProductService;
 import commerce.eshop.core.util.SortSanitizer;
+import commerce.eshop.core.util.sort.ProductSort;
 import commerce.eshop.core.web.dto.requests.Products.DTOAddProduct;
 import commerce.eshop.core.web.dto.response.Product.DTOProductResponse;
 import commerce.eshop.core.web.mapper.ProductServiceMapper;
@@ -36,14 +37,6 @@ public class ProductServiceImpl implements ProductService {
     private final CentralAudit centralAudit;
     private final ProductServiceMapper productServiceMapper;
     private final DomainLookupService domainLookupService;
-
-    // == Whitelisting & Constraints
-    /** For DTOProductResponse */
-    public static final Map<String, String> PRODUCT_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("id", "productId"),
-            Map.entry("name", "productName"),
-            Map.entry("price", "productPrice")
-    );
 
     // == Constructors ==
     @Autowired
@@ -100,7 +93,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     @Override
     public Page<DTOProductResponse> getAllProducts(long categoryId, Pageable pageable) {
-        Pageable p = sortSanitizer.sanitize(pageable, PRODUCT_SORT_WHITELIST, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, ProductSort.PRODUCT_SORT_WHITELIST, ProductSort.MAX_PAGE_SIZE);
         Page<Product> products = productRepo.findAllByCategoryId(categoryId, p);
         centralAudit.info(null, EndpointsNameMethods.PRODUCT_GET_ALL, AuditingStatus.SUCCESSFUL,
                 AuditMessage.PRODUCT_GET_ALL_SUCCESS.getMessage());

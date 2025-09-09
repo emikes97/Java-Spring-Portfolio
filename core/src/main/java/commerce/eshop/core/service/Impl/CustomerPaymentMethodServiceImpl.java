@@ -12,6 +12,7 @@ import commerce.eshop.core.repository.CustomerPaymentMethodRepo;
 import commerce.eshop.core.repository.CustomerRepo;
 import commerce.eshop.core.service.CustomerPaymentMethodService;
 import commerce.eshop.core.util.SortSanitizer;
+import commerce.eshop.core.util.sort.CustomerPaymentMethodSort;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOUpdatePaymentMethod;
 import commerce.eshop.core.web.dto.response.PaymentMethod.DTOPaymentMethodResponse;
@@ -42,19 +43,6 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     private final CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper;
     private final DomainLookupService domainLookupService;
 
-    // == Whitelist & Constraints ==
-
-    // Allowed sort columns for customer_payment_methods pagination
-    public static final Map<String, String> PAYMENT_METHOD_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("provider", "provider"),
-            Map.entry("brand", "brand"),
-            Map.entry("last_4", "last4"),
-            Map.entry("year_exp", "yearExp"),
-            Map.entry("month_exp", "monthExp"),
-            Map.entry("is_default", "isDefault"),
-            Map.entry("created_at", "createdAt")
-    );
-
     // == Constructors ==
 
     @Autowired
@@ -76,7 +64,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Transactional(readOnly = true)
     @Override
     public Page<DTOPaymentMethodResponse> getAllPaymentMethods(UUID customerId, Pageable pageable) {
-        Pageable p = sortSanitizer.sanitize(pageable, PAYMENT_METHOD_SORT_WHITELIST, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, CustomerPaymentMethodSort.PAYMENT_METHOD_SORT_WHITELIST, CustomerPaymentMethodSort.MAX_PAGE_SIZE);
         Page<CustomerPaymentMethod> customerPayment = customerPaymentMethodRepo.findByCustomer_CustomerId(customerId, p);
         centralAudit.info(customerId, EndpointsNameMethods.PM_GET_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.PM_GET_ALL_SUCCESS.getMessage());
         return customerPayment.map(customerPaymentMethodServiceMapper::toDto);

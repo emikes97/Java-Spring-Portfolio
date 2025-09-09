@@ -13,6 +13,7 @@ import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.util.sort.WishlistSort;
 import commerce.eshop.core.web.dto.response.Wishlist.DTOWishlistResponse;
 import commerce.eshop.core.web.mapper.WishlistServiceMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -35,16 +36,6 @@ public class WishlistServiceImpl implements WishlistService {
     private final SortSanitizer sortSanitizer;
     private final WishlistServiceMapper wishlistServiceMapper;
     private final DomainLookupService domainLookupService;
-
-    // == Whitelist & Constraints ==
-    private static final Map<String, String> WISHLIST_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("productName", "productName"),
-            Map.entry("product_name", "productName"),
-            Map.entry("name", "productName"),
-            Map.entry("addedAt", "addedAt"),
-            Map.entry("added_at", "addedAt"),
-            Map.entry("date", "addedAt")
-    );
 
     // == Constructors ==
     public WishlistServiceImpl(CentralAudit centralAudit, WishlistRepo wishlistRepo, WishlistItemRepo wishlistItemRepo,
@@ -85,7 +76,7 @@ public class WishlistServiceImpl implements WishlistService {
     @Transactional(readOnly = true)
     @Override
     public Page<DTOWishlistResponse> findAllWishes(UUID customerId, Pageable pageable) {
-        Pageable p = sortSanitizer.sanitize(pageable, WISHLIST_SORT_WHITELIST, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, WishlistSort.WISHLIST_SORT_WHITELIST, WishlistSort.MAX_PAGE_SIZE);
 
         final Wishlist wishlist = domainLookupService.getWishlistOrThrow(customerId, EndpointsNameMethods.FIND_ALL_WISHES);
 

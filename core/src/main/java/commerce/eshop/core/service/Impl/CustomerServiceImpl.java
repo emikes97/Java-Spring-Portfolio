@@ -9,6 +9,7 @@ import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.service.CustomerService;
 import commerce.eshop.core.util.SortSanitizer;
+import commerce.eshop.core.util.sort.CustomerSort;
 import commerce.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerce.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
 import commerce.eshop.core.web.dto.response.Customer.DTOCustomerOrderResponse;
@@ -43,38 +44,6 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerServiceMapper customerServiceMapper;
     private final WishlistRepo wishlistRepo;
     private final DomainLookupService domainLookupService;
-
-    // == Whitelisting & Constraints ==
-
-    /** For DTOCustomerResponse */
-    public static final Map<String, String> CUSTOMER_PROFILE_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("username", "username"),
-            Map.entry("name", "name"),
-            Map.entry("surname", "surname"),
-            Map.entry("created_at", "createdAt")
-    );
-
-    /** For DTOCustomerOrderResponse */
-    public static final Map<String, String> CUSTOMER_ORDERS_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("total_outstanding", "totalOutstanding"),
-            Map.entry("created_at", "orderCreatedAt"),
-            Map.entry("completed_at", "orderCompletedAt")
-    );
-
-    /** For DTOCustomerCartItemResponse */
-    public static final Map<String, String> CUSTOMER_CART_ITEMS_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("quantity", "quantity"),
-            Map.entry("price_at", "priceAt"),
-            Map.entry("added_at", "addedAt")
-    );
-
-    /** For DTOCustomerAddressResponse */
-    public static final Map<String, String> CUSTOMER_ADDRESS_SORT_WHITELIST = Map.ofEntries(
-            Map.entry("country", "country"),
-            Map.entry("street", "street"),
-            Map.entry("city", "city"),
-            Map.entry("postal_code", "postalCode")
-    );
 
     // == Constructors ==
     @Autowired
@@ -177,7 +146,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCustomerOrderResponse> getOrders(UUID customerId, Pageable pageable) {
-        Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_ORDERS_SORT_WHITELIST, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, CustomerSort.CUSTOMER_ORDERS_SORT_WHITELIST, CustomerSort.MAX_PAGE_SIZE);
         Page<Order> orders = orderRepo.findByCustomer_CustomerId(customerId, p);
         centralAudit.info(customerId, EndpointsNameMethods.GET_ORDERS,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_ORDERS_SUCCESS.getMessage());
@@ -189,7 +158,7 @@ public class CustomerServiceImpl implements CustomerService {
     public Page<DTOCustomerCartItemResponse> getCartItems(UUID customerId, Pageable pageable) {
         final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.GET_CART_ITEMS);
 
-        Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_CART_ITEMS_SORT_WHITELIST, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, CustomerSort.CUSTOMER_CART_ITEMS_SORT_WHITELIST, CustomerSort.MAX_PAGE_SIZE);
         Page<CartItem> cartItems = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
 
         centralAudit.info(customerId, EndpointsNameMethods.GET_CART_ITEMS,

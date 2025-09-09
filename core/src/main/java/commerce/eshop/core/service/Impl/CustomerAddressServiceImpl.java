@@ -12,6 +12,7 @@ import commerce.eshop.core.repository.CustomerRepo;
 import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CustomerAddressService;
 import commerce.eshop.core.util.SortSanitizer;
+import commerce.eshop.core.util.sort.CustomerAddrSort;
 import commerce.eshop.core.web.dto.requests.CustomerAddr.DTOAddCustomerAddress;
 import commerce.eshop.core.web.dto.requests.CustomerAddr.DTOUpdateCustomerAddress;
 import commerce.eshop.core.web.dto.response.CustomerAddr.DTOCustomerAddressResponse;
@@ -38,15 +39,6 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     private final CustomerAddressServiceMapper customerAddressServiceMapper;
     private final DomainLookupService domainLookupService;
 
-    // == Constraints - Whitelisting ==
-    private static final Map<String, String> ALLOWED_SORTS = Map.of(
-            "country",     "country",
-            "street",      "street",
-            "city",        "city",
-            "postal_code", "postalCode",  // API → entity
-            "created_at",  "createdAt"    // API → entity
-    );
-
     // == Constructors ==
     @Autowired
     protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo,
@@ -65,7 +57,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     @Transactional(readOnly = true)
     public Page<DTOCustomerAddressResponse> getAllAddresses(UUID customerId, Pageable pageable) {
-        Pageable p = sortSanitizer.sanitize(pageable, ALLOWED_SORTS, 25);
+        Pageable p = sortSanitizer.sanitize(pageable, CustomerAddrSort.ALLOWED_SORTS, CustomerAddrSort.MAX_PAGE_SIZE);
 
         Page<CustomerAddress> page = customerAddrRepo.findByCustomerCustomerId(customerId, p);
 
