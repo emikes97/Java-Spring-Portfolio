@@ -3,6 +3,7 @@ package commerce.eshop.core.service.async.internal;
 
 import commerce.eshop.core.events.PaymentSucceededOrFailed;
 import commerce.eshop.core.model.entity.Order;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.util.enums.OrderStatus;
@@ -18,18 +19,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.NoSuchElementException;
+
 
 @Component
 @Slf4j
 public class OrderUpdater {
 
     private final OrderRepo orderRepo;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
 
     @Autowired
-    public OrderUpdater(OrderRepo orderRepo, AuditingService auditingService){
+    public OrderUpdater(OrderRepo orderRepo, CentralAudit centralAudit){
         this.orderRepo = orderRepo;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
     }
 
     @Async("asyncExecutor")
@@ -37,19 +40,26 @@ public class OrderUpdater {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateOrder(PaymentSucceededOrFailed paymentSucceededOrFailed){
 
-        Order order = orderRepo.findByOrderIdForUpdate(paymentSucceededOrFailed.orderId()).orElseThrow(
-                () -> new IllegalStateException("Order wasn't found"));
+        final Order order;
+
+        try {
+            order = orderRepo.findByOrderIdForUpdate(paymentSucceededOrFailed.orderId()).orElseThrow(
+                    () -> new IllegalStateException("Order wasn't found"));
+        } catch (NoSuchElementException ex){
+            throw centralAudit.audit(ex, null, EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR);
+        }
+
 
         if(isTerminal(order.getOrderStatus())){
             log.info("Order {} already terminal ({}) – skipping update.", order.getOrderId(), order.getOrderStatus());
-            auditingService.log(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Order {" + order.getOrderId() +"} already terminal ({"+ order.getOrderStatus() +"}) – skipping update.");
             return;
         }
 
         if (order.getOrderStatus() == paymentSucceededOrFailed.status()) {
             log.info("Order {} already in status {} – no-op.", order.getOrderId(), order.getOrderStatus());
-            auditingService.log(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Order {" + order.getOrderId() +"} already in status ({"+ order.getOrderStatus() +"}) – no-op.");
             return;
         }
@@ -59,17 +69,15 @@ public class OrderUpdater {
             order.setCompletedAt(paymentSucceededOrFailed.time());
             orderRepo.restoreProductStockFromOrder(order.getOrderId());
             orderRepo.saveAndFlush(order);
-            auditingService.log(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL, order.getOrderStatus().toString());
+            centralAudit.info(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL, order.getOrderStatus().toString());
         } catch (DataIntegrityViolationException err){
             log.error("[OrderUpdater] Integrity violation updating order {}: {}", order.getOrderId(), err.getMessage(), err);
-            auditingService.log(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR,
-                    "[OrderUpdater] Integrity violation updating order" + order.getOrderId() + " " + err.toString());
-            throw err;
-        } catch (Exception exception) {
-            log.error("[OrderUpdater] Unexpected error updating order {}. Please update manually", order.getOrderId(), exception);
-            auditingService.log(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR,
-                    "[OrderUpdater] Unexpected error updating order + " + order.getOrderId() + ". Please update manually, " + exception);
-            throw exception;
+            throw centralAudit.audit(err,order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR,
+                    "[OrderUpdater] Integrity violation updating order" + order.getOrderId() + " " + err);
+        } catch (Exception ex) {
+            log.error("[OrderUpdater] Unexpected error updating order {}. Please update manually", order.getOrderId(), ex);
+            throw centralAudit.audit(new RuntimeException("Unexpected Error"), order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR,
+                    "[OrderUpdater] Unexpected error updating order + " + order.getOrderId() + ". Please update manually");
         }
     }
 
