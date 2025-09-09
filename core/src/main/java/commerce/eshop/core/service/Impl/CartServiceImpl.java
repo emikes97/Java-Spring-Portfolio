@@ -95,7 +95,7 @@ public class CartServiceImpl implements CartService {
                     EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR);
         }
 
-        final Product product = domainLookupService.getProductOrThrow(productId, customerId, EndpointsNameMethods.CART_ADD_ITEM);
+        final Product product = domainLookupService.getProductOrThrow(customerId, productId, EndpointsNameMethods.CART_ADD_ITEM);
         final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_ADD_ITEM);
 
         int updated = cartItemRepo.bumpQuantity(cart.getCartId(), productId, quantity, MAX_QTY);

@@ -29,7 +29,6 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     private final WishlistItemRepo wishlistItemRepo;
 
     // == Constructors ==
-
     public DomainLookupServiceImpl(
             CustomerRepo customerRepo,
             CartRepo cartRepo,
@@ -58,52 +57,7 @@ public class DomainLookupServiceImpl implements DomainLookupService {
 
     // == Public Methods ==
 
-    @Override
-    public CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method) {
-        try{
-            return cartItemRepo.getCartItemByCartIdAndProductId(cartId, productId).orElseThrow(
-                    () -> new NoSuchElementException("Cart Item doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
-    @Override
-    public Product getProductOrThrow(long productId, UUID customerId, String method) {
-        try {
-            return productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }    }
-
-    @Override
-    public Cart getCartOrThrow(UUID customerId, String method) {
-        try {
-            return cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e,customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
-    @Override
-    public Category getCategoryOrThrow(long categoryId, String method) {
-        try{
-            return categoryRepo.findById(categoryId).orElseThrow(
-                    () -> new NoSuchElementException("The requested category doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, null, method, AuditingStatus.ERROR);
-        }
-    }
-
-    @Override
-    public CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method) {
-        try {
-            return customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
+    // --- Customer & Identity ---
     @Override
     public Customer getCustomerOrThrow(UUID customerId, String method) {
         try {
@@ -112,17 +66,6 @@ public class DomainLookupServiceImpl implements DomainLookupService {
             );
         } catch (NoSuchElementException e){
             throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    @Override
-    public CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method){
-        try {
-            return paymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
-                    customerId, paymentMethodId).orElseThrow(
-                    () -> new NoSuchElementException("The payment method doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
         }
     }
 
@@ -137,12 +80,43 @@ public class DomainLookupServiceImpl implements DomainLookupService {
         }
     }
 
+    // --- Cart & Items (ownership enforced) ---
+    @Override
+    public Cart getCartOrThrow(UUID customerId, String method) {
+        try {
+            return cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e,customerId, method, AuditingStatus.ERROR, e.toString());
+        }
+    }
+
+    @Override
+    public CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method) {
+        try{
+            return cartItemRepo.getCartItemByCartIdAndProductId(cartId, productId).orElseThrow(
+                    () -> new NoSuchElementException("Cart Item doesn't exist"));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
+        }
+    }
+
+    // --- Orders (ownership enforced) ---
     @Override
     public Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
         try {
             return orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
         } catch (NoSuchElementException e){
             throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    // --- Addresses (ownership enforced) ---
+    @Override
+    public CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method) {
+        try {
+            return customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
         }
     }
 
@@ -158,13 +132,27 @@ public class DomainLookupServiceImpl implements DomainLookupService {
         }
     }
 
+    // --- Payment Methods (ownership enforced) ---
     @Override
-    // get product for product service
-    public Product getProductOrThrow(long productId, String method){
+    public CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method){
         try {
-            return productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
+            return paymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
+                    customerId, paymentMethodId).orElseThrow(
+                    () -> new NoSuchElementException("The payment method doesn't exist"));
         } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, null, method, AuditingStatus.WARNING, e.toString());
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
+        }
+    }
+
+    // --- Wishlist (ownership enforced) ---
+    @Override
+    public Wishlist getWishlistOrThrow(UUID customerId, String method){
+        try {
+            return wishlistRepo.findWishlistByCustomerId(customerId).orElseThrow(
+                    () -> new NoSuchElementException("NOT_FOUND_BY_ID")
+            );
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
         }
     }
 
@@ -179,14 +167,14 @@ public class DomainLookupServiceImpl implements DomainLookupService {
         }
     }
 
+    // --- Catalog ---
     @Override
-    public Wishlist getWishlistOrThrow(UUID customerId, String method){
+    // get product for product service
+    public Product getProductOrThrow(long productId, String method){
         try {
-            return wishlistRepo.findWishlistByCustomerId(customerId).orElseThrow(
-                    () -> new NoSuchElementException("NOT_FOUND_BY_ID")
-            );
+            return productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
         } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+            throw centralAudit.audit(e, null, method, AuditingStatus.WARNING, e.toString());
         }
     }
 
@@ -199,6 +187,16 @@ public class DomainLookupServiceImpl implements DomainLookupService {
             return product;
         } catch (NoSuchElementException e){
             throw centralAudit.audit(e,customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    @Override
+    public Category getCategoryOrThrow(long categoryId, String method) {
+        try{
+            return categoryRepo.findById(categoryId).orElseThrow(
+                    () -> new NoSuchElementException("The requested category doesn't exist"));
+        } catch (NoSuchElementException e){
+            throw centralAudit.audit(e, null, method, AuditingStatus.ERROR);
         }
     }
 }

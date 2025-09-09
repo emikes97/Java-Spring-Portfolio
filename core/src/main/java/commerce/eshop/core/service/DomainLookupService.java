@@ -6,19 +6,33 @@ import java.util.UUID;
 
 public interface DomainLookupService {
 
+
     // == Find or throw methods ==
-    public CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method );
-    public Product getProductOrThrow(long productId, UUID customerId, String method);
-    public Cart getCartOrThrow(UUID customerId, String method);
-    public Category getCategoryOrThrow(long categoryId, String method);
-    public CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method);
-    public Customer getCustomerOrThrow(UUID customerId, String method);
-    public CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method);
-    public Customer getCustomerByPhoneOrEmailOrThrow(String key, String method);
-    public Order getOrderOrThrow(UUID customerId, UUID orderId, String method);
-    public CustomerAddress getCustomerAddrOrThrow(UUID customerId, String method); // Get default address
-    public Product getProductOrThrow(long productId, String method); // Product service overload
-    public Wishlist getWishlistOrThrow(UUID customerId, String method);
-    public WishlistItem getWishOrThrow(UUID customerId, Wishlist wishlist, long wishId, String method);
-    public Product getProductOrThrow(UUID customerId, long productId, String method); // Overload for wishlist
+
+    // --- Customer & Identity ---
+    Customer getCustomerOrThrow(UUID customerId, String method);
+    Customer getCustomerByPhoneOrEmailOrThrow(String key, String method);
+
+    // --- Cart & Items (ownership enforced) ---
+    Cart getCartOrThrow(UUID customerId, String method);
+    CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method );
+
+    // --- Orders (ownership enforced) ---
+    Order getOrderOrThrow(UUID customerId, UUID orderId, String method);
+
+    // --- Addresses (ownership enforced) ---
+    CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method);
+    CustomerAddress getCustomerAddrOrThrow(UUID customerId, String method); // Get default address
+
+    // --- Payment Methods (ownership enforced) ---
+    CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method);
+
+    // --- Wishlist (ownership enforced) ---
+    Wishlist getWishlistOrThrow(UUID customerId, String method);
+    WishlistItem getWishOrThrow(UUID customerId, Wishlist wishlist, long wishId, String method);
+
+    // --- Catalog ---
+    Product getProductOrThrow(UUID customerId, long productId, String method);
+    Product getProductOrThrow(long productId, String method); // Product service overload
+    Category getCategoryOrThrow(long categoryId, String method);
 }
