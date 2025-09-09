@@ -2,6 +2,7 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -35,6 +36,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     private final CentralAudit centralAudit;
     private final SortSanitizer sortSanitizer;
     private final CustomerAddressServiceMapper customerAddressServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Constraints - Whitelisting ==
     private static final Map<String, String> ALLOWED_SORTS = Map.of(
@@ -49,12 +51,14 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Autowired
     protected CustomerAddressServiceImpl(CustomerAddrRepo customerAddrRepo, CustomerRepo customerRepo,
                                          CentralAudit centralAudit, SortSanitizer sortSanitizer,
-                                         CustomerAddressServiceMapper customerAddressServiceMapper){
+                                         CustomerAddressServiceMapper customerAddressServiceMapper,
+                                         DomainLookupService domainLookupService){
         this.customerAddrRepo = customerAddrRepo;
         this.customerRepo = customerRepo;
         this.centralAudit = centralAudit;
         this.sortSanitizer = sortSanitizer;
         this.customerAddressServiceMapper = customerAddressServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -73,7 +77,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Transactional
     public DTOCustomerAddressResponse addCustomerAddress(UUID customerId, DTOAddCustomerAddress dto) {
 
-        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.ADDR_ADD);
+        final Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.ADDR_ADD);
 
         if (dto.isDefault()) {
             int outcome = customerAddrRepo.clearDefaultsForCustomer(customerId);
@@ -98,7 +102,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     public DTOCustomerAddressResponse updateCustomerAddress(UUID customerId, Long id, DTOUpdateCustomerAddress dto) {
 
-        final CustomerAddress addr = getCustomerAddrOrThrow(customerId, id, EndpointsNameMethods.ADDR_UPDATE);
+        final CustomerAddress addr = domainLookupService.getCustomerAddrOrThrow(customerId, id, EndpointsNameMethods.ADDR_UPDATE);
 
         if(!(addr.getCustomer().getCustomerId().equals(customerId))){
             throw centralAudit.audit(new NoSuchElementException("Mentioned address couldn't be found for user " + customerId),
@@ -140,7 +144,7 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
     @Override
     public DTOCustomerAddressResponse makeDefaultCustomerAddress(UUID customerId, Long id) {
 
-        final CustomerAddress customerAddress = getCustomerAddrOrThrow(customerId, id, EndpointsNameMethods.ADDR_MAKE_DEFAULT);
+        final CustomerAddress customerAddress = domainLookupService.getCustomerAddrOrThrow(customerId, id, EndpointsNameMethods.ADDR_MAKE_DEFAULT);
 
         // Idempotent: already default → no-op
         if (Boolean.TRUE.equals(customerAddress.isDefault())) {
@@ -182,28 +186,6 @@ public class CustomerAddressServiceImpl implements CustomerAddressService {
             Throwable most = dive.getMostSpecificCause();
             String msg = (most.getMessage() != null && !most.getMessage().isBlank()) ? most.getMessage() : dive.toString();
             throw centralAudit.audit(dive, customerId, EndpointsNameMethods.ADDR_DELETE, AuditingStatus.ERROR, msg);
-        }
-    }
-
-    // == Private Methods ==
-
-    private Customer getCustomerOrThrow(UUID customerId, String method){
-        try {
-            final Customer customer = customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("Customer doesn't exist")
-            );
-            return customer;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method){
-        try {
-           final CustomerAddress addr = customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
-           return addr;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
         }
     }
 }

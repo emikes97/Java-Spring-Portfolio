@@ -2,6 +2,7 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -41,6 +42,7 @@ public class CustomerServiceImpl implements CustomerService {
     private final CentralAudit centralAudit;
     private final CustomerServiceMapper customerServiceMapper;
     private final WishlistRepo wishlistRepo;
+    private final DomainLookupService domainLookupService;
 
     // == Whitelisting & Constraints ==
 
@@ -78,7 +80,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Autowired
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
                                PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, CentralAudit centralAudit,
-                               CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo) {
+                               CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo, DomainLookupService domainLookupService) {
 
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
@@ -89,6 +91,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.sortSanitizer = sortSanitizer;
         this.customerServiceMapper = customerServiceMapper;
         this.wishlistRepo = wishlistRepo;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -150,7 +153,7 @@ public class CustomerServiceImpl implements CustomerService {
             throw centralAudit.audit(bad, null, EndpointsNameMethods.GET_PROFILE_BY_ID, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
         }
 
-        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID);
+        final Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID);
         centralAudit.info(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
         return customerServiceMapper.toDtoCustomerRes(customer);
@@ -163,7 +166,7 @@ public class CustomerServiceImpl implements CustomerService {
                 "MISSING_IDENTIFIER", "Missing phone/email identifier.");
 
         final String key = phoneOrEmail.trim();
-        final Customer customer = getCustomerByPhoneOrEmailOrThrow(key, EndpointsNameMethods.GET_PROFILE_BY_SEARCH);
+        final Customer customer = domainLookupService.getCustomerByPhoneOrEmailOrThrow(key, EndpointsNameMethods.GET_PROFILE_BY_SEARCH);
 
         centralAudit.info(customer.getCustomerId(), EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
                 AuditingStatus.SUCCESSFUL, AuditMessage.GET_PROFILE_SUCCESS.getMessage());
@@ -184,7 +187,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Transactional(readOnly = true)
     @Override
     public Page<DTOCustomerCartItemResponse> getCartItems(UUID customerId, Pageable pageable) {
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.GET_CART_ITEMS);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.GET_CART_ITEMS);
 
         Pageable p = sortSanitizer.sanitize(pageable, CUSTOMER_CART_ITEMS_SORT_WHITELIST, 25);
         Page<CartItem> cartItems = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
@@ -204,7 +207,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         requireNotBlank(name, customerId, EndpointsNameMethods.UPDATE_NAME, "INVALID_NAME", "Name must not be blank.");
 
-        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_NAME);
+        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_NAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_NAME);
 
         String trimmed = name.trim();
@@ -226,7 +229,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_SURNAME, "INVALID_SURNAME", "Surname must not be blank.");
-        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_SURNAME);
+        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_SURNAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_SURNAME);
 
         String trimmed = lastName.trim();
@@ -250,7 +253,7 @@ public class CustomerServiceImpl implements CustomerService {
         requireNotBlank(name, customerId, EndpointsNameMethods.UPDATE_FULLNAME, "INVALID_FULLNAME", "Name must not be blank.");
         requireNotBlank(lastName, customerId, EndpointsNameMethods.UPDATE_FULLNAME, "INVALID_FULLNAME", "Surname must not be blank.");
 
-        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_FULLNAME);
+        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_FULLNAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_FULLNAME);
 
         String newName = name.trim();
@@ -277,7 +280,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
         requireNotBlank(userName, customerId, EndpointsNameMethods.UPDATE_USERNAME, "INVALID_USERNAME", "Username must not be blank.");
 
-        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_USERNAME);
+        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_USERNAME);
         verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_USERNAME);
 
         String trimmed = userName.trim();
@@ -307,7 +310,7 @@ public class CustomerServiceImpl implements CustomerService {
             throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "WEAK_PASSWORD");
         }
 
-        Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
+        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
         verifyPasswordOrThrow(customer, currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD);
 
         // Prevent reuse
@@ -326,38 +329,6 @@ public class CustomerServiceImpl implements CustomerService {
     private void requireNotBlank(String val, UUID cid, String endpoint, String code, String msg) {
         if (val == null || val.isBlank()) {
             throw centralAudit.audit(new IllegalArgumentException(msg), cid, endpoint, AuditingStatus.WARNING, code);
-        }
-    }
-
-    /** Load a customer or audit+throw 404 (NoSuchElementException). */
-    private Customer getCustomerOrThrow(UUID customerId, String method) {
-        try {
-            return customerRepo.findById(customerId)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found: " + customerId));
-        } catch (NoSuchElementException e) {
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + customerId);
-        }
-    }
-
-    /** Load a customer or audit+throw 404 (NoSuchElementException). */
-    private Customer getCustomerByPhoneOrEmailOrThrow(String key, String method){
-        try {
-            return customerRepo.findByPhoneNumberOrEmail(key)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found for: " + key));
-        } catch (NoSuchElementException e) {
-            throw centralAudit.audit(e,null, method,
-                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + key);
-        }
-    }
-
-    /** Load a cart or audit+throw 404 (NoSuchElementException). */
-
-    private Cart getCartOrThrow(UUID customerId, String method){
-        try {
-            return cartRepo.findByCustomerCustomerId(customerId)
-                    .orElseThrow(() -> new NoSuchElementException("Cart not found for customer: " + customerId));
-        } catch (NoSuchElementException e) {
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, "CART_NOT_FOUND");
         }
     }
 

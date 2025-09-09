@@ -5,6 +5,7 @@ import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.repository.*;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -42,12 +43,13 @@ public class OrderServiceImpl implements OrderService {
     private final CustomerPaymentMethodRepo customerPaymentMethodRepo;
     private final CentralAudit centralAudit;
     private final OrderServiceMapper orderServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Constructors ==
     @Autowired
     public OrderServiceImpl(CustomerRepo customerRepo, CartItemRepo cartItemRepo, CartRepo cartRepo, OrderItemRepo orderItemRepo,
                             OrderRepo orderRepo, CustomerAddrRepo customerAddrRepo, CustomerPaymentMethodRepo customerPaymentMethodRepo,
-                            CentralAudit centralAudit, OrderServiceMapper orderServiceMapper){
+                            CentralAudit centralAudit, OrderServiceMapper orderServiceMapper, DomainLookupService domainLookupService){
 
         this.customerRepo = customerRepo;
         this.cartItemRepo = cartItemRepo;
@@ -58,6 +60,7 @@ public class OrderServiceImpl implements OrderService {
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.centralAudit = centralAudit;
         this.orderServiceMapper = orderServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -72,16 +75,16 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Get cart_id from customer
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
 
         // Get customer reference
-        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
+        final Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
 
         // If no address is provided, go for the default. (Default in our case is the one that the customer will pick during
         // checkout. In case to simulate it for now, is the default from what has been chosen in the db.
 
         if(addressDto == null){
-            final CustomerAddress customerAddress = getCustomerAddrOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
+            final CustomerAddress customerAddress = domainLookupService.getCustomerAddrOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
             addressDto = new DTOOrderCustomerAddress(customerAddress.getCountry(), customerAddress.getStreet(),
                     customerAddress.getCity(), customerAddress.getPostalCode());
         }
@@ -134,7 +137,7 @@ public class OrderServiceImpl implements OrderService {
             throw centralAudit.audit(bad, customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.WARNING, "MISSING_IDS");
         }
 
-        final Order order = getOrderOrThrow(customerId, orderId, EndpointsNameMethods.ORDER_CANCEL);
+        final Order order = domainLookupService.getOrderOrThrow(customerId, orderId, EndpointsNameMethods.ORDER_CANCEL);
 
         if(order.getOrderStatus() != OrderStatus.PENDING_PAYMENT){
             IllegalStateException illegal = new IllegalStateException("INVALID_STATE" + order.getOrderStatus());
@@ -168,7 +171,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public DTOOrderDetailsResponse viewOrder(UUID customerId, UUID orderId) {
 
-        final Order order = getOrderOrThrow(customerId, orderId, EndpointsNameMethods.ORDER_VIEW);
+        final Order order = domainLookupService.getOrderOrThrow(customerId, orderId, EndpointsNameMethods.ORDER_VIEW);
 
         var itemDtos = orderItemRepo.getOrderItems(orderId).stream()
                 .map(oi -> new DTOOrderItemsResponse(
@@ -181,44 +184,5 @@ public class OrderServiceImpl implements OrderService {
 
         centralAudit.info(customerId, EndpointsNameMethods.ORDER_VIEW, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_VIEW_SUCCESS.getMessage());
         return orderServiceMapper.toDtoDetails(order, itemDtos);
-    }
-
-    // == Private Methods ==
-
-    private Cart getCartOrThrow(UUID customerId, String method){
-        try {
-            return cartRepo.findByCustomerCustomerId(customerId).orElseThrow(() ->
-                    new NoSuchElementException("[ERROR] No cart exists for this customer."));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private Customer getCustomerOrThrow(UUID customerId, String method){
-        try {
-            return customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("Customer account couldn't be found with the provided identification key= " + customerId)
-            );
-        } catch (NoSuchElementException e){
-           throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private CustomerAddress getCustomerAddrOrThrow(UUID customerId, String method){
-        try {
-            return  customerAddrRepo.findByCustomerCustomerIdAndIsDefaultTrue(customerId).orElseThrow(
-                    () -> new NoSuchElementException("The customer = " + customerId + " doesn't have a default address and " +
-                            "no address has been provided for the order"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
-        try {
-            return orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
     }
 }

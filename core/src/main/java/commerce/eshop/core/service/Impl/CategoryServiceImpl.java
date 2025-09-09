@@ -1,6 +1,7 @@
 package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.Category;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -29,14 +30,17 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepo categoryRepo;
     private final CentralAudit centralAudit;
     private final CategoryServiceMapper categoryServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Constructors ==
 
     @Autowired
-    public CategoryServiceImpl(CategoryRepo categoryRepo, CentralAudit centralAudit, CategoryServiceMapper categoryServiceMapper){
+    public CategoryServiceImpl(CategoryRepo categoryRepo, CentralAudit centralAudit, CategoryServiceMapper categoryServiceMapper,
+                               DomainLookupService domainLookupService){
         this.categoryRepo = categoryRepo;
         this.centralAudit = centralAudit;
         this.categoryServiceMapper = categoryServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -70,7 +74,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public DTOCategoryResponse updateCategory(DTOUpdateCategory dto, long categoryId) {
 
-        Category category = getCategoryOrThrow(categoryId, EndpointsNameMethods.CATEGORY_UPDATE);
+        Category category = domainLookupService.getCategoryOrThrow(categoryId, EndpointsNameMethods.CATEGORY_UPDATE);
 
         if (dto.categoryName() != null && !dto.categoryName().isBlank()){
             String temp_catName = category.getCategoryName();
@@ -109,31 +113,19 @@ public class CategoryServiceImpl implements CategoryService {
         try {
             deleted = categoryRepo.deleteCategory(categoryId);
             categoryRepo.flush(); // forces constraint check now so catch can handle it
-        } catch (DataIntegrityViolationException dive){
+        } catch (DataIntegrityViolationException dive) {
             Throwable most = dive.getMostSpecificCause(); // never null
             String msg = (most.getMessage() != null && !most.getMessage().isBlank())
                     ? most.getMessage()
                     : dive.toString();
-            throw centralAudit.audit(dive,null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.ERROR, msg);
+            throw centralAudit.audit(dive, null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.ERROR, msg);
         }
 
-        if (deleted == 0){
+        if (deleted == 0) {
             NoSuchElementException ex = new NoSuchElementException("The requested category doesn't exist");
             throw centralAudit.audit(ex, null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.WARNING, ex.toString());
         }
 
         centralAudit.info(null, EndpointsNameMethods.CATEGORY_DELETE, AuditingStatus.SUCCESSFUL, AuditMessage.CATEGORY_DELETE_SUCCESS.getMessage());
-    }
-
-    // == Private Methods ==
-
-    private Category getCategoryOrThrow(long categoryId, String method){
-        try{
-           final Category category = categoryRepo.findById(categoryId).orElseThrow(
-                    () -> new NoSuchElementException("The requested category doesn't exist"));
-           return category;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, null, method, AuditingStatus.ERROR);
-        }
     }
 }

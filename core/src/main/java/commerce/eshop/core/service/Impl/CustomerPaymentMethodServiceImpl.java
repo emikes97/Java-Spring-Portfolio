@@ -2,6 +2,7 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.events.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -39,6 +40,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     private final CentralAudit centralAudit;
     private final SortSanitizer sortSanitizer;
     private final CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Whitelist & Constraints ==
 
@@ -58,13 +60,15 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Autowired
     public CustomerPaymentMethodServiceImpl(CustomerPaymentMethodRepo customerPaymentMethodRepo, CustomerRepo customerRepo,
                                             ApplicationEventPublisher applicationEventPublisher, CentralAudit centralAudit,
-                                            SortSanitizer sortSanitizer, CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper){
+                                            SortSanitizer sortSanitizer, CustomerPaymentMethodServiceMapper customerPaymentMethodServiceMapper,
+                                            DomainLookupService domainLookupService){
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.customerRepo = customerRepo;
         this.applicationEventPublisher = applicationEventPublisher;
         this.centralAudit = centralAudit;
         this.sortSanitizer = sortSanitizer;
         this.customerPaymentMethodServiceMapper = customerPaymentMethodServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -114,7 +118,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Override
     public DTOPaymentMethodResponse updatePaymentMethod(UUID customerId, UUID paymentMethodId, DTOUpdatePaymentMethod dto) {
 
-        final CustomerPaymentMethod paymentMethod = getPaymentMethodOrThrow(customerId, paymentMethodId, EndpointsNameMethods.PM_UPDATE);
+        final CustomerPaymentMethod paymentMethod = domainLookupService.getPaymentMethodOrThrow(customerId, paymentMethodId, EndpointsNameMethods.PM_UPDATE);
 
         // == Update fields ==
         if(dto.provider() != null && !dto.provider().isBlank())
@@ -153,7 +157,7 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
     @Override
     public DTOPaymentMethodResponse retrievePaymentMethod(UUID customerId, UUID paymentMethodId) {
 
-        CustomerPaymentMethod paymentMethod = getPaymentMethodOrThrow(customerId, paymentMethodId, EndpointsNameMethods.PM_RETRIEVE);
+        CustomerPaymentMethod paymentMethod = domainLookupService.getPaymentMethodOrThrow(customerId, paymentMethodId, EndpointsNameMethods.PM_RETRIEVE);
         centralAudit.info(customerId, EndpointsNameMethods.PM_RETRIEVE, AuditingStatus.SUCCESSFUL, AuditMessage.PM_RETRIEVE_SUCCESS.getMessage());
         return customerPaymentMethodServiceMapper.toDto(paymentMethod);
     }
@@ -182,17 +186,6 @@ public class CustomerPaymentMethodServiceImpl implements CustomerPaymentMethodSe
             // Constraint violation case
             throw centralAudit.audit(dup, customerId, EndpointsNameMethods.PM_DELETE,
                     AuditingStatus.ERROR, dup.toString());
-        }
-    }
-
-    private CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method){
-        try {
-            final CustomerPaymentMethod paymentMethod = customerPaymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
-                    customerId, paymentMethodId).orElseThrow(
-                    () -> new NoSuchElementException("The payment method doesn't exist"));
-            return paymentMethod;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
         }
     }
 }

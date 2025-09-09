@@ -6,6 +6,7 @@ import commerce.eshop.core.model.entity.WishlistItem;
 import commerce.eshop.core.repository.ProductRepo;
 import commerce.eshop.core.repository.WishlistItemRepo;
 import commerce.eshop.core.repository.WishlistRepo;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.service.WishlistService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.SortSanitizer;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -34,6 +34,7 @@ public class WishlistServiceImpl implements WishlistService {
     private final ProductRepo productRepo;
     private final SortSanitizer sortSanitizer;
     private final WishlistServiceMapper wishlistServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Whitelist & Constraints ==
     private static final Map<String, String> WISHLIST_SORT_WHITELIST = Map.ofEntries(
@@ -47,7 +48,8 @@ public class WishlistServiceImpl implements WishlistService {
 
     // == Constructors ==
     public WishlistServiceImpl(CentralAudit centralAudit, WishlistRepo wishlistRepo, WishlistItemRepo wishlistItemRepo,
-                               ProductRepo productRepo, SortSanitizer sortSanitizer, WishlistServiceMapper wishlistServiceMapper){
+                               ProductRepo productRepo, SortSanitizer sortSanitizer, WishlistServiceMapper wishlistServiceMapper,
+                               DomainLookupService domainLookupService){
 
         this.centralAudit = centralAudit;
         this.wishlistRepo = wishlistRepo;
@@ -55,6 +57,7 @@ public class WishlistServiceImpl implements WishlistService {
         this.productRepo = productRepo;
         this.sortSanitizer = sortSanitizer;
         this.wishlistServiceMapper = wishlistServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -63,9 +66,9 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public DTOWishlistResponse addNewWish(UUID customerId, long productId) {
 
-        final Product product = getProductOrThrow(customerId, productId, EndpointsNameMethods.ADD_NEW_WISH);
+        final Product product = domainLookupService.getProductOrThrow(customerId, productId, EndpointsNameMethods.ADD_NEW_WISH);
 
-        final Wishlist wishlist = getWishlistOrThrow(customerId, EndpointsNameMethods.ADD_NEW_WISH);
+        final Wishlist wishlist = domainLookupService.getWishlistOrThrow(customerId, EndpointsNameMethods.ADD_NEW_WISH);
 
         final WishlistItem wishlistItem = new WishlistItem(wishlist, product, product.getProductName());
 
@@ -84,7 +87,7 @@ public class WishlistServiceImpl implements WishlistService {
     public Page<DTOWishlistResponse> findAllWishes(UUID customerId, Pageable pageable) {
         Pageable p = sortSanitizer.sanitize(pageable, WISHLIST_SORT_WHITELIST, 25);
 
-        final Wishlist wishlist = getWishlistOrThrow(customerId, EndpointsNameMethods.FIND_ALL_WISHES);
+        final Wishlist wishlist = domainLookupService.getWishlistOrThrow(customerId, EndpointsNameMethods.FIND_ALL_WISHES);
 
         Page<WishlistItem> items = wishlistItemRepo.findByWishlist_WishlistId(wishlist.getWishlistId(), p);
 
@@ -97,9 +100,9 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public DTOWishlistResponse findWish(UUID customerId, long wishId) {
 
-        final Wishlist wishlist = getWishlistOrThrow(customerId, EndpointsNameMethods.FIND_WISH);
+        final Wishlist wishlist = domainLookupService.getWishlistOrThrow(customerId, EndpointsNameMethods.FIND_WISH);
 
-        final WishlistItem wishlistItem = getWishOrThrow(customerId, wishlist, wishId, EndpointsNameMethods.FIND_WISH);
+        final WishlistItem wishlistItem = domainLookupService.getWishOrThrow(customerId, wishlist, wishId, EndpointsNameMethods.FIND_WISH);
 
         centralAudit.info(customerId, EndpointsNameMethods.FIND_WISH, AuditingStatus.SUCCESSFUL,
                 AuditMessage.WISHLIST_FIND_A_WISH_SUCCESS.getMessage());
@@ -110,9 +113,9 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public void removeWish(UUID customerId, long wishId) {
 
-        final Wishlist wishlist = getWishlistOrThrow(customerId, EndpointsNameMethods.REMOVE_WISH);
+        final Wishlist wishlist = domainLookupService.getWishlistOrThrow(customerId, EndpointsNameMethods.REMOVE_WISH);
 
-        final WishlistItem wishlistItem = getWishOrThrow(customerId, wishlist, wishId, EndpointsNameMethods.REMOVE_WISH);
+        final WishlistItem wishlistItem = domainLookupService.getWishOrThrow(customerId, wishlist, wishId, EndpointsNameMethods.REMOVE_WISH);
 
         try {
             wishlistItemRepo.delete(wishlistItem);
@@ -128,7 +131,7 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public void clearWishlist(UUID customerId) {
 
-        final Wishlist wishlist = getWishlistOrThrow(customerId, EndpointsNameMethods.CLEAR_WISHLIST);
+        final Wishlist wishlist = domainLookupService.getWishlistOrThrow(customerId, EndpointsNameMethods.CLEAR_WISHLIST);
 
         try {
             int expected = wishlistItemRepo.countWishlistItems(wishlist.getWishlistId());
@@ -145,41 +148,6 @@ public class WishlistServiceImpl implements WishlistService {
 
         } catch (DataIntegrityViolationException dup){
             throw centralAudit.audit(dup, customerId, EndpointsNameMethods.CLEAR_WISHLIST, AuditingStatus.ERROR, dup.toString());
-        }
-    }
-
-    // == Private Methods ==
-
-    private Wishlist getWishlistOrThrow(UUID customerId, String method){
-        try {
-            final Wishlist wishlist = wishlistRepo.findWishlistByCustomerId(customerId).orElseThrow(
-                    () -> new NoSuchElementException("NOT_FOUND_BY_ID")
-            );
-            return wishlist;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private Product getProductOrThrow(UUID customerId, long productId, String method){
-        try {
-           final Product product = productRepo.findById(productId).orElseThrow(
-                    () -> new NoSuchElementException("The provided ID doesn't match with any available product.")
-            );
-           return product;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e,customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private WishlistItem getWishOrThrow(UUID customerId, Wishlist wishlist, long wishId, String method){
-        try {
-            final WishlistItem wishlistItem = wishlistItemRepo.findWish(wishlist.getWishlistId(), wishId).orElseThrow(
-                    () -> new NoSuchElementException("WISHLISTED_ITEM_NOT_FOUND")
-            );
-            return wishlistItem;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
         }
     }
 }

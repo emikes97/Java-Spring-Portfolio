@@ -2,6 +2,7 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.model.entity.Category;
 import commerce.eshop.core.model.entity.Product;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -9,7 +10,6 @@ import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.repository.CategoryRepo;
 import commerce.eshop.core.repository.ProductCategoryRepo;
 import commerce.eshop.core.repository.ProductRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.ProductService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.web.dto.requests.Products.DTOAddProduct;
@@ -35,6 +35,7 @@ public class ProductServiceImpl implements ProductService {
     private final SortSanitizer sortSanitizer;
     private final CentralAudit centralAudit;
     private final ProductServiceMapper productServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Whitelisting & Constraints
     /** For DTOProductResponse */
@@ -47,13 +48,15 @@ public class ProductServiceImpl implements ProductService {
     // == Constructors ==
     @Autowired
     public ProductServiceImpl(ProductRepo productRepo, CategoryRepo categoryRepo, ProductCategoryRepo productCategoryRepo,
-                              SortSanitizer sortSanitizer, CentralAudit centralAudit, ProductServiceMapper productServiceMapper){
+                              SortSanitizer sortSanitizer, CentralAudit centralAudit, ProductServiceMapper productServiceMapper,
+                              DomainLookupService domainLookupService){
         this.productRepo = productRepo;
         this.categoryRepo = categoryRepo;
         this.productCategoryRepo = productCategoryRepo;
         this.sortSanitizer = sortSanitizer;
         this.centralAudit = centralAudit;
         this.productServiceMapper = productServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
 
@@ -90,7 +93,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     @Override
     public DTOProductResponse getProduct(long id) {
-        final Product product = getProductOrThrow(id, EndpointsNameMethods.PRODUCT_GET);
+        final Product product = domainLookupService.getProductOrThrow(id, EndpointsNameMethods.PRODUCT_GET);
         return productServiceMapper.toDto(product);
     }
 
@@ -113,7 +116,7 @@ public class ProductServiceImpl implements ProductService {
             throw centralAudit.audit(illegal, null, EndpointsNameMethods.PRODUCT_INCREASE_QTY, AuditingStatus.WARNING, illegal.toString());
         }
 
-        final  Product product = getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_INCREASE_QTY);
+        final  Product product = domainLookupService.getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_INCREASE_QTY);
 
         try {
             int newStock = Math.addExact(product.getProductAvailableStock(), quantity); // overflow-safe
@@ -136,7 +139,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void decreaseQuantity(long productId, int quantity) {
 
-        final  Product product = getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_DECREASE_QTY);
+        final  Product product = domainLookupService.getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_DECREASE_QTY);
 
         if (product.getProductAvailableStock() < quantity){
             IllegalStateException illegal = new IllegalStateException("Insufficient stock: available="
@@ -159,9 +162,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void linkProduct(long productId, long categoryId) {
 
-        final Product product = getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_LINK);
+        final Product product = domainLookupService.getProductOrThrow(productId, EndpointsNameMethods.PRODUCT_LINK);
 
-        final Category category = getCategoryOrThrow(categoryId, EndpointsNameMethods.PRODUCT_LINK);
+        final Category category = domainLookupService.getCategoryOrThrow(categoryId, EndpointsNameMethods.PRODUCT_LINK);
 
         try {
             int inserted = productCategoryRepo.linkIfAbsent(productId, categoryId);
@@ -198,7 +201,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public void removeProduct(long id) {
 
-        final Product product = getProductOrThrow(id, EndpointsNameMethods.PRODUCT_REMOVE);
+        final Product product = domainLookupService.getProductOrThrow(id, EndpointsNameMethods.PRODUCT_REMOVE);
 
         try {
             productRepo.delete(product);
@@ -207,25 +210,6 @@ public class ProductServiceImpl implements ProductService {
                     AuditMessage.PRODUCT_REMOVE_SUCCESS.getMessage());
         } catch (DataIntegrityViolationException dup){
             centralAudit.audit(dup, null, EndpointsNameMethods.PRODUCT_REMOVE, AuditingStatus.ERROR, dup.toString());
-        }
-    }
-
-    // == Private Methods ==
-
-    private Product getProductOrThrow(long productId, String method){
-        try {
-            return productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, null, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private Category getCategoryOrThrow(long categoryId, String method){
-        try {
-            return categoryRepo.findById((categoryId)).orElseThrow(() ->
-                    new NoSuchElementException("Category with Category ID " + categoryId + " doesn't exists"));
-        } catch (NoSuchElementException e){
-           throw centralAudit.audit(e,null, method, AuditingStatus.WARNING, e.toString());
         }
     }
 }

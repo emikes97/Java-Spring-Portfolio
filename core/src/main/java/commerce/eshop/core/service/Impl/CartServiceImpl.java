@@ -3,6 +3,7 @@ package commerce.eshop.core.service.Impl;
 import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.CartItem;
 import commerce.eshop.core.model.entity.Product;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -40,6 +41,7 @@ public class CartServiceImpl implements CartService {
     private final CentralAudit centralAudit;
     private final CartServiceMapper cartServiceMapper;
     private final SortSanitizer sortSanitizer;
+    private final DomainLookupService domainLookupService;
 
     // == Whitelisting & Constraints
     public static final Map<String, String> CART_ITEMS_SORT_WHITELIST = Map.ofEntries(
@@ -52,13 +54,14 @@ public class CartServiceImpl implements CartService {
     // == Constructors ==
     @Autowired
     public CartServiceImpl(CartItemRepo cartItemRepo, CartRepo cartRepo, ProductRepo productRepo, CentralAudit centralAudit,
-                           CartServiceMapper cartServiceMapper, SortSanitizer sortSanitizer){
+                           CartServiceMapper cartServiceMapper, SortSanitizer sortSanitizer, DomainLookupService domainLookupService){
         this.cartItemRepo = cartItemRepo;
         this.cartRepo = cartRepo;
         this.productRepo = productRepo;
         this.centralAudit = centralAudit;
         this.cartServiceMapper = cartServiceMapper;
         this.sortSanitizer = sortSanitizer;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -67,7 +70,7 @@ public class CartServiceImpl implements CartService {
     public Page<DTOCartItemResponse> viewAllCartItems(UUID customerId, Pageable pageable) {
 
         Pageable p = sortSanitizer.sanitize(pageable, CART_ITEMS_SORT_WHITELIST, 25);
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_VIEW_ALL);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_VIEW_ALL);
         Page<CartItem> items = cartItemRepo.findByCart_CartId(cart.getCartId(), p);
         centralAudit.info(customerId, EndpointsNameMethods.CART_VIEW_ALL, AuditingStatus.SUCCESSFUL, AuditMessage.CART_VIEW_ALL_SUCCESS.getMessage());
         return items.map(cartServiceMapper::toDto);
@@ -77,8 +80,8 @@ public class CartServiceImpl implements CartService {
     @Override
     public DTOCartItemResponse findItem(UUID customerId, long productId) {
 
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_FIND_ITEM);
-        final CartItem cartItem = getCartItemOrThrow(cart.getCartId(), productId, customerId, EndpointsNameMethods.CART_FIND_ITEM);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_FIND_ITEM);
+        final CartItem cartItem = domainLookupService.getCartItemOrThrow(cart.getCartId(), productId, customerId, EndpointsNameMethods.CART_FIND_ITEM);
         centralAudit.info(customerId, EndpointsNameMethods.CART_FIND_ITEM, AuditingStatus.SUCCESSFUL, AuditMessage.CART_FIND_ITEM_SUCCESS.getMessage());
         return cartServiceMapper.toDto(cartItem);
     }
@@ -92,8 +95,8 @@ public class CartServiceImpl implements CartService {
                     EndpointsNameMethods.CART_ADD_ITEM, AuditingStatus.ERROR);
         }
 
-        final Product product = getProductOrThrow(productId, customerId, EndpointsNameMethods.CART_ADD_ITEM);
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_ADD_ITEM);
+        final Product product = domainLookupService.getProductOrThrow(productId, customerId, EndpointsNameMethods.CART_ADD_ITEM);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_ADD_ITEM);
 
         int updated = cartItemRepo.bumpQuantity(cart.getCartId(), productId, quantity, MAX_QTY);
 
@@ -123,9 +126,9 @@ public class CartServiceImpl implements CartService {
     @Override
     public void removeCartItem(UUID customerId, long productId, Integer quantity) {
 
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_REMOVE);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_REMOVE);
 
-        final CartItem cartItem = getCartItemOrThrow(cart.getCartId(), productId, customerId, EndpointsNameMethods.CART_REMOVE);
+        final CartItem cartItem = domainLookupService.getCartItemOrThrow(cart.getCartId(), productId, customerId, EndpointsNameMethods.CART_REMOVE);
 
         if (quantity == null || cartItem.getQuantity() <= quantity) {
             cartItemRepo.deleteItemByCartIdAndProductId(cart.getCartId(), productId);
@@ -152,7 +155,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public void clearCart(UUID customerId) {
 
-        final Cart cart = getCartOrThrow(customerId, EndpointsNameMethods.CART_CLEAR);
+        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.CART_CLEAR);
 
         try {
             cartItemRepo.clearCart(cart.getCartId());
@@ -161,35 +164,5 @@ public class CartServiceImpl implements CartService {
             throw centralAudit.audit(dup, customerId, EndpointsNameMethods.CART_CLEAR, AuditingStatus.ERROR, dup.toString());
         }
 
-    }
-
-    // == Private Methods ==
-
-    private Cart getCartOrThrow(UUID customerId, String method){
-        try {
-            final Cart cart = cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
-            return cart;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e,customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
-    private Product getProductOrThrow(long productId, UUID customerId, String method){
-        try {
-            final Product product = productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product doesn't exist."));
-            return product;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
-    private CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method ){
-        try{
-           final CartItem cartItem = cartItemRepo.getCartItemByCartIdAndProductId(cartId, productId).orElseThrow(
-                    () -> new NoSuchElementException("Cart Item doesn't exist"));
-           return cartItem;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
     }
 }

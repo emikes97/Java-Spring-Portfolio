@@ -2,9 +2,9 @@ package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.events.PaymentExecutionRequestEvent;
 import commerce.eshop.core.model.entity.Customer;
-import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -14,7 +14,6 @@ import commerce.eshop.core.util.enums.TransactionStatus;
 import commerce.eshop.core.repository.CustomerRepo;
 import commerce.eshop.core.repository.OrderRepo;
 import commerce.eshop.core.repository.TransactionRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.TransactionsService;
 import commerce.eshop.core.web.dto.requests.Transactions.DTOTransactionRequest;
 import commerce.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseNewCard;
@@ -41,18 +40,20 @@ public class TransactionServiceImpl implements TransactionsService {
     private final ApplicationEventPublisher publisher;
     private final CentralAudit centralAudit;
     private final TransactionServiceMapper transactionServiceMapper;
+    private final DomainLookupService domainLookupService;
 
     // == Constructors ==
     @Autowired
     public TransactionServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, TransactionRepo transactionRepo,
                                   ApplicationEventPublisher publisher, CentralAudit centralAudit,
-                                  TransactionServiceMapper transactionServiceMapper){
+                                  TransactionServiceMapper transactionServiceMapper, DomainLookupService domainLookupService){
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
         this.transactionRepo = transactionRepo;
         this.publisher = publisher;
         this.centralAudit = centralAudit;
         this.transactionServiceMapper = transactionServiceMapper;
+        this.domainLookupService = domainLookupService;
     }
 
     // == Public Methods ==
@@ -70,7 +71,7 @@ public class TransactionServiceImpl implements TransactionsService {
             throw centralAudit.audit(bad, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "MISSING_INSTRUCTION");
         }
 
-        final Order order = getOrderOrThrow(customerId, orderId, EndpointsNameMethods.TRANSACTION_PAY);
+        final Order order = domainLookupService.getOrderOrThrow(customerId, orderId, EndpointsNameMethods.TRANSACTION_PAY);
 
         // State gate (mirrors cancel rule)
         if (order.getOrderStatus() != OrderStatus.PENDING_PAYMENT) {
@@ -84,7 +85,7 @@ public class TransactionServiceImpl implements TransactionsService {
             throw centralAudit.audit(bad, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "ZERO_OR_NEGATIVE_TOTAL");
         }
 
-        final Customer customer = getCustomerOrThrow(customerId, EndpointsNameMethods.TRANSACTION_PAY);
+        final Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.TRANSACTION_PAY);
 
         Map<String, Object> snapshot = transactionServiceMapper.toSnapShot(dto.instruction());
 
@@ -132,26 +133,6 @@ public class TransactionServiceImpl implements TransactionsService {
                 transaction.getIdempotencyKey()
         ));
         centralAudit.info(customerId, EndpointsNameMethods.EVENT_PUBLISHED, AuditingStatus.SUCCESSFUL, "Transaction_Event_Published");
-    }
-
-    private Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
-        try{
-            return orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow(
-                    () -> new NoSuchElementException("The order doesn't exist")
-            );
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    private Customer getCustomerOrThrow(UUID customerId, String method){
-        try{
-            return customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("The customer with customer_id= " + customerId + " doesn't exist.")
-            );
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
     }
 
     private DTOTransactionResponse resolveWinner(Transaction winner, UUID expectedOrderId){
