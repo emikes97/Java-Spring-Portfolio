@@ -3,6 +3,7 @@ package commerce.eshop.core.service.async.internal;
 import commerce.eshop.core.events.PaymentExecutionRequestEvent;
 import commerce.eshop.core.events.PaymentSucceededOrFailed;
 import commerce.eshop.core.model.entity.Transaction;
+import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.util.enums.OrderStatus;
@@ -36,16 +37,16 @@ public class PaymentProcessor {
     private final TransactionRepo transactionRepo;
     private final OrderRepo orderRepo;
     private final ApplicationEventPublisher publisher;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
 
     @Autowired
     public PaymentProcessor(PaymentProviderClient paymentProviderClient, TransactionRepo transactionRepo, OrderRepo orderRepo,
-                            ApplicationEventPublisher publisher, AuditingService auditingService){
+                            ApplicationEventPublisher publisher, CentralAudit centralAudit){
         this.paymentProviderClient = paymentProviderClient;
         this.transactionRepo = transactionRepo;
         this.orderRepo = orderRepo;
         this.publisher = publisher;
-        this.auditingService = auditingService;
+        this.centralAudit = centralAudit;
     }
 
     @Async("asyncExecutor")
@@ -59,18 +60,17 @@ public class PaymentProcessor {
             tr = transactionRepo.findByIdempotencyKeyForUpdate(paymentExecutionRequestEvent.idemKey())
                     .orElseThrow(() -> new IllegalArgumentException("No transaction with idemKey = " + paymentExecutionRequestEvent.idemKey()));
         } catch (IllegalArgumentException ex){
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.WARNING, ex.toString());
-            throw ex;
+            throw centralAudit.audit(ex, paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.WARNING, ex.toString());
         }
 
 
         if(!paymentExecutionRequestEvent.orderId().equals(tr.getOrder().getOrderId())){
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
+            centralAudit.warn(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
                     "Transaction IDs mismatch");
             return;
         }
         if (tr.getStatus() == TransactionStatus.SUCCESSFUL || tr.getStatus() == TransactionStatus.FAILED){
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Transaction Status Terminal");
             return;
         }
@@ -95,18 +95,18 @@ public class PaymentProcessor {
                 }
 
                 default -> {
-                    auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.WARNING,
+                    throw centralAudit.audit(new IllegalArgumentException("Unsupported payment method: " + paymentExecutionRequestEvent.methodType()),
+                            paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.WARNING,
                             "Unsupported payment method");
-                    throw new IllegalArgumentException("Unsupported payment method: " + paymentExecutionRequestEvent.methodType());
                 }
             }
         } catch (DataIntegrityViolationException err){
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
+            centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
                     err.toString());
             showErrorMessage(providerChargeResult, err, tr);
             return;
         } catch (Exception ex) {
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
+            centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
                     ex.toString());
             showErrorMessage(providerChargeResult, ex, tr);
             return;
@@ -119,7 +119,7 @@ public class PaymentProcessor {
             log.info("Transaction: " + tr.getTransactionId() + "was completed");
             transactionRepo.save(tr);
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAID, OffsetDateTime.now(), tr.getOrder().getOrderId()));
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
+            centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Transaction Succeeded");
         } else {
             tr.setStatus(TransactionStatus.FAILED);
@@ -127,7 +127,7 @@ public class PaymentProcessor {
             tr.setProviderReference(providerChargeResult.providerReference());
             log.info("Transaction: " + tr.getTransactionId() + "failed");
             transactionRepo.save(tr);
-            auditingService.log(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.FAILED,
+            centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.FAILED,
                     "Transaction Failed");
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAYMENT_FAILED, OffsetDateTime.now(), tr.getOrder().getOrderId()));
         }
