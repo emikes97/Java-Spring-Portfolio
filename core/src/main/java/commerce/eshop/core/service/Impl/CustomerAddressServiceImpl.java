@@ -9,7 +9,6 @@ import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.repository.CustomerAddrRepo;
 import commerce.eshop.core.repository.CustomerRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.CustomerAddressService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.util.sort.CustomerAddrSort;
