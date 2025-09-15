@@ -22,8 +22,8 @@ CREATE TYPE order_status       AS ENUM ('PENDING_PAYMENT','PAID','PAYMENT_FAILED
 CREATE TYPE transaction_status AS ENUM ('PENDING','SUCCESSFUL','FAILED');
 CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR', 'WARNING');
 CREATE TYPE email_status       AS ENUM ('QUEUED','SENT', 'SENDING', 'FAILED');
-CREATE TYPE email_kind         AS ENUM ('ORDER_CONFIRMATION', 'ORDER_CANCEL_CONFIRMATION', 'PAYMENT_CONFIRMATION', 'PAYMENT_FAILED_CONFIRMATION',
-'ACCOUNT_UPDATE', 'PASSWORD_CHANGE', 'ACCOUNT_CREATED')
+CREATE TYPE email_kind         AS ENUM ('ORDER_CONFIRMATION', 'ORDER_CANCEL_CONFIRMATION', 'PAYMENT_CONFIRMATION', 'PAYMENT_FAILED_CONFIRMATION','ACCOUNT_UPDATE',
+ 'PASSWORD_CHANGE', 'ACCOUNT_CREATED');
 
 -- ====================================
 --         Clear all tables
@@ -40,6 +40,9 @@ DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS order_item CASCADE;
 DROP TABLE IF EXISTS transactions CASCADE;
 DROP TABLE IF EXISTS auditing CASCADE;
+DROP TABLE IF EXISTS wishlist CASCADE;
+DROP TABLE IF EXISTS wishlist_item CASCADE;
+DROP TABLE IF EXISTS emails_sent CASCADE;
 
 -- =====================================
 -- Customers & Addresses & PaymentMethod
@@ -229,7 +232,7 @@ create table wishlist_item(
     product_id BIGINT NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
     product_name varchar(200) NOT NULL,
     added_at timestamptz NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_wishlist_product UNIQUE (wishlist_id, product_id);
+    CONSTRAINT uq_wishlist_product UNIQUE (wishlist_id, product_id)
 );
 
 create table emails_sent(
