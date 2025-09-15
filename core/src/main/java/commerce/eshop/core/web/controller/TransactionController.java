@@ -29,6 +29,7 @@ public class TransactionController {
     ///       "customerPaymentMethodId": "d41a102b-dda1-403a-9897-3eaeff6d0c49"
     ///     }
     ///   }'
+    ///
     /// Or
     ///
     /// curl -X POST "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123:RANDOM" \
