@@ -1,4 +1,4 @@
-package commerce.eshop.core.util.email.templating;
+package commerce.eshop.core.email.templating;
 
 import java.util.Map;
 import java.util.regex.Matcher;

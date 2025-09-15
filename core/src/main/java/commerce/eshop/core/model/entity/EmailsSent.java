@@ -1,7 +1,7 @@
 package commerce.eshop.core.model.entity;
 
-import commerce.eshop.core.util.enums.EmailKind;
-import commerce.eshop.core.util.enums.EmailStatus;
+import commerce.eshop.core.email.enums.EmailKind;
+import commerce.eshop.core.email.enums.EmailStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

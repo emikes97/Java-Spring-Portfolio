@@ -1,6 +1,6 @@
 package commerce.eshop.core.events;
 
-import commerce.eshop.core.util.enums.EmailKind;
+import commerce.eshop.core.email.enums.EmailKind;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

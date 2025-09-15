@@ -1,18 +1,19 @@
 package commerce.eshop.core.service.Impl;
 
+import commerce.eshop.core.email.EmailComposer;
 import commerce.eshop.core.events.EmailEventRequest;
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.constants.EmailBody;
-import commerce.eshop.core.util.constants.EmailSubject;
+import commerce.eshop.core.email.constants.EmailBody;
+import commerce.eshop.core.email.constants.EmailSubject;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.service.CustomerService;
 import commerce.eshop.core.util.SortSanitizer;
-import commerce.eshop.core.util.enums.EmailKind;
+import commerce.eshop.core.email.enums.EmailKind;
 import commerce.eshop.core.util.sort.CustomerSort;
 import commerce.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerce.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
@@ -48,13 +49,14 @@ public class CustomerServiceImpl implements CustomerService {
     private final WishlistRepo wishlistRepo;
     private final DomainLookupService domainLookupService;
     private final ApplicationEventPublisher publisher;
+    private final EmailComposer emailComposer;
 
     // == Constructors ==
     @Autowired
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
                                PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, CentralAudit centralAudit,
                                CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo, DomainLookupService domainLookupService,
-                               ApplicationEventPublisher publisher) {
+                               ApplicationEventPublisher publisher, EmailComposer emailComposer) {
 
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
@@ -67,6 +69,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.wishlistRepo = wishlistRepo;
         this.domainLookupService = domainLookupService;
         this.publisher = publisher;
+        this.emailComposer = emailComposer;
     }
 
     // == Public Methods ==
@@ -116,9 +119,9 @@ public class CustomerServiceImpl implements CustomerService {
         // 6) Success
         centralAudit.info(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
                 AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
-        publisher.publishEvent(new EmailEventRequest(customer.getCustomerId(),
-                null, customer.getName(), customer.getEmail(), EmailKind.ACCOUNT_UPDATE, EmailSubject.CUSTOMER_ACCOUNT_CREATED,
-                EmailBody.CUSTOMER_ACCOUNT_CREATED));
+
+        var event = emailComposer.accountCreated(customer, "https://example.com/verify?token=...");
+        publisher.publishEvent(event);
         return customerServiceMapper.toDtoCustomerRes(customer);
     }
 
@@ -196,6 +199,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setName(trimmed);
         saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_NAME, AuditMessage.UPDATE_NAME_SUCCESS.getMessage());
+        publish(customer, "Name");
     }
 
     @Transactional
@@ -218,6 +222,7 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setSurname(trimmed);
         saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_SURNAME, AuditMessage.UPDATE_SURNAME_SUCCESS.getMessage());
+        publish(customer, "Surname");
     }
 
     @Transactional
@@ -247,6 +252,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_FULLNAME, AuditMessage.UPDATE_FULLNAME_SUCCESS.getMessage());
+        publish(customer, "Name & Surname");
     }
 
     @Transactional
@@ -269,11 +275,14 @@ public class CustomerServiceImpl implements CustomerService {
 
         customer.setUsername(trimmed);
         saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_USERNAME, AuditMessage.UPDATE_USERNAME_SUCCESS.getMessage());
+        publish(customer, "username");
     }
 
     @Transactional
     @Override
     public void updateUserPassword(UUID customerId, String currentPassword, String newPassword) {
+        EmailEventRequest event = null;
+
         if (customerId == null) {
             IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
             throw centralAudit.audit(illegal, null, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
@@ -282,23 +291,29 @@ public class CustomerServiceImpl implements CustomerService {
         requireNotBlank(currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD, "INVALID_INPUT", "Missing current password.");
         requireNotBlank(newPassword,     customerId, EndpointsNameMethods.UPDATE_PASSWORD, "INVALID_INPUT", "Missing new password.");
 
+        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
+        verifyPasswordOrThrow(customer, currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD);
+
         // Reject easy passwords
         if (newPassword.length() < 8) {
             IllegalArgumentException illegal = new IllegalArgumentException("Password too short.");
+            event = emailComposer.passwordUpdated(customer, false);
+            publisher.publishEvent(event);
             throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "WEAK_PASSWORD");
         }
-
-        Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
-        verifyPasswordOrThrow(customer, currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD);
 
         // Prevent reuse
         if (passwordEncoder.matches(newPassword, customer.getPasswordHash())) {
             IllegalArgumentException illegal = new IllegalArgumentException("New password must be different from current.");
+            event = emailComposer.passwordUpdated(customer, false);
+            publisher.publishEvent(event);
             throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "REUSED_PASSWORD");
         }
 
         customer.setPasswordHash(passwordEncoder.encode(newPassword));
         saveAndAudit(customer, customerId, EndpointsNameMethods.UPDATE_PASSWORD, AuditMessage.UPDATE_PASSWORD_SUCCESS.getMessage());
+        event = emailComposer.passwordUpdated(customer, true);
+        publisher.publishEvent(event);
     }
 
     // == Private Methods ==
@@ -325,5 +340,11 @@ public class CustomerServiceImpl implements CustomerService {
         } catch (DataIntegrityViolationException dup) {
             throw centralAudit.audit(dup, cid, method, AuditingStatus.ERROR, dup.toString());
         }
+    }
+
+    /** publish event for changes **/
+    private void publish(Customer customer, String changed){
+        var event = emailComposer.accountUpdated(customer, changed);
+        publisher.publishEvent(event);
     }
 }

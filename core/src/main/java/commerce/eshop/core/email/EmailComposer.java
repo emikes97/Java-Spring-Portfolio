@@ -1,15 +1,15 @@
-package commerce.eshop.core.util.email;
+package commerce.eshop.core.email;
 
 import commerce.eshop.core.events.EmailEventRequest;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
-import commerce.eshop.core.util.constants.EmailBody;
-import commerce.eshop.core.util.constants.EmailSubject;
-import commerce.eshop.core.util.email.properties.EmailBrandProps;
-import commerce.eshop.core.util.email.templating.TemplateEngine;
-import commerce.eshop.core.util.email.templating.Vars;
-import commerce.eshop.core.util.enums.EmailKind;
+import commerce.eshop.core.email.constants.EmailBody;
+import commerce.eshop.core.email.constants.EmailSubject;
+import commerce.eshop.core.email.properties.EmailBrandProps;
+import commerce.eshop.core.email.templating.TemplateEngine;
+import commerce.eshop.core.email.templating.Vars;
+import commerce.eshop.core.email.enums.EmailKind;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

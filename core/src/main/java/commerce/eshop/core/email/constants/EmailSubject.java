@@ -1,4 +1,4 @@
-package commerce.eshop.core.util.constants;
+package commerce.eshop.core.email.constants;
 
 public final class EmailSubject {
 

@@ -1,6 +1,6 @@
 package commerce.eshop.core.config;
 
-import commerce.eshop.core.util.email.properties.EmailBrandProps;
+import commerce.eshop.core.email.properties.EmailBrandProps;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 

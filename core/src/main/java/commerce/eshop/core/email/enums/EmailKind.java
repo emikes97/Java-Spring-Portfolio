@@ -1,4 +1,4 @@
-package commerce.eshop.core.util.enums;
+package commerce.eshop.core.email.enums;
 
 public enum EmailKind {
     ORDER_CONFIRMATION,

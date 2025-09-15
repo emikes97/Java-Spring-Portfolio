@@ -1,4 +1,4 @@
-package commerce.eshop.core.util.email.properties;
+package commerce.eshop.core.email.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
