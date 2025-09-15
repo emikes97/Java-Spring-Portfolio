@@ -1,6 +1,5 @@
 package commerce.eshop.core.util;
 
-import commerce.eshop.core.model.entity.Auditing;
 import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import jakarta.annotation.Nullable;
@@ -21,11 +20,12 @@ public class SortSanitizer {
 
     // == Fields ==
     private static final  int DEFAULT_MAX_PAGE_SIZE = 100;
-    private final AuditingService auditingService;
+    private final CentralAudit centralAudit;
 
     // == Constructors ==
-    public SortSanitizer(AuditingService auditingService){
-        this.auditingService = auditingService;
+    @Autowired
+    public SortSanitizer(CentralAudit centralAudit){
+        this.centralAudit = centralAudit;
     }
 
     // == Public Methods ==
@@ -69,9 +69,8 @@ public class SortSanitizer {
             String apiProp = o.getProperty();
             String entityProp = allowedMap.get(apiProp);
             if(entityProp == null) {
-                auditingService.log(null, "Sort_Sanitizer_Class", AuditingStatus.ERROR, "Invalid sort property: " + apiProp);
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Invalid sort property: " + apiProp);
+                throw centralAudit.audit(new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Invalid sort property: " + apiProp), null, "Sort_Sanitizer_Class", AuditingStatus.ERROR, "Invalid sort property: " + apiProp);
             }
 
             // Start with direction + mapped property

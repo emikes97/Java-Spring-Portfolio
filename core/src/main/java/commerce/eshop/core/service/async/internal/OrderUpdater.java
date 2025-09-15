@@ -8,7 +8,6 @@ import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.util.enums.OrderStatus;
 import commerce.eshop.core.repository.OrderRepo;
-import commerce.eshop.core.service.AuditingService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;

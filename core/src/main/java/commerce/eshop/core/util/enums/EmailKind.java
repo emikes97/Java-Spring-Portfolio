@@ -1,0 +1,10 @@
+package commerce.eshop.core.util.enums;
+
+public enum EmailKind {
+    ORDER_CONFIRMATION,
+    ORDER_CANCEL_CONFIRMATION,
+    PAYMENT_CONFIRMATION,
+    PAYMENT_FAILED_CONFIRMATION,
+    ACCOUNT_UPDATE,
+    PASSWORD_CHANGE
+}

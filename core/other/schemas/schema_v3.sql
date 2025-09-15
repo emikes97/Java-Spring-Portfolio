@@ -14,11 +14,15 @@ DROP TYPE IF EXISTS token_status       CASCADE;
 DROP TYPE IF EXISTS order_status       CASCADE;
 DROP TYPE IF EXISTS transaction_status CASCADE;
 DROP TYPE IF EXISTS auditing_status    CASCADE;
+DROP TYPE IF EXISTS email_status       CASCADE;
+DROP TYPE IF EXISTS email_kind         CASCADE;
 
 CREATE TYPE token_status       AS ENUM ('PENDING', 'ACTIVE', 'PROCESSING', 'FAILED');
 CREATE TYPE order_status       AS ENUM ('PENDING_PAYMENT','PAID','PAYMENT_FAILED','CANCELLED','EXPIRED');
 CREATE TYPE transaction_status AS ENUM ('PENDING','SUCCESSFUL','FAILED');
 CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR', 'WARNING');
+CREATE TYPE email_status       AS ENUM ('QUEUED','SENT','FAILED');
+CREATE TYPE email_kind         AS ENUM ('ORDER_CONFIRMATION', 'ORDER_CANCEL_CONFIRMATION', 'PAYMENT_CONFIRMATION', 'PAYMENT_FAILED_CONFIRMATION', 'ACCOUNT_UPDATE', 'PASSWORD_CHANGE')
 
 -- ====================================
 --         Clear all tables
@@ -228,4 +232,16 @@ create table wishlist_item(
 );
 
 create table emails_sent(
+    email_id UUID PRIMARY KEY,
+    customer_id UUID,
+    order_id UUID,
+    payment_id UUID,
+    customer_name varchar(100),
+    to_email CITEXT NOT NULL,
+    status email_status NOT NULL default 'QUEUED',
+    type email_kind NOT NULL,
+    subject TEXT NOT NULL,
+    email_text TEXT NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT NOW(),
+    sent_at timestamptz
 );
