@@ -1,8 +1,13 @@
 package commerce.eshop.core.service.async.internal;
 
+import commerce.eshop.core.email.EmailComposer;
+import commerce.eshop.core.events.EmailEventRequest;
 import commerce.eshop.core.events.PaymentExecutionRequestEvent;
 import commerce.eshop.core.events.PaymentSucceededOrFailed;
+import commerce.eshop.core.model.entity.Customer;
+import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
+import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;
@@ -33,22 +38,33 @@ import java.util.UUID;
 @Slf4j
 public class PaymentProcessor {
 
+    // == Fields ==
+
     private final PaymentProviderClient paymentProviderClient;
     private final TransactionRepo transactionRepo;
     private final OrderRepo orderRepo;
     private final ApplicationEventPublisher publisher;
     private final CentralAudit centralAudit;
+    private final EmailComposer emailComposer;
+    private final DomainLookupService domainLookupService;
+
+    // == Constructors ==
 
     @Autowired
     public PaymentProcessor(PaymentProviderClient paymentProviderClient, TransactionRepo transactionRepo, OrderRepo orderRepo,
-                            ApplicationEventPublisher publisher, CentralAudit centralAudit){
+                            ApplicationEventPublisher publisher, CentralAudit centralAudit, EmailComposer emailComposer,
+                            DomainLookupService domainLookupService){
+
         this.paymentProviderClient = paymentProviderClient;
         this.transactionRepo = transactionRepo;
         this.orderRepo = orderRepo;
         this.publisher = publisher;
         this.centralAudit = centralAudit;
+        this.emailComposer = emailComposer;
+        this.domainLookupService = domainLookupService;
     }
 
+    // == Public Methods ==
     @Async("asyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -100,11 +116,6 @@ public class PaymentProcessor {
                             "Unsupported payment method");
                 }
             }
-        } catch (DataIntegrityViolationException err){
-            centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
-                    err.toString());
-            showErrorMessage(providerChargeResult, err, tr);
-            return;
         } catch (Exception ex) {
             centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.ERROR,
                     ex.toString());
@@ -119,6 +130,7 @@ public class PaymentProcessor {
             log.info("Transaction: " + tr.getTransactionId() + "was completed");
             transactionRepo.save(tr);
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAID, OffsetDateTime.now(), tr.getOrder().getOrderId()));
+            publishPaymentEmail(paymentExecutionRequestEvent, tr, providerChargeResult.successful());
             centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Transaction Succeeded");
         } else {
@@ -130,8 +142,12 @@ public class PaymentProcessor {
             centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.FAILED,
                     "Transaction Failed");
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAYMENT_FAILED, OffsetDateTime.now(), tr.getOrder().getOrderId()));
+            publishPaymentEmail(paymentExecutionRequestEvent, tr, providerChargeResult.successful());
         }
     }
+
+
+    // == Private Methods ==
 
     private void showErrorMessage(ProviderChargeResult providerChargeResult, Exception exception, Transaction tr){
         if (providerChargeResult == null) {
@@ -151,5 +167,17 @@ public class PaymentProcessor {
         if (o instanceof Integer i) return i;
         if (o instanceof Number n) return n.intValue();
         return Integer.parseInt(o.toString());
+    }
+
+    private void publishPaymentEmail(PaymentExecutionRequestEvent pm, Transaction tr, Boolean successful){
+        Customer customer = domainLookupService.getCustomerOrThrow(pm.customerId(), EndpointsNameMethods.GET_PROFILE_BY_ID);
+        Order order = domainLookupService.getOrderOrThrow(customer.getCustomerId(), pm.orderId(), EndpointsNameMethods.ORDER_VIEW);
+        EmailEventRequest event = null;
+        if(successful){
+            event = emailComposer.paymentConfirmed(customer, order, tr, tr.getTotalOutstanding(), "Euro");
+        } else {
+            event = emailComposer.paymentFailed(customer, order, tr, "Transaction Failed");
+        }
+        publisher.publishEvent(event);
     }
 }

@@ -19,7 +19,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"phoneNumber\": \"+30647532317\",\r\n  \"email\": \"dib@example.com\",\r\n  \"userName\": \"liakopoulos\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon\",\r\n  \"surname\": \"Dubaious\"\r\n}",
+									"raw": "{\r\n  \"phoneNumber\": \"+30647732317\",\r\n  \"email\": \"dib3@example.com\",\r\n  \"userName\": \"liakopoulos3\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon3\",\r\n  \"surname\": \"Dubaious3\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -60,7 +60,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4 ",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -70,7 +70,7 @@
 										"api",
 										"v1",
 										"customers",
-										"5305688f-2c42-4f7f-9514-ce46dc310ba4 "
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f"
 									],
 									"query": [
 										{
@@ -385,7 +385,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4 /addresses",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/addresses",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -395,7 +395,7 @@
 										"api",
 										"v1",
 										"customers",
-										"5305688f-2c42-4f7f-9514-ce46dc310ba4 ",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
 										"addresses"
 									]
 								}
@@ -561,7 +561,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/payment-methods",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/payment-methods",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -571,7 +571,7 @@
 										"api",
 										"v1",
 										"customers",
-										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
 										"payment-methods"
 									]
 								}
@@ -589,7 +589,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/payment-methods?page=0&size=10&sort=createdAt,desc",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/payment-methods?page=0&size=10&sort=",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -599,7 +599,7 @@
 										"api",
 										"v1",
 										"customers",
-										"00000000-0000-0000-0000-000000000101",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
 										"payment-methods"
 									],
 									"query": [
@@ -613,7 +613,7 @@
 										},
 										{
 											"key": "sort",
-											"value": "createdAt,desc"
+											"value": ""
 										}
 									]
 								}
@@ -626,7 +626,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/03b9d0fb-2a6c-4c9f-997b-3e0fed17465c/payment-methods/44b83e5b-8907-4698-9589-dbba789d1778",
+									"raw": "http://localhost:8080/api/v1/customers/ff05e33f-6473-454b-b079-fcc29d6b9504/payment-methods/44b83e5b-8907-4698-9589-dbba789d1778",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -636,7 +636,7 @@
 										"api",
 										"v1",
 										"customers",
-										"03b9d0fb-2a6c-4c9f-997b-3e0fed17465c",
+										"ff05e33f-6473-454b-b079-fcc29d6b9504",
 										"payment-methods",
 										"44b83e5b-8907-4698-9589-dbba789d1778"
 									]
@@ -736,7 +736,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/cart",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/cart",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -746,7 +746,7 @@
 										"api",
 										"v1",
 										"customers",
-										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
 										"cart"
 									]
 								}
@@ -860,7 +860,7 @@
 								"method": "DELETE",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/00000000-0000-0000-0000-000000000101/cart",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/cart",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -870,7 +870,7 @@
 										"api",
 										"v1",
 										"customers",
-										"00000000-0000-0000-0000-000000000101",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
 										"cart"
 									]
 								}
@@ -1083,7 +1083,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/products/3",
+									"raw": "http://localhost:8080/api/v1/products/1",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -1093,7 +1093,7 @@
 										"api",
 										"v1",
 										"products",
-										"3"
+										"1"
 									]
 								}
 							},
@@ -1143,7 +1143,7 @@
 								"method": "PUT",
 								"header": [],
 								"url": {
-									"raw": "http://localhost:8080/api/v1/products/3/categories/7",
+									"raw": "http://localhost:8080/api/v1/products/1/categories/1",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -1153,9 +1153,9 @@
 										"api",
 										"v1",
 										"products",
-										"3",
+										"1",
 										"categories",
-										"7"
+										"1"
 									]
 								}
 							},
@@ -1237,7 +1237,7 @@
 									}
 								},
 								"url": {
-									"raw": "http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/checkout",
+									"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/checkout",
 									"protocol": "http",
 									"host": [
 										"localhost"
@@ -1247,7 +1247,7 @@
 										"api",
 										"v1",
 										"customers",
-										"5305688f-2c42-4f7f-9514-ce46dc310ba4",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
 										"checkout"
 									]
 								}
@@ -1322,7 +1322,38 @@
 							"name": "NewCardPay - Successful",
 							"request": {
 								"method": "POST",
-								"header": []
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\"instruction\": {\r\n    \"type\": \"USE_NEW_CARD\",\r\n    \"panMasked\": \"411111******1111\",\r\n    \"brand\": \"VISA\",\r\n    \"expMonth\": 12,\r\n    \"expYear\": 2028,\r\n    \"holderName\": \"Test User\",\r\n    \"cvc\": \"123\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"payout",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+										"order",
+										"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+									],
+									"query": [
+										{
+											"key": "idemKey",
+											"value": "abc-123"
+										}
+									]
+								}
 							},
 							"response": []
 						},
@@ -1330,21 +1361,376 @@
 							"name": "SavedCardPay - Successful",
 							"request": {
 								"method": "POST",
-								"header": []
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"instruction\": {\r\n      \"type\": \"USE_SAVED_METHOD\",\r\n      \"customerPaymentMethodId\": \"b141abeb-0819-4ff2-a93b-378714ae5d55\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"payout",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+										"order",
+										"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+									],
+									"query": [
+										{
+											"key": "idemKey",
+											"value": "abc-123"
+										}
+									]
+								}
 							},
 							"response": []
-						},
+						}
+					]
+				},
+				{
+					"name": "Post-Unsuccessful",
+					"item": [
 						{
 							"name": "NewCardPay - UnSuccessful",
 							"request": {
 								"method": "POST",
-								"header": []
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\"instruction\": {\r\n    \"type\": \"USE_NEW_CARD\",\r\n    \"panMasked\": \"411111******1111\",\r\n    \"brand\": \"VISA\",\r\n    \"expMonth\": 12,\r\n    \"expYear\": 2028,\r\n    \"holderName\": \"Test User\",\r\n    \"cvc\": \"123\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123:FAIL",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"payout",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+										"order",
+										"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+									],
+									"query": [
+										{
+											"key": "idemKey",
+											"value": "abc-123:FAIL"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "SavedCardPay - UnSuccessful",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"instruction\": {\r\n      \"type\": \"USE_SAVED_METHOD\",\r\n      \"customerPaymentMethodId\": \"b141abeb-0819-4ff2-a93b-378714ae5d55\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"payout",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+										"order",
+										"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+									],
+									"query": [
+										{
+											"key": "idemKey",
+											"value": "abc-123"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Post-Random",
+					"item": [
+						{
+							"name": "NewCardPay - Random",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"instruction\": {\r\n      \"type\": \"USE_NEW_CARD\",\r\n      \"panMasked\": \"555555******4444\",\r\n      \"brand\": \"MASTERCARD\",\r\n      \"expMonth\": 11,\r\n      \"expYear\": 2029,\r\n      \"holderName\": \"Test User\",\r\n      \"cvc\": \"321\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123:RANDOM",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"payout",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+										"order",
+										"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+									],
+									"query": [
+										{
+											"key": "idemKey",
+											"value": "abc-123:RANDOM"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "SavedCardPay - Random",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"instruction\": {\r\n      \"type\": \"USE_SAVED_METHOD\",\r\n      \"customerPaymentMethodId\": \"b141abeb-0819-4ff2-a93b-378714ae5d55\"\r\n    }\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"payout",
+										"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+										"order",
+										"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+									],
+									"query": [
+										{
+											"key": "idemKey",
+											"value": "abc-123"
+										}
+									]
+								}
 							},
 							"response": []
 						}
 					]
 				}
 			]
+		},
+		{
+			"name": "Wishlist",
+			"item": [
+				{
+					"name": "POST",
+					"item": [
+						{
+							"name": "AddWish",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/{CUSTOMER_ID}/wishlist/items?productId=123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"{CUSTOMER_ID}",
+										"wishlist",
+										"items"
+									],
+									"query": [
+										{
+											"key": "productId",
+											"value": "123"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "GET",
+					"item": [
+						{
+							"name": "FindAllWishes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/{CUSTOMER_ID}/wishlist/items?page=0&size=20&sort=createdAt,desc",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"{CUSTOMER_ID}",
+										"wishlist",
+										"items"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "0"
+										},
+										{
+											"key": "size",
+											"value": "20"
+										},
+										{
+											"key": "sort",
+											"value": "createdAt,desc"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "FindWish",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/{CUSTOMER_ID}/wishlist/items/123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"{CUSTOMER_ID}",
+										"wishlist",
+										"items",
+										"123"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "DELETE",
+					"item": [
+						{
+							"name": "RemoveWish",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/{CUSTOMER_ID}/wishlist/items/123",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"{CUSTOMER_ID}",
+										"wishlist",
+										"items",
+										"123"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "RemoveAllWishes",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/customers/{CUSTOMER_ID}/wishlist/items",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"customers",
+										"{CUSTOMER_ID}",
+										"wishlist",
+										"items"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Test_1",
+			"item": []
 		}
 	]
 }

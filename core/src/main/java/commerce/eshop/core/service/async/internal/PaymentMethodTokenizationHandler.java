@@ -57,15 +57,15 @@ public class PaymentMethodTokenizationHandler {
             throw centralAudit.audit(e, paymentMethodCreatedEvent.customerId(), EndpointsNameMethods.TOKENIZATION_ASYNC, AuditingStatus.WARNING, e.toString());
         }
 
-        // idempotency guard: process only if it's PROCESSING.
-        if(paymentMethod.getTokenStatus() != TokenStatus.PROCESSING){
+        // Process only when it's freshly created (PENDING). Otherwise skip.
+        if(paymentMethod.getTokenStatus() != TokenStatus.PENDING){
             log.info("Skip tokenization, status={}", paymentMethod.getTokenStatus());
             centralAudit.info(paymentMethodCreatedEvent.customerId(), EndpointsNameMethods.TOKENIZATION_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Tokenization skipped");
             return; // Early return
         }
 
-        // Try to become the processor
+        // Try to become the processor (optimistic lock)
         try {
             paymentMethod.setTokenStatus(TokenStatus.PROCESSING);
             customerPaymentMethodRepo.flush(); // will throw if another worker updated the row (version changed)

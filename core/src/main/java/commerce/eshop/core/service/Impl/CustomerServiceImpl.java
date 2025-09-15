@@ -6,14 +6,11 @@ import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.email.constants.EmailBody;
-import commerce.eshop.core.email.constants.EmailSubject;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.service.CustomerService;
 import commerce.eshop.core.util.SortSanitizer;
-import commerce.eshop.core.email.enums.EmailKind;
 import commerce.eshop.core.util.sort.CustomerSort;
 import commerce.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerce.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
@@ -95,7 +92,6 @@ public class CustomerServiceImpl implements CustomerService {
         try {
             customerRepo.saveAndFlush(customer);
         } catch (DataIntegrityViolationException dup) {
-            // No stable UUID yet → don't attach a null customerId in audit context
             log.warn("CREATE_USER failed (duplicate/constraint) email={} phone={}", dto.email(), dto.phoneNumber(), dup);
             throw centralAudit.audit(dup, null, EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
         }

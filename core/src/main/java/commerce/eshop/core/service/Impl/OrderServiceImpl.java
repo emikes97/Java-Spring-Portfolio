@@ -1,5 +1,6 @@
 package commerce.eshop.core.service.Impl;
 
+import commerce.eshop.core.email.EmailComposer;
 import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
@@ -19,6 +20,7 @@ import commerce.eshop.core.web.dto.response.Order.DTOOrderPlacedResponse;
 import commerce.eshop.core.web.mapper.OrderServiceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.http.HttpStatus;
@@ -44,12 +46,15 @@ public class OrderServiceImpl implements OrderService {
     private final CentralAudit centralAudit;
     private final OrderServiceMapper orderServiceMapper;
     private final DomainLookupService domainLookupService;
+    private final ApplicationEventPublisher publisher;
+    private final EmailComposer emailComposer;
 
     // == Constructors ==
     @Autowired
     public OrderServiceImpl(CustomerRepo customerRepo, CartItemRepo cartItemRepo, CartRepo cartRepo, OrderItemRepo orderItemRepo,
                             OrderRepo orderRepo, CustomerAddrRepo customerAddrRepo, CustomerPaymentMethodRepo customerPaymentMethodRepo,
-                            CentralAudit centralAudit, OrderServiceMapper orderServiceMapper, DomainLookupService domainLookupService){
+                            CentralAudit centralAudit, OrderServiceMapper orderServiceMapper, DomainLookupService domainLookupService,
+                            ApplicationEventPublisher publisher, EmailComposer emailComposer){
 
         this.customerRepo = customerRepo;
         this.cartItemRepo = cartItemRepo;
@@ -61,6 +66,8 @@ public class OrderServiceImpl implements OrderService {
         this.centralAudit = centralAudit;
         this.orderServiceMapper = orderServiceMapper;
         this.domainLookupService = domainLookupService;
+        this.emailComposer = emailComposer;
+        this.publisher = publisher;
     }
 
     // == Public Methods ==
@@ -122,6 +129,8 @@ public class OrderServiceImpl implements OrderService {
             orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
             orderItemRepo.clearCart(cart.getCartId());
             centralAudit.info(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_PLACE_SUCCESS.getMessage());
+            var event = emailComposer.orderConfirmed(customer, order, order.getTotalOutstanding(), "Euro");
+            publisher.publishEvent(event);
             return orderServiceMapper.toDto(order);
         } catch (DataIntegrityViolationException dub){
            throw centralAudit.audit(dub, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, dub.toString());
@@ -162,6 +171,9 @@ public class OrderServiceImpl implements OrderService {
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepo.saveAndFlush(order);
             centralAudit.info(customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_CANCEL_SUCCESS.getMessage());
+            Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID);
+            var event = emailComposer.orderCancelled(customer, order);
+            publisher.publishEvent(event);
         } catch (DataIntegrityViolationException dup){
             throw centralAudit.audit(dup, customerId, EndpointsNameMethods.ORDER_CANCEL, AuditingStatus.ERROR, dup.toString());
         }
