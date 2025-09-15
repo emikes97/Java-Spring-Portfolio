@@ -1,14 +1,18 @@
 package commerce.eshop.core.service.Impl;
 
+import commerce.eshop.core.events.EmailEventRequest;
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
+import commerce.eshop.core.util.constants.EmailBody;
+import commerce.eshop.core.util.constants.EmailSubject;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.service.CustomerService;
 import commerce.eshop.core.util.SortSanitizer;
+import commerce.eshop.core.util.enums.EmailKind;
 import commerce.eshop.core.util.sort.CustomerSort;
 import commerce.eshop.core.web.dto.requests.Customer.DTOCustomerCreateUser;
 import commerce.eshop.core.web.dto.response.Customer.DTOCustomerCartItemResponse;
@@ -17,6 +21,7 @@ import commerce.eshop.core.web.dto.response.Customer.DTOCustomerResponse;
 import commerce.eshop.core.web.mapper.CustomerServiceMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,12 +47,14 @@ public class CustomerServiceImpl implements CustomerService {
     private final CustomerServiceMapper customerServiceMapper;
     private final WishlistRepo wishlistRepo;
     private final DomainLookupService domainLookupService;
+    private final ApplicationEventPublisher publisher;
 
     // == Constructors ==
     @Autowired
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
                                PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, CentralAudit centralAudit,
-                               CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo, DomainLookupService domainLookupService) {
+                               CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo, DomainLookupService domainLookupService,
+                               ApplicationEventPublisher publisher) {
 
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
@@ -59,6 +66,7 @@ public class CustomerServiceImpl implements CustomerService {
         this.customerServiceMapper = customerServiceMapper;
         this.wishlistRepo = wishlistRepo;
         this.domainLookupService = domainLookupService;
+        this.publisher = publisher;
     }
 
     // == Public Methods ==
@@ -108,6 +116,9 @@ public class CustomerServiceImpl implements CustomerService {
         // 6) Success
         centralAudit.info(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
                 AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
+        publisher.publishEvent(new EmailEventRequest(customer.getCustomerId(),
+                null, customer.getName(), customer.getEmail(), EmailKind.ACCOUNT_UPDATE, EmailSubject.CUSTOMER_ACCOUNT_CREATED,
+                EmailBody.CUSTOMER_ACCOUNT_CREATED));
         return customerServiceMapper.toDtoCustomerRes(customer);
     }
 
