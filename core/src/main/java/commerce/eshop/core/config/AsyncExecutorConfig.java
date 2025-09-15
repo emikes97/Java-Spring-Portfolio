@@ -41,6 +41,22 @@ public class AsyncExecutorConfig implements AsyncConfigurer {
         return ex;
     }
 
+    @Bean(name = "emailExecutor")
+    public Executor emailExecutor(){
+        ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+        ex.setThreadNamePrefix("async-email-"); // Adds async- as a prefix to thread name, to make it easier for our info/debug.
+
+        // IO-Bound work (HTTP calls): allow higher concurrency
+        ex.setCorePoolSize(8);
+        ex.setMaxPoolSize(32);
+        ex.setQueueCapacity(200); //  * - Queue capacity: 200 (backlog of tasks before rejecting).
+        ex.setKeepAliveSeconds(60); // * - Keep alive: 60 seconds (time before idle threads are removed).
+        ex.setAwaitTerminationSeconds(30); // * - Await termination: 30 seconds (time to wait for tasks to finish on shutdown).
+        ex.setWaitForTasksToCompleteOnShutdown(true);
+        ex.initialize();
+        return ex;
+    }
+
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler(){
         return (ex, method, params) -> System.err.println("[ASYNC-UNCAUGHT] " + method + " -> " + ex.getMessage());

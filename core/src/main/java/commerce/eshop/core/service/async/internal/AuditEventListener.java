@@ -27,7 +27,7 @@ public class AuditEventListener {
     }
 
     /// Successful / Failed events
-    @Async
+    @Async("asyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handle(AuditingMethodEvent event){
@@ -40,7 +40,7 @@ public class AuditEventListener {
     }
 
     /// Edge cases / errors with reason ///
-    @Async
+    @Async("asyncExecutor")
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handle(AuditingImmediateEvent event){
