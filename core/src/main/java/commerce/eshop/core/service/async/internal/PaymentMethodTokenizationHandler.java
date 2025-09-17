@@ -8,7 +8,6 @@ import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.util.enums.TokenStatus;
 import commerce.eshop.core.repository.CustomerPaymentMethodRepo;
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.service.async.external.ProviderClient;
 import jakarta.persistence.OptimisticLockException;
 import lombok.extern.slf4j.Slf4j;
