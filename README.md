@@ -14,6 +14,11 @@ A production-style **e-commerce backend simulation** designed as a portfolio pro
 
 ---
 
+## 🗺️ Roadmap
+- [ ] Retry/scheduler for failed tokenizations & emails
+      
+---
+
 ## ⚙️ Tech Stack
 
 - **Language**: Java 17  
