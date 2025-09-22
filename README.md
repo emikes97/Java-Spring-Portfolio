@@ -139,7 +139,7 @@ A production-style **e-commerce backend simulation** designed as a portfolio pro
 ---
 
 ## Project Structure
-
+```
 Portfolio_Eshop/
 ├── core/                                # Core domain logic & infra
 │   ├── config/                          # App configs (executors, background, branding)
@@ -272,3 +272,4 @@ Portfolio_Eshop/
         ├── ProductServiceMapper.java
         ├── TransactionServiceMapper.java
         └── WishlistServiceMapper.java
+```
