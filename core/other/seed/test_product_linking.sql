@@ -66,7 +66,7 @@ FROM products p JOIN names n ON p.product_name = n.name CROSS JOIN cat c
 ON CONFLICT DO NOTHING;
 
 -- Babies
-WITH cat AS (SELECT category_id FROM categories WHERE category_name = 'Babies'),
+WITH cat AS (SELECT category_id FROM categories WHERE category_name = 'Kids'),
 names(name) AS (
   VALUES
     ($$Diapers Size 3 (70)$$),($$Baby Wipes (12x)$$),($$Baby Stroller$$),($$Baby Monitor$$),

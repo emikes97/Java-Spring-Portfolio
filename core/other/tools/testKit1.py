@@ -118,6 +118,7 @@ def pay_order(session, customer_id, order_id, amount_ignored):
     r = session.post(url, params={"idemKey": idem_key}, json=payload, timeout=30)
     r.raise_for_status()
     return r.json() if r.headers.get("content-type","").startswith("application/json") else None
+
 def user_flow(customer_id, product_ids):
     s = requests.Session()
     try:

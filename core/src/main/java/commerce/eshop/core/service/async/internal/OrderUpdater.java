@@ -37,47 +37,45 @@ public class OrderUpdater {
     @Async("asyncExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateOrder(PaymentSucceededOrFailed paymentSucceededOrFailed){
+    public void updateOrder(PaymentSucceededOrFailed evt) {
 
-        final Order order;
+        final Order order = orderRepo.findByOrderIdForUpdate(evt.orderId())
+                .orElseThrow(() -> centralAudit.audit(
+                        new IllegalStateException("Order wasn't found"), null,
+                        EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR));
 
-        try {
-            order = orderRepo.findByOrderIdForUpdate(paymentSucceededOrFailed.orderId()).orElseThrow(
-                    () -> new IllegalStateException("Order wasn't found"));
-        } catch (NoSuchElementException ex){
-            throw centralAudit.audit(ex, null, EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR);
-        }
-
-
-        if(isTerminal(order.getOrderStatus())){
-            log.info("Order {} already terminal ({}) – skipping update.", order.getOrderId(), order.getOrderStatus());
-            centralAudit.info(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL,
-                    "Order {" + order.getOrderId() +"} already terminal ({"+ order.getOrderStatus() +"}) – skipping update.");
+        // If already terminal, ignore
+        if (isTerminal(order.getOrderStatus())) {
+            log.info("Order {} already terminal ({}), skipping.", order.getOrderId(), order.getOrderStatus());
             return;
         }
 
-        if (order.getOrderStatus() == paymentSucceededOrFailed.status()) {
-            log.info("Order {} already in status {} – no-op.", order.getOrderId(), order.getOrderStatus());
-            centralAudit.info(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL,
-                    "Order {" + order.getOrderId() +"} already in status ({"+ order.getOrderStatus() +"}) – no-op.");
+        // No-op if already at requested status
+        if (order.getOrderStatus() == evt.status()) {
+            log.info("Order {} already in status {}, no-op.", order.getOrderId(), order.getOrderStatus());
             return;
         }
 
-        try {
-            order.setOrderStatus(paymentSucceededOrFailed.status());
-            order.setCompletedAt(paymentSucceededOrFailed.time());
-            orderRepo.restoreProductStockFromOrder(order.getOrderId());
-            orderRepo.saveAndFlush(order);
-            centralAudit.info(order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.SUCCESSFUL, order.getOrderStatus().toString());
-        } catch (DataIntegrityViolationException err){
-            log.error("[OrderUpdater] Integrity violation updating order {}: {}", order.getOrderId(), err.getMessage(), err);
-            throw centralAudit.audit(err,order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR,
-                    "[OrderUpdater] Integrity violation updating order" + order.getOrderId() + " " + err);
-        } catch (Exception ex) {
-            log.error("[OrderUpdater] Unexpected error updating order {}. Please update manually", order.getOrderId(), ex);
-            throw centralAudit.audit(new RuntimeException("Unexpected Error"), order.getCustomer().getCustomerId(), EndpointsNameMethods.UPDATE_ORDER_ASYNC, AuditingStatus.ERROR,
-                    "[OrderUpdater] Unexpected error updating order + " + order.getOrderId() + ". Please update manually");
+        // Apply transition
+        switch (evt.status()) {
+            case PAID -> {
+                // ✅ Do NOT restore stock on success
+                order.setOrderStatus(OrderStatus.PAID);
+                order.setCompletedAt(evt.time());
+            }
+            case PAYMENT_FAILED, CANCELLED, EXPIRED -> {
+                // ✅ Only here we put stock back
+                orderRepo.restoreProductStockFromOrder(order.getOrderId());
+                order.setOrderStatus(evt.status());
+                order.setCompletedAt(evt.time());
+            }
+            default -> {
+                log.warn("Order {}: unexpected status {} in payment event", order.getOrderId(), evt.status());
+                return;
+            }
         }
+
+        orderRepo.saveAndFlush(order);
     }
 
     private boolean isTerminal(OrderStatus status){

@@ -53,9 +53,9 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
     @Query(value = "select * from cart_item where cart_id = :cartId and product_id = :productId for update", nativeQuery = true)
     Optional<CartItem> getCartItemForUpdate(@Param("cartId")UUID cartId, @Param("productId") long productId);
 
-    // == Expected changes
-    @Query(value = "SELECT COUNT(DISTINCT product_id) FROM cart_item WHERE cart_id = :cartId", nativeQuery = true)
-    long countDistinctCartProducts(@Param("cartId") UUID cartId);
+//    // == Expected changes
+//    @Query(value = "SELECT COUNT(DISTINCT product_id) FROM cart_item WHERE cart_id = :cartId", nativeQuery = true)
+//    long countDistinctCartProducts(@Param("cartId") UUID cartId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
@@ -73,4 +73,33 @@ public interface CartItemRepo extends JpaRepository<CartItem, Long> {
         @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "delete from cart_item where cart_id = :cartId", nativeQuery = true)
     int clearCart(@Param("cartId") UUID cartId);
+
+    // How many distinct products are in the cart (number of rows we expect to update)
+    @Query(value = """
+      SELECT COUNT(*) 
+      FROM (
+        SELECT ci.product_id
+        FROM cart_item ci
+        WHERE ci.cart_id = :cartId
+        GROUP BY ci.product_id
+      ) x
+      """, nativeQuery = true)
+    long countDistinctCartProducts(@Param("cartId") UUID cartId);
+
+    // Atomic, grouped stock reservation for the entire cart
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+    WITH wanted AS (
+      SELECT ci.product_id, SUM(ci.quantity) AS qty
+      FROM cart_item ci
+      WHERE ci.cart_id = :cartId
+      GROUP BY ci.product_id
+    )
+    UPDATE products p
+       SET product_available_stock = p.product_available_stock - w.qty
+    FROM wanted w
+    WHERE p.product_id = w.product_id
+      AND p.product_available_stock >= w.qty
+    """, nativeQuery = true)
+    int reserveStockForCart(@Param("cartId") UUID cartId);
 }

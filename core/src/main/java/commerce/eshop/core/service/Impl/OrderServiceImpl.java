@@ -7,6 +7,7 @@ import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.service.internal.OrderPlacementExecutor;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -21,16 +22,21 @@ import commerce.eshop.core.web.mapper.OrderServiceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.CannotSerializeTransactionException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -48,13 +54,14 @@ public class OrderServiceImpl implements OrderService {
     private final DomainLookupService domainLookupService;
     private final ApplicationEventPublisher publisher;
     private final EmailComposer emailComposer;
+    private final OrderPlacementExecutor executor; // <-- inject the separate bean
 
     // == Constructors ==
     @Autowired
     public OrderServiceImpl(CustomerRepo customerRepo, CartItemRepo cartItemRepo, CartRepo cartRepo, OrderItemRepo orderItemRepo,
                             OrderRepo orderRepo, CustomerAddrRepo customerAddrRepo, CustomerPaymentMethodRepo customerPaymentMethodRepo,
                             CentralAudit centralAudit, OrderServiceMapper orderServiceMapper, DomainLookupService domainLookupService,
-                            ApplicationEventPublisher publisher, EmailComposer emailComposer){
+                            ApplicationEventPublisher publisher, EmailComposer emailComposer, OrderPlacementExecutor executor){
 
         this.customerRepo = customerRepo;
         this.cartItemRepo = cartItemRepo;
@@ -68,72 +75,34 @@ public class OrderServiceImpl implements OrderService {
         this.domainLookupService = domainLookupService;
         this.emailComposer = emailComposer;
         this.publisher = publisher;
+        this.executor = executor;
     }
 
     // == Public Methods ==
-    @Transactional
+
+    /**
+     * ENTRYPOINT (non-transactional): bounded retry with small random backoff.
+     * Controller keeps calling this; signature unchanged.
+     */
     @Override
-    public DTOOrderPlacedResponse placeOrder(UUID customerId, DTOOrderCustomerAddress addressDto){
-
-        // Validation of customerId
-        if(customerId == null){
-            IllegalArgumentException illegal = new IllegalArgumentException("The identification key can't be empty");
-            throw centralAudit.audit(illegal, null, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, illegal.toString());
-        }
-
-        // Get cart_id from customer
-        final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
-
-        // Get customer reference
-        final Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
-
-        // If no address is provided, go for the default. (Default in our case is the one that the customer will pick during
-        // checkout. In case to simulate it for now, is the default from what has been chosen in the db.
-
-        if(addressDto == null){
-            final CustomerAddress customerAddress = domainLookupService.getCustomerAddrOrThrow(customerId, EndpointsNameMethods.ORDER_PLACE);
-            addressDto = new DTOOrderCustomerAddress(customerAddress.getCountry(), customerAddress.getStreet(),
-                    customerAddress.getCity(), customerAddress.getPostalCode());
-        }
-
-        // #1 Sum total_outstanding from Cart_Items;
-        BigDecimal total_outstanding = cartItemRepo.sumCartTotalOutstanding(cart.getCartId());
-        if(Objects.isNull(total_outstanding) || total_outstanding.compareTo(BigDecimal.ZERO) <= 0 ){
-            IllegalStateException illegal = new IllegalStateException("The cart is empty");
-            throw centralAudit.audit(illegal, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, illegal.toString());
-        }
-
-        // Initiate a new order
-        Order order = new Order(customer, orderServiceMapper.toMap(addressDto), total_outstanding);
-
-        // set status to pending
-        order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
-
-        // Decrement quantity of cart_items
-        try {
-           int updated = cartItemRepo.updateProductStock(cart.getCartId());
-           long expected = cartItemRepo.countDistinctCartProducts(cart.getCartId());
-           if(updated != expected){
-               /// Client error, The product was out-of-stock when order was placed.
-               ResponseStatusException err = new ResponseStatusException(HttpStatus.CONFLICT, "INSUFFICIENT_STOCK");
-               throw centralAudit.audit(err, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.WARNING, "INSUFFICIENT_STOCK");
-           }
-        } catch (TransientDataAccessResourceException | CannotCreateTransactionException ex){
-           throw centralAudit.audit(ex, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, ex.toString());
-        }
-
-        // Save order and flush
-        try {
-            orderRepo.saveAndFlush(order);
-            // Snapshot cart items to order_items
-            orderItemRepo.snapShotFromCart(order.getOrderId(), cart.getCartId());
-            orderItemRepo.clearCart(cart.getCartId());
-            centralAudit.info(customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.SUCCESSFUL, AuditMessage.ORDER_PLACE_SUCCESS.getMessage());
-            var event = emailComposer.orderConfirmed(customer, order, order.getTotalOutstanding(), "Euro");
-            publisher.publishEvent(event);
-            return orderServiceMapper.toDto(order);
-        } catch (DataIntegrityViolationException dub){
-           throw centralAudit.audit(dub, customerId, EndpointsNameMethods.ORDER_PLACE, AuditingStatus.ERROR, dub.toString());
+    public DTOOrderPlacedResponse placeOrder(UUID customerId, DTOOrderCustomerAddress addressDto) {
+        int attempts = 0;
+        while (true) {
+            try {
+                // Each call opens a FRESH transaction
+                return  executor.tryPlaceOrder(customerId, addressDto);
+            } catch (CannotSerializeTransactionException | DeadlockLoserDataAccessException ex) {
+                if (++attempts >= 5) {
+                    throw ex;
+                }
+                int backoffMs = ThreadLocalRandom.current().nextInt(5, 25);
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while retrying order placement", ie);
+                }
+            }
         }
     }
 
