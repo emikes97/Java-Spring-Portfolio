@@ -1,4 +1,4 @@
-package commerce.eshop.core.service.internal;
+package commerce.eshop.core.service.Components;
 
 import commerce.eshop.core.email.EmailComposer;
 import commerce.eshop.core.model.entity.Cart;

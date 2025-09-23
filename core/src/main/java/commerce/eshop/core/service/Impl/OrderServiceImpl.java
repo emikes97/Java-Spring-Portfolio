@@ -1,13 +1,11 @@
 package commerce.eshop.core.service.Impl;
 
 import commerce.eshop.core.email.EmailComposer;
-import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.Customer;
-import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
-import commerce.eshop.core.service.internal.OrderPlacementExecutor;
+import commerce.eshop.core.service.Components.OrderPlacementExecutor;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -22,19 +20,14 @@ import commerce.eshop.core.web.mapper.OrderServiceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.CannotSerializeTransactionException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
-import org.springframework.dao.TransientDataAccessResourceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.CannotCreateTransactionException;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
