@@ -85,8 +85,6 @@ public class TransactionServiceImpl implements TransactionsService {
             throw centralAudit.audit(bad, customerId, EndpointsNameMethods.TRANSACTION_PAY, AuditingStatus.WARNING, "ZERO_OR_NEGATIVE_TOTAL");
         }
 
-        final Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.TRANSACTION_PAY);
-
         Map<String, Object> snapshot = transactionServiceMapper.toSnapShot(dto.instruction());
 
         Transaction transaction = new Transaction(order, customerId.toString(), snapshot, order.getTotalOutstanding(), idemKey);
