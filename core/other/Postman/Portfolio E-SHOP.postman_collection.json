@@ -19,7 +19,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"phoneNumber\": \"+30647732317\",\r\n  \"email\": \"dib3@example.com\",\r\n  \"userName\": \"liakopoulos3\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon3\",\r\n  \"surname\": \"Dubaious3\"\r\n}",
+									"raw": "{\r\n  \"phoneNumber\": \"+30647732317\",\r\n  \"email\": \"postman@example.com\",\r\n  \"userName\": \"user1234\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"genericTest\",\r\n  \"surname\": \"gener\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1730,7 +1730,438 @@
 		},
 		{
 			"name": "Test_1",
-			"item": []
+			"item": [
+				{
+					"name": "CreateNewUser Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"phoneNumber\": \"+30647732317\",\r\n  \"email\": \"dib3@example.com\",\r\n  \"userName\": \"liakopoulos3\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon3\",\r\n  \"surname\": \"Dubaious3\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers"
+							],
+							"query": [
+								{
+									"key": null,
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AddItemsToCart Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 4\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/cart",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PlaceOrder Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"Mykonou 12\",\r\n  \"city\": \"Athenistan\",\r\n  \"postalCode\": \"1452\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/checkout",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "NewCardPay - Successful Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\"instruction\": {\r\n    \"type\": \"USE_NEW_CARD\",\r\n    \"panMasked\": \"411111******1111\",\r\n    \"brand\": \"VISA\",\r\n    \"expMonth\": 12,\r\n    \"expYear\": 2028,\r\n    \"holderName\": \"Test User\",\r\n    \"cvc\": \"123\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"payout",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"order",
+								"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+							],
+							"query": [
+								{
+									"key": "idemKey",
+									"value": "abc-123"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test_2",
+			"item": [
+				{
+					"name": "CreateNewUser Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"phoneNumber\": \"+30647732317\",\r\n  \"email\": \"dib3@example.com\",\r\n  \"userName\": \"liakopoulos3\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon3\",\r\n  \"surname\": \"Dubaious3\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers"
+							],
+							"query": [
+								{
+									"key": null,
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AddItemsToCart Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 4\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/cart",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PlaceOrder Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"Mykonou 12\",\r\n  \"city\": \"Athenistan\",\r\n  \"postalCode\": \"1452\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/checkout",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "NewCardPay - UnSuccessful Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n\"instruction\": {\r\n    \"type\": \"USE_NEW_CARD\",\r\n    \"panMasked\": \"411111******1111\",\r\n    \"brand\": \"VISA\",\r\n    \"expMonth\": 12,\r\n    \"expYear\": 2028,\r\n    \"holderName\": \"Test User\",\r\n    \"cvc\": \"123\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123:FAIL",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"payout",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"order",
+								"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+							],
+							"query": [
+								{
+									"key": "idemKey",
+									"value": "abc-123:FAIL"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test_3",
+			"item": [
+				{
+					"name": "CreateNewUser Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"phoneNumber\": \"+30647732317\",\r\n  \"email\": \"dib3@example.com\",\r\n  \"userName\": \"liakopoulos3\",\r\n  \"password\": \"1234!\",\r\n  \"name\": \"Elon3\",\r\n  \"surname\": \"Dubaious3\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers"
+							],
+							"query": [
+								{
+									"key": null,
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AddItemsToCart Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"productId\": 1,\r\n    \"quantity\": 4\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/cart",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"cart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PlaceOrder Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"country\": \"Greece\",\r\n  \"street\": \"Mykonou 12\",\r\n  \"city\": \"Athenistan\",\r\n  \"postalCode\": \"1452\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/customers/3fe32988-08e3-4fe4-ab99-14288ea8609f/checkout",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"customers",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"checkout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "NewCardPay - Random Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"instruction\": {\r\n      \"type\": \"USE_NEW_CARD\",\r\n      \"panMasked\": \"555555******4444\",\r\n      \"brand\": \"MASTERCARD\",\r\n      \"expMonth\": 11,\r\n      \"expYear\": 2029,\r\n      \"holderName\": \"Test User\",\r\n      \"cvc\": \"321\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/v1/payout/3fe32988-08e3-4fe4-ab99-14288ea8609f/order/b76d4cad-5c11-4b04-b4ff-e882d5fbe41e?idemKey=abc-123:RANDOM",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"payout",
+								"3fe32988-08e3-4fe4-ab99-14288ea8609f",
+								"order",
+								"b76d4cad-5c11-4b04-b4ff-e882d5fbe41e"
+							],
+							"query": [
+								{
+									"key": "idemKey",
+									"value": "abc-123:RANDOM"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
