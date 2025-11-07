@@ -5,6 +5,7 @@ import commerce.eshop.core.model.entity.EmailsSent;
 import commerce.eshop.core.repository.EmailsSentRepo;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.enums.AuditingStatus;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +17,8 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import jakarta.validation.Validator;
+
+import java.util.Set;
 
 @Component
 public class EmailRequestListener {
@@ -39,7 +42,7 @@ public class EmailRequestListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handle(EmailEventRequest request){
 
-        var violations = validator.validate(request);
+        Set<ConstraintViolation<EmailEventRequest>> violations = validator.validate(request);
 
         if (!violations.isEmpty()) {
             ConstraintViolationException violation = new ConstraintViolationException(violations);

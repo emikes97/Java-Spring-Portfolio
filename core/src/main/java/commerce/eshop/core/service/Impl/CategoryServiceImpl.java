@@ -112,7 +112,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         try {
             deleted = categoryRepo.deleteCategory(categoryId);
-            categoryRepo.flush(); // forces constraint check now so catch can handle it
+            categoryRepo.flush(); // forces constraint check now so catch can createFrom it
         } catch (DataIntegrityViolationException dive) {
             Throwable most = dive.getMostSpecificCause(); // never null
             String msg = (most.getMessage() != null && !most.getMessage().isBlank())

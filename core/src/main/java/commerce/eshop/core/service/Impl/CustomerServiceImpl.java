@@ -5,6 +5,7 @@ import commerce.eshop.core.events.EmailEventRequest;
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.customer.usecases.CustomerRegistrationHandler;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;
@@ -35,6 +36,7 @@ import java.util.UUID;
 public class CustomerServiceImpl implements CustomerService {
 
     // == Fields ==
+    private final CustomerRegistrationHandler customerRegistrationHandler;
     private final CustomerRepo customerRepo;
     private final OrderRepo orderRepo;
     private final CartRepo cartRepo;
@@ -53,7 +55,7 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, CartRepo cartRepo, CartItemRepo cartItemRepo,
                                PasswordEncoder passwordEncoder, SortSanitizer sortSanitizer, CentralAudit centralAudit,
                                CustomerServiceMapper customerServiceMapper, WishlistRepo wishlistRepo, DomainLookupService domainLookupService,
-                               ApplicationEventPublisher publisher, EmailComposer emailComposer) {
+                               ApplicationEventPublisher publisher, EmailComposer emailComposer, CustomerRegistrationHandler customerRegistrationHandler) {
 
         this.customerRepo = customerRepo;
         this.orderRepo = orderRepo;
@@ -67,57 +69,16 @@ public class CustomerServiceImpl implements CustomerService {
         this.domainLookupService = domainLookupService;
         this.publisher = publisher;
         this.emailComposer = emailComposer;
+        this.customerRegistrationHandler = customerRegistrationHandler;
     }
 
     // == Public Methods ==
 
-    @Transactional
     @Override
     public DTOCustomerResponse createUser(DTOCustomerCreateUser dto) {
-
-        // 1) Hash password
-        final String hashed = passwordEncoder.encode(dto.password());
-
-        // 2) Create aggregate
-        final Customer customer = new Customer(
-                dto.phoneNumber(),
-                dto.email(),
-                dto.userName(),
-                hashed,
-                dto.name(),
-                dto.surname()
-        );
-
-        // 3) Persist customer
-        try {
-            customerRepo.saveAndFlush(customer);
-        } catch (DataIntegrityViolationException dup) {
-            log.warn("CREATE_USER failed (duplicate/constraint) email={} phone={}", dto.email(), dto.phoneNumber(), dup);
-            throw centralAudit.audit(dup, null, EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
-        }
-
-        // 4) Create cart (same TX → atomic)
-        final Cart cart = new Cart(customer);
-        try {
-            cartRepo.saveAndFlush(cart);
-        } catch (DataIntegrityViolationException dup) {
-            throw centralAudit.audit(dup, customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
-        }
-
-        // 5) Create wishlist
-        final  Wishlist wishlist = new Wishlist(customer);
-        try {
-            wishlistRepo.saveAndFlush(wishlist);
-        } catch (DataIntegrityViolationException dup){
-            throw centralAudit.audit(dup, customer.getCustomerId(), EndpointsNameMethods.CREATE_USER, AuditingStatus.ERROR, dup.toString());
-        }
-
-        // 6) Success
+        Customer customer = customerRegistrationHandler.handle(dto);
         centralAudit.info(customer.getCustomerId(), EndpointsNameMethods.CREATE_USER,
                 AuditingStatus.SUCCESSFUL, AuditMessage.CREATE_USER_SUCCESS.getMessage());
-
-        var event = emailComposer.accountCreated(customer, "https://example.com/verify?token=...");
-        publisher.publishEvent(event);
         return customerServiceMapper.toDtoCustomerRes(customer);
     }
 
