@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.customer.usecases;
+package commerce.eshop.core.application.customer.commands;
 
 import commerce.eshop.core.events.customer.CustomerRegisteredEvent;
 import commerce.eshop.core.model.entity.Customer;
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @Slf4j
-public class CustomerRegistrationHandler {
+public class CustomerRegistration {
 
     // == Fields ==
     private final CustomerFactory customerFactory;
@@ -22,7 +22,7 @@ public class CustomerRegistrationHandler {
 
     // == Constructors ==
     @Autowired
-    public CustomerRegistrationHandler(CustomerFactory customerFactory, CustomerWriter customerWriter, ApplicationEventPublisher publisher) {
+    public CustomerRegistration(CustomerFactory customerFactory, CustomerWriter customerWriter, ApplicationEventPublisher publisher) {
         this.customerFactory = customerFactory;
         this.customerWriter = customerWriter;
         this.publisher = publisher;

@@ -27,7 +27,7 @@ public class CustomerWriter {
     // == Public methods ==
 
     public Customer save(Customer customer){
-
+        // Do not call the method, from a non-transactional function. As it will not save/flush to the db
         try {
             return customerRepo.saveAndFlush(customer);
         } catch (DataIntegrityViolationException dup) {

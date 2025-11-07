@@ -5,6 +5,8 @@ import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.enums.AuditingStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -198,5 +200,16 @@ public class DomainLookupServiceImpl implements DomainLookupService {
         } catch (NoSuchElementException e){
             throw centralAudit.audit(e, null, method, AuditingStatus.ERROR);
         }
+    }
+
+    // == Pageable ==
+    @Override
+    public Page<Order> getPagedOrders(UUID customerId, Pageable page) {
+        return orderRepo.findByCustomer_CustomerId(customerId, page);
+    }
+
+    @Override
+    public Page<CartItem> getPagedCartItems(UUID cartId, Pageable page){
+        return cartItemRepo.findByCart_CartId(cartId, page);
     }
 }

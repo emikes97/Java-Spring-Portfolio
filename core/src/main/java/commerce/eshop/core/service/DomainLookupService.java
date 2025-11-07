@@ -1,6 +1,8 @@
 package commerce.eshop.core.service;
 
 import commerce.eshop.core.model.entity.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
@@ -35,4 +37,8 @@ public interface DomainLookupService {
     Product getProductOrThrow(UUID customerId, long productId, String method);
     Product getProductOrThrow(long productId, String method); // Product service overload
     Category getCategoryOrThrow(long categoryId, String method);
+
+    // --- Pageable ---
+    Page<Order>  getPagedOrders(UUID customerId, Pageable page);
+    Page<CartItem> getPagedCartItems(UUID cartId, Pageable page);
 }
