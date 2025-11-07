@@ -23,7 +23,7 @@ public class PaymentProviderClientImpl implements PaymentProviderClient {
     ///
     /// idemKey=abc-123:FAIL → always FAILED (decline simulated)
     ///
-    /// idemKey=abc-123:RANDOM → randomly SUCCESSFUL or FAILED (decided once, cached, so repeated calls for the same key return the same outcome)
+    /// idemKey=abc-123:RANDOM → randomly SUCCESSFUL or FAILED (decided once, cached, so repeated calls for the same key return the same outcome) <-- Outdated, no caching, random each time. 
 
     // == Fields ==
     private final Map<String, ProviderChargeResult> outcomes = new ConcurrentHashMap<>();
