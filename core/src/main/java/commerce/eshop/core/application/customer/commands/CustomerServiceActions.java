@@ -1,10 +1,9 @@
 package commerce.eshop.core.application.customer.commands;
 
 import commerce.eshop.core.application.customer.writer.CustomerWriter;
-import commerce.eshop.core.events.EmailEventRequest;
-import commerce.eshop.core.events.customer.CustomerFailedUpdatePasswordEvent;
-import commerce.eshop.core.events.customer.CustomerSuccessfulUpdatePasswordEvent;
-import commerce.eshop.core.events.customer.CustomerUpdatedInfoEvent;
+import commerce.eshop.core.application.events.customer.CustomerFailedUpdatePasswordEvent;
+import commerce.eshop.core.application.events.customer.CustomerSuccessfulUpdatePasswordEvent;
+import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
@@ -140,8 +139,6 @@ public class CustomerServiceActions {
 
     @Transactional
     public void handleUpdateUserPassword(UUID customerId, String currentPassword, String newPassword) {
-        EmailEventRequest event = null;
-
         if (customerId == null) {
             IllegalArgumentException illegal = new IllegalArgumentException("Missing customerId.");
             throw centralAudit.audit(illegal, null, EndpointsNameMethods.UPDATE_PASSWORD, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");

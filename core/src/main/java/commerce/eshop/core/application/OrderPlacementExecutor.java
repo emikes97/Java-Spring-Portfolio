@@ -1,6 +1,6 @@
 package commerce.eshop.core.application;
 
-import commerce.eshop.core.email.EmailComposer;
+import commerce.eshop.core.application.email.EmailComposer;
 import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;

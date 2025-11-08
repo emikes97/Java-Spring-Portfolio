@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.customer.commands;
 
-import commerce.eshop.core.events.customer.CustomerRegisteredEvent;
+import commerce.eshop.core.application.events.customer.CustomerRegisteredEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.application.customer.factory.CustomerFactory;
 import commerce.eshop.core.application.customer.writer.CustomerWriter;

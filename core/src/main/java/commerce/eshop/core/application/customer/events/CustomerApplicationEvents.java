@@ -1,11 +1,11 @@
 package commerce.eshop.core.application.customer.events;
 
-import commerce.eshop.core.email.EmailComposer;
-import commerce.eshop.core.events.EmailEventRequest;
-import commerce.eshop.core.events.customer.CustomerRegisteredEvent;
-import commerce.eshop.core.events.customer.CustomerFailedUpdatePasswordEvent;
-import commerce.eshop.core.events.customer.CustomerSuccessfulUpdatePasswordEvent;
-import commerce.eshop.core.events.customer.CustomerUpdatedInfoEvent;
+import commerce.eshop.core.application.email.EmailComposer;
+import commerce.eshop.core.application.events.EmailEventRequest;
+import commerce.eshop.core.application.events.customer.CustomerRegisteredEvent;
+import commerce.eshop.core.application.events.customer.CustomerFailedUpdatePasswordEvent;
+import commerce.eshop.core.application.events.customer.CustomerSuccessfulUpdatePasswordEvent;
+import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.service.DomainLookupService;
 import lombok.extern.slf4j.Slf4j;

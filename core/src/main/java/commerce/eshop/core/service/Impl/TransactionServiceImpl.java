@@ -1,7 +1,6 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.events.PaymentExecutionRequestEvent;
-import commerce.eshop.core.model.entity.Customer;
+import commerce.eshop.core.application.events.PaymentExecutionRequestEvent;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
 import commerce.eshop.core.service.DomainLookupService;

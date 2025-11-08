@@ -1,7 +1,7 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.events.auditing_events.AuditingImmediateEvent;
-import commerce.eshop.core.events.auditing_events.AuditingMethodEvent;
+import commerce.eshop.core.application.events.auditing_events.AuditingImmediateEvent;
+import commerce.eshop.core.application.events.auditing_events.AuditingMethodEvent;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import commerce.eshop.core.service.AuditingService;
 import jakarta.annotation.Nullable;

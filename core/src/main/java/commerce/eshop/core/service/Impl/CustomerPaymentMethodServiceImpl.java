@@ -1,6 +1,6 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.events.PaymentMethodCreatedEvent;
+import commerce.eshop.core.application.events.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
