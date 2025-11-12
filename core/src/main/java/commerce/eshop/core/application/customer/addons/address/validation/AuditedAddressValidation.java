@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.customer.address.validation;
+package commerce.eshop.core.application.customer.addons.address.validation;
 
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.util.CentralAudit;

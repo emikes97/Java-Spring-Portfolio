@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.customer.address.queries;
+package commerce.eshop.core.application.customer.addons.address.queries;
 
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.service.DomainLookupService;

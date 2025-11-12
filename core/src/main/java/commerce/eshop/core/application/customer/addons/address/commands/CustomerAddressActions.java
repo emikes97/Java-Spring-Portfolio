@@ -1,8 +1,8 @@
-package commerce.eshop.core.application.customer.address.commands;
+package commerce.eshop.core.application.customer.addons.address.commands;
 
-import commerce.eshop.core.application.customer.address.factory.AddressFactory;
-import commerce.eshop.core.application.customer.address.validation.AuditedAddressValidation;
-import commerce.eshop.core.application.customer.address.writer.AddressWriter;
+import commerce.eshop.core.application.customer.addons.address.factory.AddressFactory;
+import commerce.eshop.core.application.customer.addons.address.validation.AuditedAddressValidation;
+import commerce.eshop.core.application.customer.addons.address.writer.AddressWriter;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.service.DomainLookupService;
@@ -89,6 +89,7 @@ public class CustomerAddressActions {
         return customerAddress;
     }
 
+    @Transactional
     public long deleteAddress(UUID customerId, Long id){
         return addressWriter.delete(customerId, id);
     }

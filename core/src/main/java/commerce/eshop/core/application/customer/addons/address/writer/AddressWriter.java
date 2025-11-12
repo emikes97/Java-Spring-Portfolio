@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.customer.address.writer;
+package commerce.eshop.core.application.customer.addons.address.writer;
 
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.repository.CustomerAddrRepo;
@@ -36,7 +36,7 @@ public class AddressWriter {
 
     public CustomerAddress save(CustomerAddress address, UUID customerId, String endpoint){
         try {
-            customerAddrRepo.saveAndFlush(address);
+            address = customerAddrRepo.saveAndFlush(address);
             return address;
         } catch (DataIntegrityViolationException dup){
             throw centralAudit.audit(dup, customerId, endpoint, AuditingStatus.ERROR, dup.toString());

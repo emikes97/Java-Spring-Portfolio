@@ -1,7 +1,7 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.application.customer.address.commands.CustomerAddressActions;
-import commerce.eshop.core.application.customer.address.queries.AddressQueries;
+import commerce.eshop.core.application.customer.addons.address.commands.CustomerAddressActions;
+import commerce.eshop.core.application.customer.addons.address.queries.AddressQueries;
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;

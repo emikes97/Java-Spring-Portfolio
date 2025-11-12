@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.customer.address.factory;
+package commerce.eshop.core.application.customer.addons.address.factory;
 
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;

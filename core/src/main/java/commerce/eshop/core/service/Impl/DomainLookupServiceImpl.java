@@ -5,6 +5,7 @@ import commerce.eshop.core.repository.*;
 import commerce.eshop.core.service.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.util.sort.CustomerPaymentMethodSort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -216,5 +217,10 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     @Override
     public Page<CustomerAddress> getPagedCustomerAddresses(UUID customerId, Pageable page){
         return customerAddrRepo.findByCustomerCustomerId(customerId, page);
+    }
+
+    @Override
+    public Page<CustomerPaymentMethod> getPagedPaymentMethods(UUID customerId, Pageable page){
+        return paymentMethodRepo.findByCustomer_CustomerId(customerId, page);
     }
 }
