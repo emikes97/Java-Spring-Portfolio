@@ -212,4 +212,9 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     public Page<CartItem> getPagedCartItems(UUID cartId, Pageable page){
         return cartItemRepo.findByCart_CartId(cartId, page);
     }
+
+    @Override
+    public Page<CustomerAddress> getPagedCustomerAddresses(UUID customerId, Pageable page){
+        return customerAddrRepo.findByCustomerCustomerId(customerId, page);
+    }
 }

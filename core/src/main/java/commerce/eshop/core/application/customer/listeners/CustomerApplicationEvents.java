@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.customer.events;
+package commerce.eshop.core.application.customer.listeners;
 
 import commerce.eshop.core.application.email.EmailComposer;
 import commerce.eshop.core.application.events.EmailEventRequest;
