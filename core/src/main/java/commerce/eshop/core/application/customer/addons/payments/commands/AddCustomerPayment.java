@@ -41,7 +41,7 @@ public class AddCustomerPayment {
         boolean makeDefault = Boolean.TRUE.equals(dto.isDefault());
 
         if(makeDefault) // in case it's true, disable the current default method.
-            pmWriter.updateDefaultToFalse(customerId, true);
+            pmWriter.updateDefaultToFalse(customerId);
 
         CustomerPaymentMethod paymentMethod = pmFactory.create(dto, customer, makeDefault);
 

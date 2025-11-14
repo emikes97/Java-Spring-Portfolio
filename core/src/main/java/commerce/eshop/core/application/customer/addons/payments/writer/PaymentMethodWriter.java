@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Slf4j
@@ -28,13 +29,10 @@ public class PaymentMethodWriter {
     }
 
     // == Public Methods ==
-    public void updateDefaultToFalse(UUID customerId, boolean makeDefault){
-        if(makeDefault){
-            int outcome = customerPaymentMethodRepo.updateDefaultMethodToFalse(customerId);
-            if (outcome == 0){
-                log.info("Customer with customerId= " + customerId + " doesn't have a default method for payments");
-            }
-        }
+    public void updateDefaultToFalse(UUID customerId){
+        int outcome = customerPaymentMethodRepo.updateDefaultMethodToFalse(customerId);
+        if (outcome == 0)
+            log.info("Customer with customerId= " + customerId + " doesn't have a default method for payments");
     }
 
     public CustomerPaymentMethod save(CustomerPaymentMethod pm, String endpoint){
@@ -43,6 +41,24 @@ public class PaymentMethodWriter {
             return pm;
         } catch (DataIntegrityViolationException dup){
             throw centralAudit.audit(dup, pm.getCustomer().getCustomerId(), endpoint, AuditingStatus.ERROR, dup.toString());
+        }
+    }
+
+    public long delete(UUID customerId, UUID paymentId){
+        try {
+            long outcome = customerPaymentMethodRepo
+                    .deleteByCustomer_CustomerIdAndCustomerPaymentId(customerId, paymentId);
+            if (outcome == 0) {
+                // Not found case
+                NoSuchElementException notFound =
+                        new NoSuchElementException("Payment method not found: " + paymentId);
+                throw centralAudit.audit(notFound, customerId, EndpointsNameMethods.PM_DELETE,
+                        AuditingStatus.WARNING, notFound.toString());
+            }
+            return outcome;
+        } catch (DataIntegrityViolationException dup){
+            throw centralAudit.audit(dup, customerId, EndpointsNameMethods.PM_DELETE,
+                    AuditingStatus.ERROR, dup.toString());
         }
     }
 }
