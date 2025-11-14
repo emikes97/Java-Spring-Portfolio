@@ -59,18 +59,19 @@ public class CartWriter {
     }
 
     public void clear(Cart cart, String endpoint){
-        try {
-            cartItemRepo.clearCart(cart.getCartId());
-        } catch (NoSuchElementException ex){
-            throw centralAudit.audit(ex, cart.getCustomer().getCustomerId(), endpoint, AuditingStatus.WARNING, ex.toString());
+        int rows = cartItemRepo.clearCart(cart.getCartId());
+        if (rows == 0) {
+            centralAudit.warn(cart.getCustomer().getCustomerId(), endpoint, AuditingStatus.WARNING, "CART_IS_ALREADY_EMPTY");
         }
     }
 
     public void delete(Cart cart, long productId, String endpoint){
-        try {
-            cartItemRepo.deleteItemByCartIdAndProductId(cart.getCartId(), productId);
-        } catch (NoSuchElementException ex){
-            throw centralAudit.audit(ex, cart.getCustomer().getCustomerId(), endpoint, AuditingStatus.WARNING, ex.toString());
+        int rows = cartItemRepo.deleteItemByCartIdAndProductId(cart.getCartId(), productId);
+        if (rows == 0) {
+            NoSuchElementException ex =
+                    new NoSuchElementException("Cart item not found for productId=" + productId);
+            throw centralAudit.audit(ex, cart.getCustomer().getCustomerId(),
+                    endpoint, AuditingStatus.WARNING, ex.toString());
         }
     }
 }

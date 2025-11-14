@@ -18,7 +18,7 @@ import java.util.UUID;
 public class AddCartItem {
 
     // == Constants ==
-    private final int MAX_QTY = 99;
+    private static final int MAX_QTY = 99;
 
     // == Fields ==
     private final AuditedCartValidation validation;
