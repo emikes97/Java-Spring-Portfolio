@@ -3,9 +3,7 @@ package commerce.eshop.core.application.wishlist.writer;
 import commerce.eshop.core.model.entity.Wishlist;
 import commerce.eshop.core.model.entity.WishlistItem;
 import commerce.eshop.core.repository.WishlistItemRepo;
-import commerce.eshop.core.repository.WishlistRepo;
 import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,14 +15,12 @@ import java.util.UUID;
 public class WishlistWriter {
 
     // == Fields ==
-    private final WishlistRepo wishRepo;
     private final WishlistItemRepo wishItemRepo;
     private final CentralAudit centralAudit;
 
     // == Constructors ==
     @Autowired
-    public WishlistWriter(WishlistRepo wishRepo, WishlistItemRepo wishItemRepo, CentralAudit centralAudit) {
-        this.wishRepo = wishRepo;
+    public WishlistWriter(WishlistItemRepo wishItemRepo, CentralAudit centralAudit) {
         this.wishItemRepo = wishItemRepo;
         this.centralAudit = centralAudit;
     }

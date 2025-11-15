@@ -37,6 +37,7 @@ public interface DomainLookupService {
     Product getProductOrThrow(UUID customerId, long productId, String method);
     Product getProductOrThrow(long productId, String method); // Product service overload
     Category getCategoryOrThrow(long categoryId, String method);
+    Boolean checkIfCatExists(String catName);
 
     // --- Pageable ---
     Page<Order>  getPagedOrders(UUID customerId, Pageable page);

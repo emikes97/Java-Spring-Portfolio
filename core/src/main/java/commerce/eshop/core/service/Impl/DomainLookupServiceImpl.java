@@ -203,6 +203,11 @@ public class DomainLookupServiceImpl implements DomainLookupService {
         }
     }
 
+    @Override
+    public Boolean checkIfCatExists(String catName){
+        return categoryRepo.existsByCategoryNameIgnoreCase(catName);
+    }
+
     // == Pageable ==
     @Override
     public Page<Order> getPagedOrders(UUID customerId, Pageable page) {
