@@ -5,7 +5,7 @@ import commerce.eshop.core.application.customer.addons.payments.writer.PaymentMe
 import commerce.eshop.core.application.events.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import org.springframework.beans.factory.annotation.Autowired;

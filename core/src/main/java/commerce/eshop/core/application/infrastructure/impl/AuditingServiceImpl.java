@@ -1,17 +1,17 @@
-package commerce.eshop.core.service.Impl;
+package commerce.eshop.core.application.infrastructure.impl;
 
 import commerce.eshop.core.application.events.auditing_events.AuditingImmediateEvent;
 import commerce.eshop.core.application.events.auditing_events.AuditingMethodEvent;
 import commerce.eshop.core.util.enums.AuditingStatus;
-import commerce.eshop.core.service.AuditingService;
+import commerce.eshop.core.application.infrastructure.AuditingService;
 import jakarta.annotation.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 
 import java.util.UUID;
 
-@Service
+@Component
 public class AuditingServiceImpl implements AuditingService {
 
     private final ApplicationEventPublisher publisher;

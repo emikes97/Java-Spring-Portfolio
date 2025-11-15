@@ -1,6 +1,5 @@
 package commerce.eshop.core.util;
 
-import commerce.eshop.core.service.AuditingService;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;

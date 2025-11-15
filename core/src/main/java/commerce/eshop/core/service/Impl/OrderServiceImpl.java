@@ -4,7 +4,7 @@ import commerce.eshop.core.application.email.EmailComposer;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.repository.*;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.application.OrderPlacementExecutor;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;

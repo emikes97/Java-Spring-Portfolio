@@ -3,7 +3,7 @@ package commerce.eshop.core.service.Impl;
 import commerce.eshop.core.application.events.PaymentExecutionRequestEvent;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;

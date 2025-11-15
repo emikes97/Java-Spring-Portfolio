@@ -3,7 +3,7 @@ package commerce.eshop.core.application.product.commands;
 import commerce.eshop.core.application.product.validation.AuditedProductValidation;
 import commerce.eshop.core.application.product.writer.ProductWriter;
 import commerce.eshop.core.model.entity.Product;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditingStatus;

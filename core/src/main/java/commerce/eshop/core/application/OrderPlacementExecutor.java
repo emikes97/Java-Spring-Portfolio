@@ -9,7 +9,7 @@ import commerce.eshop.core.repository.CartItemRepo;
 import commerce.eshop.core.repository.DbLockRepository;
 import commerce.eshop.core.repository.OrderItemRepo;
 import commerce.eshop.core.repository.OrderRepo;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.enums.AuditMessage;

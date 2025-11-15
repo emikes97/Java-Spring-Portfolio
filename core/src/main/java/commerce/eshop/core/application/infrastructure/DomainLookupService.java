@@ -1,4 +1,4 @@
-package commerce.eshop.core.service;
+package commerce.eshop.core.application.infrastructure;
 
 import commerce.eshop.core.model.entity.*;
 import org.springframework.data.domain.Page;

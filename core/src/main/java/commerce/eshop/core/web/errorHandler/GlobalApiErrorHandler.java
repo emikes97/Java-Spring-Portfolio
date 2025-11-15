@@ -1,6 +1,6 @@
 package commerce.eshop.core.web.errorHandler;
 
-import commerce.eshop.core.service.AuditingService;
+import commerce.eshop.core.application.infrastructure.AuditingService;
 import commerce.eshop.core.util.enums.AuditingStatus;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;

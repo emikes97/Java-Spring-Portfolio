@@ -1,7 +1,7 @@
 package commerce.eshop.core.application.product.queries;
 
 import commerce.eshop.core.model.entity.Product;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.sort.ProductSort;

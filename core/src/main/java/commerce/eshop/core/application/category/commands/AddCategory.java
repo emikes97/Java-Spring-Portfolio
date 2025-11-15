@@ -4,7 +4,7 @@ import commerce.eshop.core.application.category.factory.CategoryFactory;
 import commerce.eshop.core.application.category.validation.AuditedCategoryValidation;
 import commerce.eshop.core.application.category.writer.CategoryWriter;
 import commerce.eshop.core.model.entity.Category;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.web.dto.requests.Category.DTOAddCategory;
 import org.springframework.beans.factory.annotation.Autowired;

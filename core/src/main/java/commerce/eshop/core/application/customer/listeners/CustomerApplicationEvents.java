@@ -7,7 +7,7 @@ import commerce.eshop.core.application.events.customer.CustomerFailedUpdatePassw
 import commerce.eshop.core.application.events.customer.CustomerSuccessfulUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;

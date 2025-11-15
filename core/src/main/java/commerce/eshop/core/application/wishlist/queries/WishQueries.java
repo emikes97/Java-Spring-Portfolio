@@ -2,7 +2,7 @@ package commerce.eshop.core.application.wishlist.queries;
 
 import commerce.eshop.core.model.entity.Wishlist;
 import commerce.eshop.core.model.entity.WishlistItem;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.SortSanitizer;
 import commerce.eshop.core.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.util.sort.WishlistSort;

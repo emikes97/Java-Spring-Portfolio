@@ -1,20 +1,19 @@
-package commerce.eshop.core.service.Impl;
+package commerce.eshop.core.application.infrastructure.impl;
 
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.repository.*;
-import commerce.eshop.core.service.DomainLookupService;
+import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.util.CentralAudit;
 import commerce.eshop.core.util.enums.AuditingStatus;
-import commerce.eshop.core.util.sort.CustomerPaymentMethodSort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-@Service
+@Component
 @Transactional(readOnly = true)
 public class DomainLookupServiceImpl implements DomainLookupService {
 
