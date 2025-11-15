@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Component
 @Transactional(readOnly = true)
@@ -109,6 +110,11 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     @Override
     public Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
         return orderDomain.retrieveOrder(customerId, orderId, method);
+    }
+
+    @Override
+    public Stream<OrderItem> getOrderItemsStream(UUID orderId){
+        return orderDomain.retrieveOrderItems(orderId);
     }
 
     // --- Order pageable ---

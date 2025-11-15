@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.events;
+package commerce.eshop.core.application.events.payments;
 
 import java.math.BigDecimal;
 import java.util.Map;

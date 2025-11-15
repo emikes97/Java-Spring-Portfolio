@@ -1,6 +1,6 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.application.events.PaymentExecutionRequestEvent;
+import commerce.eshop.core.application.events.payments.PaymentExecutionRequestEvent;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
@@ -33,8 +33,6 @@ import java.util.*;
 public class TransactionServiceImpl implements TransactionsService {
 
     // == Fields ==
-    private final CustomerRepo customerRepo;
-    private final OrderRepo orderRepo;
     private final TransactionRepo transactionRepo;
     private final ApplicationEventPublisher publisher;
     private final CentralAudit centralAudit;
@@ -43,11 +41,9 @@ public class TransactionServiceImpl implements TransactionsService {
 
     // == Constructors ==
     @Autowired
-    public TransactionServiceImpl(CustomerRepo customerRepo, OrderRepo orderRepo, TransactionRepo transactionRepo,
+    public TransactionServiceImpl(TransactionRepo transactionRepo,
                                   ApplicationEventPublisher publisher, CentralAudit centralAudit,
                                   TransactionServiceMapper transactionServiceMapper, DomainLookupService domainLookupService){
-        this.customerRepo = customerRepo;
-        this.orderRepo = orderRepo;
         this.transactionRepo = transactionRepo;
         this.publisher = publisher;
         this.centralAudit = centralAudit;

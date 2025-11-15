@@ -1,9 +1,9 @@
 package commerce.eshop.core.application.async.internal;
 
 import commerce.eshop.core.application.email.EmailComposer;
-import commerce.eshop.core.application.events.EmailEventRequest;
-import commerce.eshop.core.application.events.PaymentExecutionRequestEvent;
-import commerce.eshop.core.application.events.PaymentSucceededOrFailed;
+import commerce.eshop.core.application.events.email.EmailEventRequest;
+import commerce.eshop.core.application.events.payments.PaymentExecutionRequestEvent;
+import commerce.eshop.core.application.events.payments.PaymentSucceededOrFailed;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;

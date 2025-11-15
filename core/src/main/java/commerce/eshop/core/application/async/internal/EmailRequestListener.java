@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.async.internal;
 
-import commerce.eshop.core.application.events.EmailEventRequest;
+import commerce.eshop.core.application.events.email.EmailEventRequest;
 import commerce.eshop.core.model.entity.EmailsSent;
 import commerce.eshop.core.repository.EmailsSentRepo;
 import commerce.eshop.core.application.infrastructure.audit.CentralAudit;

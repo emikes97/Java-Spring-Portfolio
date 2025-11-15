@@ -1,7 +1,7 @@
 package commerce.eshop.core.application.async.internal;
 
 
-import commerce.eshop.core.application.events.PaymentSucceededOrFailed;
+import commerce.eshop.core.application.events.payments.PaymentSucceededOrFailed;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
 import commerce.eshop.core.application.util.constants.EndpointsNameMethods;

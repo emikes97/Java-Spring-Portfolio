@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface DomainLookupService {
 
@@ -41,6 +42,7 @@ public interface DomainLookupService {
 
     // --- Orders (ownership enforced) ---
     Order getOrderOrThrow(UUID customerId, UUID orderId, String method);
+    Stream<OrderItem> getOrderItemsStream(UUID orderId);
 
     // --- Orders pageable ---
     Page<Order> getPagedOrders(UUID customerId, Pageable page);

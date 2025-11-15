@@ -1,7 +1,7 @@
 package commerce.eshop.core.application.async.internal;
 
 
-import commerce.eshop.core.application.events.PaymentMethodCreatedEvent;
+import commerce.eshop.core.application.events.customer.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
 import commerce.eshop.core.application.util.constants.EndpointsNameMethods;

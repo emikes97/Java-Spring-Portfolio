@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.events;
+package commerce.eshop.core.application.events.email;
 
 import commerce.eshop.core.application.email.enums.EmailKind;
 import jakarta.validation.constraints.Email;

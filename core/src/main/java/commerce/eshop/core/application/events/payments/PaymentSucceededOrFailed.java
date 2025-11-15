@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.events;
+package commerce.eshop.core.application.events.payments;
 
 import commerce.eshop.core.application.util.enums.OrderStatus;
 

@@ -2,7 +2,7 @@ package commerce.eshop.core.application.customer.addons.payments.commands;
 
 import commerce.eshop.core.application.customer.addons.payments.factory.PaymentMethodFactory;
 import commerce.eshop.core.application.customer.addons.payments.writer.PaymentMethodWriter;
-import commerce.eshop.core.application.events.PaymentMethodCreatedEvent;
+import commerce.eshop.core.application.events.customer.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;

@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.email;
 
-import commerce.eshop.core.application.events.EmailEventRequest;
+import commerce.eshop.core.application.events.email.EmailEventRequest;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
