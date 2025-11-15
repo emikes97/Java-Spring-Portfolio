@@ -135,6 +135,11 @@ public class DomainLookupServiceImpl implements DomainLookupService {
         }
     }
 
+    // --- Product Methods ----
+    public boolean checkIfProductExistsByProductName(String normalisedName){
+        return productRepo.existsByProductNameIgnoreCase(normalisedName);
+    }
+
     // --- Payment Methods (ownership enforced) ---
     @Override
     public CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method){
@@ -232,5 +237,10 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     @Override
     public Page<WishlistItem> getPagedWishItems(UUID wishlist, Pageable page){
         return wishlistItemRepo.findByWishlist_WishlistId(wishlist, page);
+    }
+
+    @Override
+    public Page<Product> getPagedProducts(long categoryId, Pageable pageable) {
+        return productRepo.findAllByCategoryId(categoryId, pageable);
     }
 }

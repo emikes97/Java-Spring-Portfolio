@@ -33,6 +33,9 @@ public interface DomainLookupService {
     Wishlist getWishlistOrThrow(UUID customerId, String method);
     WishlistItem getWishOrThrow(UUID customerId, Wishlist wishlist, long wishId, String method);
 
+    // --- Product ---
+    boolean checkIfProductExistsByProductName(String name);
+
     // --- Catalog ---
     Product getProductOrThrow(UUID customerId, long productId, String method);
     Product getProductOrThrow(long productId, String method); // Product service overload
@@ -45,4 +48,5 @@ public interface DomainLookupService {
     Page<CustomerAddress> getPagedCustomerAddresses(UUID customerId, Pageable page);
     Page<CustomerPaymentMethod> getPagedPaymentMethods(UUID customerId, Pageable page);
     Page<WishlistItem> getPagedWishItems(UUID wishlist, Pageable page);
+    Page<Product> getPagedProducts(long categoryId, Pageable pageable);
 }
