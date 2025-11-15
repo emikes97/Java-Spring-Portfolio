@@ -43,4 +43,5 @@ public interface DomainLookupService {
     Page<CartItem> getPagedCartItems(UUID cartId, Pageable page);
     Page<CustomerAddress> getPagedCustomerAddresses(UUID customerId, Pageable page);
     Page<CustomerPaymentMethod> getPagedPaymentMethods(UUID customerId, Pageable page);
+    Page<WishlistItem> getPagedWishItems(UUID wishlist, Pageable page);
 }

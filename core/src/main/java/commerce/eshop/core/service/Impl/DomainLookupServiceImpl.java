@@ -223,4 +223,9 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     public Page<CustomerPaymentMethod> getPagedPaymentMethods(UUID customerId, Pageable page){
         return paymentMethodRepo.findByCustomer_CustomerId(customerId, page);
     }
+
+    @Override
+    public Page<WishlistItem> getPagedWishItems(UUID wishlist, Pageable page){
+        return wishlistItemRepo.findByWishlist_WishlistId(wishlist, page);
+    }
 }
