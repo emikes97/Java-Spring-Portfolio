@@ -2,9 +2,9 @@ package commerce.eshop.core.application.product.queries;
 
 import commerce.eshop.core.model.entity.Product;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.SortSanitizer;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
-import commerce.eshop.core.util.sort.ProductSort;
+import commerce.eshop.core.application.util.SortSanitizer;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.sort.ProductSort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -4,7 +4,7 @@ import commerce.eshop.core.application.wishlist.writer.WishlistWriter;
 import commerce.eshop.core.model.entity.Wishlist;
 import commerce.eshop.core.model.entity.WishlistItem;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

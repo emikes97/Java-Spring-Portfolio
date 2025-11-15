@@ -1,6 +1,6 @@
 package commerce.eshop.core.model.entity;
 
-import commerce.eshop.core.util.enums.TokenStatus;
+import commerce.eshop.core.application.util.enums.TokenStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

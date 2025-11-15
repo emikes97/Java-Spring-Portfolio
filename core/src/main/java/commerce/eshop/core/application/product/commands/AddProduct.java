@@ -4,7 +4,7 @@ import commerce.eshop.core.application.product.factory.ProductFactory;
 import commerce.eshop.core.application.product.validation.AuditedProductValidation;
 import commerce.eshop.core.application.product.writer.ProductWriter;
 import commerce.eshop.core.model.entity.Product;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.web.dto.requests.Products.DTOAddProduct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

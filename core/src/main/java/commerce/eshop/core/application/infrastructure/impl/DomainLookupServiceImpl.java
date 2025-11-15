@@ -1,16 +1,13 @@
 package commerce.eshop.core.application.infrastructure.impl;
 
+import commerce.eshop.core.application.infrastructure.domain.*;
 import commerce.eshop.core.model.entity.*;
-import commerce.eshop.core.repository.*;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.enums.AuditingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Component
@@ -18,228 +15,165 @@ import java.util.UUID;
 public class DomainLookupServiceImpl implements DomainLookupService {
 
     // == Fields ==
-    private final CustomerRepo customerRepo;
-    private final CartRepo cartRepo;
-    private final CartItemRepo cartItemRepo;
-    private final OrderRepo orderRepo;
-    private final CustomerAddrRepo customerAddrRepo;
-    private final CustomerPaymentMethodRepo paymentMethodRepo;
-    private final ProductRepo productRepo;
-    private final CategoryRepo categoryRepo;
-    private final CentralAudit centralAudit;
-    private final WishlistRepo wishlistRepo;
-    private final WishlistItemRepo wishlistItemRepo;
+    private final CustomerDomain customerDomain;
+    private final CartDomain cartDomain;
+    private final WishlistDomain wishlistDomain;
+    private final ProductCategoryDomain productCategoryDomain;
+    private final OrderDomain orderDomain;
 
     // == Constructors ==
     public DomainLookupServiceImpl(
-            CustomerRepo customerRepo,
-            CartRepo cartRepo,
-            CartItemRepo cartItemRepo,
-            OrderRepo orderRepo,
-            CustomerAddrRepo customerAddrRepo,
-            CustomerPaymentMethodRepo paymentMethodRepo,
-            ProductRepo productRepo,
-            CategoryRepo categoryRepo,
-            CentralAudit centralAuditaudit,
-            WishlistItemRepo wishlistItemRepo,
-            WishlistRepo wishlistRepo
+            CustomerDomain customerDomain,
+            CartDomain cartDomain,
+            WishlistDomain wishlistDomain,
+            ProductCategoryDomain productCategoryDomain,
+            OrderDomain orderDomain
     ) {
-        this.customerRepo = customerRepo;
-        this.cartRepo = cartRepo;
-        this.cartItemRepo = cartItemRepo;
-        this.orderRepo = orderRepo;
-        this.customerAddrRepo = customerAddrRepo;
-        this.paymentMethodRepo = paymentMethodRepo;
-        this.productRepo = productRepo;
-        this.categoryRepo = categoryRepo;
-        this.centralAudit = centralAuditaudit;
-        this.wishlistItemRepo = wishlistItemRepo;
-        this.wishlistRepo = wishlistRepo;
+        this.customerDomain = customerDomain;
+        this.cartDomain = cartDomain;
+        this.wishlistDomain = wishlistDomain;
+        this.productCategoryDomain = productCategoryDomain;
+        this.orderDomain = orderDomain;
     }
 
-    // == Public Methods ==
+// == Public Methods ==
 
-    // --- Customer & Identity ---
+    /* ===========================================
+     *                CUSTOMER DOMAIN
+     * =========================================== */
+
     @Override
     public Customer getCustomerOrThrow(UUID customerId, String method) {
-        try {
-            return customerRepo.findById(customerId).orElseThrow(
-                    () -> new NoSuchElementException("Customer doesn't exist")
-            );
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
+        return customerDomain.retrieveCustomer(customerId, method);
     }
 
     @Override
     public Customer getCustomerByPhoneOrEmailOrThrow(String key, String method){
-        try {
-            return customerRepo.findByPhoneNumberOrEmail(key)
-                    .orElseThrow(() -> new NoSuchElementException("Customer not found for: " + key));
-        } catch (NoSuchElementException e) {
-            throw centralAudit.audit(e,null, method,
-                    AuditingStatus.WARNING, "CUSTOMER_NOT_FOUND:" + key);
-        }
-    }
-
-    // --- Cart & Items (ownership enforced) ---
-    @Override
-    public Cart getCartOrThrow(UUID customerId, String method) {
-        try {
-            return cartRepo.findCartByCustomerId(customerId).orElseThrow(() -> new NoSuchElementException("Cart doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e,customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
-    @Override
-    public CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method) {
-        try{
-            return cartItemRepo.getCartItemByCartIdAndProductId(cartId, productId).orElseThrow(
-                    () -> new NoSuchElementException("Cart Item doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
-    }
-
-    // --- Orders (ownership enforced) ---
-    @Override
-    public Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
-        try {
-            return orderRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
+        return customerDomain.retrieveCustomerByPhoneOrMail(key, method);
     }
 
     // --- Addresses (ownership enforced) ---
     @Override
     public CustomerAddress getCustomerAddrOrThrow(UUID customerId, long id, String method) {
-        try {
-            return customerAddrRepo.findById(id).orElseThrow(() -> new NoSuchElementException("The address doesn't exist."));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
+        return customerDomain.retrieveCustomerAddress(customerId, id, method);
     }
 
     @Override
-    // Get default address
     public CustomerAddress getCustomerAddrOrThrow(UUID customerId, String method){
-        try {
-            return  customerAddrRepo.findByCustomerCustomerIdAndIsDefaultTrue(customerId).orElseThrow(
-                    () -> new NoSuchElementException("The customer = " + customerId + " doesn't have a default address and " +
-                            "no address has been provided for the order"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
+        return customerDomain.retrieveDefaultAddress(customerId, method);
     }
 
-    // --- Product Methods ----
-    public boolean checkIfProductExistsByProductName(String normalisedName){
-        return productRepo.existsByProductNameIgnoreCase(normalisedName);
-    }
-
-    // --- Payment Methods (ownership enforced) ---
+    // --- Payment Methods ---
     @Override
     public CustomerPaymentMethod getPaymentMethodOrThrow(UUID customerId, UUID paymentMethodId, String method){
-        try {
-            return paymentMethodRepo.findByCustomer_CustomerIdAndCustomerPaymentId(
-                    customerId, paymentMethodId).orElseThrow(
-                    () -> new NoSuchElementException("The payment method doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.ERROR, e.toString());
-        }
+        return customerDomain.retrieveCustomerPaymentMethod(customerId, paymentMethodId, method);
     }
 
-    // --- Wishlist (ownership enforced) ---
-    @Override
-    public Wishlist getWishlistOrThrow(UUID customerId, String method){
-        try {
-            return wishlistRepo.findWishlistByCustomerId(customerId).orElseThrow(
-                    () -> new NoSuchElementException("NOT_FOUND_BY_ID")
-            );
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    @Override
-    public WishlistItem getWishOrThrow(UUID customerId, Wishlist wishlist, long wishId, String method){
-        try {
-            return wishlistItemRepo.findWish(wishlist.getWishlistId(), wishId).orElseThrow(
-                    () -> new NoSuchElementException("WISHLISTED_ITEM_NOT_FOUND")
-            );
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    // --- Catalog ---
-    @Override
-    // get product for product service
-    public Product getProductOrThrow(long productId, String method){
-        try {
-            return productRepo.findById(productId).orElseThrow(() -> new NoSuchElementException("Product with the provided ID doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, null, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    @Override
-    public Product getProductOrThrow(UUID customerId, long productId, String method){
-        try {
-            final Product product = productRepo.findById(productId).orElseThrow(
-                    () -> new NoSuchElementException("The provided ID doesn't match with any available product.")
-            );
-            return product;
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e,customerId, method, AuditingStatus.WARNING, e.toString());
-        }
-    }
-
-    @Override
-    public Category getCategoryOrThrow(long categoryId, String method) {
-        try{
-            return categoryRepo.findById(categoryId).orElseThrow(
-                    () -> new NoSuchElementException("The requested category doesn't exist"));
-        } catch (NoSuchElementException e){
-            throw centralAudit.audit(e, null, method, AuditingStatus.ERROR);
-        }
-    }
-
-    @Override
-    public Boolean checkIfCatExists(String catName){
-        return categoryRepo.existsByCategoryNameIgnoreCase(catName);
-    }
-
-    // == Pageable ==
-    @Override
-    public Page<Order> getPagedOrders(UUID customerId, Pageable page) {
-        return orderRepo.findByCustomer_CustomerId(customerId, page);
-    }
-
-    @Override
-    public Page<CartItem> getPagedCartItems(UUID cartId, Pageable page){
-        return cartItemRepo.findByCart_CartId(cartId, page);
-    }
-
+    // --- Customer pageable ---
     @Override
     public Page<CustomerAddress> getPagedCustomerAddresses(UUID customerId, Pageable page){
-        return customerAddrRepo.findByCustomerCustomerId(customerId, page);
+        return customerDomain.retrievePagedCustomerAddress(customerId, page);
     }
 
     @Override
     public Page<CustomerPaymentMethod> getPagedPaymentMethods(UUID customerId, Pageable page){
-        return paymentMethodRepo.findByCustomer_CustomerId(customerId, page);
+        return customerDomain.retrievePagedCustomerPaymentMethod(customerId, page);
     }
 
+
+    /* ===========================================
+     *                CART DOMAIN
+     * =========================================== */
+
+    @Override
+    public Cart getCartOrThrow(UUID customerId, String method) {
+        return cartDomain.retrieveCart(customerId, method);
+    }
+
+    @Override
+    public CartItem getCartItemOrThrow(UUID cartId, long productId, UUID customerId, String method) {
+        return cartDomain.retrieveCartItem(cartId, productId, customerId, method);
+    }
+
+    // --- Cart pageable ---
+    @Override
+    public Page<CartItem> getPagedCartItems(UUID cartId, Pageable page){
+        return cartDomain.retrievedPagedCartItems(cartId, page);
+    }
+
+
+    /* ===========================================
+     *                ORDER DOMAIN
+     * =========================================== */
+
+    @Override
+    public Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
+        return orderDomain.retrieveOrder(customerId, orderId, method);
+    }
+
+    // --- Order pageable ---
+    @Override
+    public Page<Order> getPagedOrders(UUID customerId, Pageable page) {
+        return orderDomain.retrievePagedOrders(customerId, page);
+    }
+
+
+    /* ===========================================
+     *                WISHLIST DOMAIN
+     * =========================================== */
+
+    @Override
+    public Wishlist getWishlistOrThrow(UUID customerId, String method){
+        return wishlistDomain.retrieveWishlist(customerId, method);
+    }
+
+    @Override
+    public WishlistItem getWishOrThrow(UUID customerId, Wishlist wishlist, long wishId, String method){
+        return wishlistDomain.retrieveWishlistItem(customerId, wishlist, wishId, method);
+    }
+
+    // --- Wishlist pageable ---
     @Override
     public Page<WishlistItem> getPagedWishItems(UUID wishlist, Pageable page){
-        return wishlistItemRepo.findByWishlist_WishlistId(wishlist, page);
+        return wishlistDomain.retrievedPagedWishlistItems(wishlist, page);
+    }
+
+
+    /* ===========================================
+     *            PRODUCT / CATEGORY DOMAIN
+     * =========================================== */
+
+    // --- Product existence ---
+    @Override
+    public boolean checkIfProductExistsByProductName(String normalisedName){
+        return productCategoryDomain.checkIfProductExistsByProductName(normalisedName);
+    }
+
+    // --- Product lookup ---
+    @Override
+    public Product getProductOrThrow(long productId, String method){
+        return productCategoryDomain.retrieveProduct(productId, method);
     }
 
     @Override
+    public Product getProductOrThrow(UUID customerId, long productId, String method){
+        return productCategoryDomain.retrieveProduct(customerId, productId, method);
+    }
+
+    // --- Category ---
+    @Override
+    public Category getCategoryOrThrow(long categoryId, String method) {
+        return productCategoryDomain.retrieveCategory(categoryId, method);
+    }
+
+    @Override
+    public Boolean checkIfCatExists(String catName){
+        return productCategoryDomain.checkIfCatExists(catName);
+    }
+
+    // --- Product pageable ---
+    @Override
     public Page<Product> getPagedProducts(long categoryId, Pageable pageable) {
-        return productRepo.findAllByCategoryId(categoryId, pageable);
+        return productCategoryDomain.retrievePagedProductsByCategory(categoryId, pageable);
     }
 }

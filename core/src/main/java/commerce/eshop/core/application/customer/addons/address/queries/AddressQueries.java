@@ -2,9 +2,9 @@ package commerce.eshop.core.application.customer.addons.address.queries;
 
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.SortSanitizer;
-import commerce.eshop.core.util.sort.CustomerAddrSort;
+import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
+import commerce.eshop.core.application.util.SortSanitizer;
+import commerce.eshop.core.application.util.sort.CustomerAddrSort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

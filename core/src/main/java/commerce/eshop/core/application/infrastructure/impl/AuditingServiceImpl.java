@@ -2,7 +2,7 @@ package commerce.eshop.core.application.infrastructure.impl;
 
 import commerce.eshop.core.application.events.auditing_events.AuditingImmediateEvent;
 import commerce.eshop.core.application.events.auditing_events.AuditingMethodEvent;
-import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
 import commerce.eshop.core.application.infrastructure.AuditingService;
 import jakarta.annotation.Nullable;
 import org.springframework.context.ApplicationEventPublisher;

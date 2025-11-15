@@ -1,4 +1,4 @@
-package commerce.eshop.core.util.sort;
+package commerce.eshop.core.application.util.sort;
 
 import java.util.Map;
 

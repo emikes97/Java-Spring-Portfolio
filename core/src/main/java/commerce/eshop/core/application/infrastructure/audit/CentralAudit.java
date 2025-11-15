@@ -1,7 +1,7 @@
-package commerce.eshop.core.util;
+package commerce.eshop.core.application.infrastructure.audit;
 
 import commerce.eshop.core.application.infrastructure.AuditingService;
-import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

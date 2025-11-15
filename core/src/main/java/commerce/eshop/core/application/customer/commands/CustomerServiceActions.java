@@ -5,7 +5,7 @@ import commerce.eshop.core.application.events.customer.CustomerSuccessfulUpdateP
 import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.application.customer.validation.AuditedCustomerValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;

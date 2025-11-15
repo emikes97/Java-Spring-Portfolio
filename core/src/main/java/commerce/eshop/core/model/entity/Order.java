@@ -1,6 +1,6 @@
 package commerce.eshop.core.model.entity;
 
-import commerce.eshop.core.util.enums.OrderStatus;
+import commerce.eshop.core.application.util.enums.OrderStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.AccessLevel;

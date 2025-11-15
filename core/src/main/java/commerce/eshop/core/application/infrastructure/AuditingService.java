@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.infrastructure;
 
-import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
 import jakarta.annotation.Nullable;
 
 import java.util.UUID;

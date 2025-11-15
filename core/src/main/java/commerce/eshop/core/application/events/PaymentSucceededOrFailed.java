@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.events;
 
-import commerce.eshop.core.util.enums.OrderStatus;
+import commerce.eshop.core.application.util.enums.OrderStatus;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;

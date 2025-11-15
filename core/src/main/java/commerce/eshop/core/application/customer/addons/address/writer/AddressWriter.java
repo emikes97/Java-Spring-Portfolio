@@ -2,9 +2,9 @@ package commerce.eshop.core.application.customer.addons.address.writer;
 
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.repository.CustomerAddrRepo;
-import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
-import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;

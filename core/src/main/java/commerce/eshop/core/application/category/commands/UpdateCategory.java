@@ -3,7 +3,7 @@ package commerce.eshop.core.application.category.commands;
 import commerce.eshop.core.application.category.writer.CategoryWriter;
 import commerce.eshop.core.model.entity.Category;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.web.dto.requests.Category.DTOUpdateCategory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

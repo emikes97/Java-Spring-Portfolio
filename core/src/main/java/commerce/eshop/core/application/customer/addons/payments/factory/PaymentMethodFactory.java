@@ -2,7 +2,7 @@ package commerce.eshop.core.application.customer.addons.payments.factory;
 
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
-import commerce.eshop.core.util.enums.TokenStatus;
+import commerce.eshop.core.application.util.enums.TokenStatus;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import org.springframework.stereotype.Component;
 

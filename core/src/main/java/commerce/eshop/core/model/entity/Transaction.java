@@ -1,6 +1,6 @@
 package commerce.eshop.core.model.entity;
 
-import commerce.eshop.core.util.enums.TransactionStatus;
+import commerce.eshop.core.application.util.enums.TransactionStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Pattern;

@@ -1,4 +1,4 @@
-package commerce.eshop.core.util.enums;
+package commerce.eshop.core.application.util.enums;
 
 /// Text bank for auditing ///
 public enum AuditMessage {

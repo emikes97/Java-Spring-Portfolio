@@ -3,10 +3,10 @@ package commerce.eshop.core.application.async.internal;
 
 import commerce.eshop.core.application.events.PaymentMethodCreatedEvent;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
-import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
-import commerce.eshop.core.util.enums.AuditingStatus;
-import commerce.eshop.core.util.enums.TokenStatus;
+import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
+import commerce.eshop.core.application.util.enums.TokenStatus;
 import commerce.eshop.core.repository.CustomerPaymentMethodRepo;
 import commerce.eshop.core.application.async.external.ProviderClient;
 import jakarta.persistence.OptimisticLockException;

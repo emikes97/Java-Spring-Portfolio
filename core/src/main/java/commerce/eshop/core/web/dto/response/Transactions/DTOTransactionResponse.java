@@ -1,6 +1,6 @@
 package commerce.eshop.core.web.dto.response.Transactions;
 
-import commerce.eshop.core.util.enums.TransactionStatus;
+import commerce.eshop.core.application.util.enums.TransactionStatus;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;

@@ -6,7 +6,7 @@ import commerce.eshop.core.application.customer.addons.address.writer.AddressWri
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.CustomerAddress;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.web.dto.requests.CustomerAddr.DTOAddCustomerAddress;
 import commerce.eshop.core.web.dto.requests.CustomerAddr.DTOUpdateCustomerAddress;
 import lombok.extern.slf4j.Slf4j;

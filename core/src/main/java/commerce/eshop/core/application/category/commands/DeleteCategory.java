@@ -1,7 +1,7 @@
 package commerce.eshop.core.application.category.commands;
 
 import commerce.eshop.core.application.category.writer.CategoryWriter;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,6 +1,7 @@
-package commerce.eshop.core.util;
+package commerce.eshop.core.application.util;
 
-import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
 import jakarta.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;

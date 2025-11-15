@@ -2,9 +2,9 @@ package commerce.eshop.core.application.customer.addons.payments.queries;
 
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.util.SortSanitizer;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
-import commerce.eshop.core.util.sort.CustomerPaymentMethodSort;
+import commerce.eshop.core.application.util.SortSanitizer;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.sort.CustomerPaymentMethodSort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

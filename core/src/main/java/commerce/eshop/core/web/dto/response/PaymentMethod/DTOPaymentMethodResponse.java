@@ -1,6 +1,6 @@
 package commerce.eshop.core.web.dto.response.PaymentMethod;
 
-import commerce.eshop.core.util.enums.TokenStatus;
+import commerce.eshop.core.application.util.enums.TokenStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

@@ -5,10 +5,10 @@ import commerce.eshop.core.application.customer.addons.payments.commands.DeleteP
 import commerce.eshop.core.application.customer.addons.payments.commands.UpdatePaymentInformation;
 import commerce.eshop.core.application.customer.addons.payments.queries.PaymentQueries;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
-import commerce.eshop.core.util.CentralAudit;
-import commerce.eshop.core.util.constants.EndpointsNameMethods;
-import commerce.eshop.core.util.enums.AuditMessage;
-import commerce.eshop.core.util.enums.AuditingStatus;
+import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
+import commerce.eshop.core.application.util.enums.AuditMessage;
+import commerce.eshop.core.application.util.enums.AuditingStatus;
 import commerce.eshop.core.service.CustomerPaymentMethodService;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOAddPaymentMethod;
 import commerce.eshop.core.web.dto.requests.CustomerPaymentMethodRequests.DTOUpdatePaymentMethod;
