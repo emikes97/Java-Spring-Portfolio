@@ -70,7 +70,7 @@ public class AuditedCustomerValidation {
     }
 
     /** Verify new name/surname **/
-    public boolean isNoChange(Customer customer, String trimmed, String methodName){
+    public boolean hasNoUpdate(Customer customer, String trimmed, String methodName){
 
         switch (methodName) {
             case EndpointsNameMethods.UPDATE_NAME -> {
@@ -97,7 +97,7 @@ public class AuditedCustomerValidation {
             default -> {
                 IllegalArgumentException illegal = new IllegalArgumentException("Non-existant method");
                 throw  centralAudit.audit(illegal, customer.getCustomerId(), "UNREGISTERED_METHOD", AuditingStatus.ERROR,
-                        "Method passed at isNoChange, doesn't exist");
+                        "Method passed at hasNoUpdate, doesn't exist");
             }
         }
     }

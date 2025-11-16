@@ -196,7 +196,7 @@ class AuditedCustomerValidationTest {
     }
 
     @Test
-    void isNoChange_namePath_SameName() {
+    void hasNoUpdate_namePath_SameName() {
         Customer customer = mock(Customer.class);
         UUID customerId = UUID.randomUUID();
 
@@ -206,7 +206,7 @@ class AuditedCustomerValidationTest {
         String trimmed = "John";
 
         //
-        boolean result = validation.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_NAME);
+        boolean result = validation.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_NAME);
 
         assertTrue(result);
 
@@ -220,7 +220,7 @@ class AuditedCustomerValidationTest {
 
 
     @Test
-    void isNoChange_namePath_differentName() {
+    void hasNoUpdate_namePath_differentName() {
         Customer customer = mock(Customer.class);
         UUID customerId = UUID.randomUUID();
 
@@ -230,13 +230,14 @@ class AuditedCustomerValidationTest {
         String trimmed = "Nick";
 
         //
-        boolean result = validation.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_NAME);
+        boolean result = validation.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_NAME);
 
         assertFalse(result);
         verifyNoInteractions(centralAudit);
     }
 
-    void isNoChange_surnamePath_sameSurname(){
+    @Test
+    void hasNoUpdate_surnamePath_sameSurname(){
         Customer customer = mock(Customer.class);
         UUID customerId = UUID.randomUUID();
 
@@ -245,15 +246,91 @@ class AuditedCustomerValidationTest {
 
         String trimmed = "JoJo";
 
-        boolean result = validation.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_SURNAME);
+        boolean result = validation.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_SURNAME);
 
         assertTrue(result);
+        verify(centralAudit, times(1)).info(
+                eq(customerId),
+                eq(EndpointsNameMethods.UPDATE_SURNAME),
+                eq(AuditingStatus.WARNING),
+                eq("NO_CHANGE_SAME_SURNAME")
+        );
+    }
+
+    @Test
+    void hasNoUpdate_surnamePath_differentSurname(){
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getSurname()).thenReturn("JoJo");
+        when(customer.getCustomerId()).thenReturn(customerId);
+
+        String trimmed = "Caesar";
+
+        boolean result = validation.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_SURNAME);
+
+        assertFalse(result);
         verifyNoInteractions(centralAudit);
     }
 
+    @Test
+    void hasNoUpdate_usernamePath_sameUsername(){
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getUsername()).thenReturn("JoJo");
+        when(customer.getCustomerId()).thenReturn(customerId);
+
+        String trimmed = "JoJo";
+
+        boolean result = validation.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_USERNAME);
+        assertTrue(result);
+        verify(centralAudit, times(1)).info(
+                eq(customerId),
+                eq(EndpointsNameMethods.UPDATE_USERNAME),
+                eq(AuditingStatus.WARNING),
+                eq("NO_CHANGE_SAME_USERNAME")
+        );
+    }
+
+    @Test
+    void hasNoUpdate_usernamePath_differentUsername(){
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getUsername()).thenReturn("JoJo");
+        when(customer.getCustomerId()).thenReturn(customerId);
+
+        String trimmed = "Caesar";
+
+        boolean result = validation.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_USERNAME);
+        assertFalse(result);
+        verifyNoInteractions(centralAudit);
+    }
+
+    @Test
+    void hasNoUpdate_wrongPath(){
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> validation.hasNoUpdate(customer, "Caesaaaaar", "RANDOM"));
+
+        verifyAuditCalledOnce(IllegalArgumentException.class, null, "UNREGISTERED_METHOD", "Method passed at hasNoUpdate, doesn't exist");
+    }
 
     @Test
     void auditNoChange() {
+        UUID customerId = UUID.randomUUID();
+
+        validation.auditNoChange(customerId);
+
+        verify(centralAudit, times(1)).info(
+                eq(customerId),
+                eq(EndpointsNameMethods.UPDATE_FULLNAME),
+                eq(AuditingStatus.WARNING),
+                eq("NO_CHANGE_SAME_FULLNAME")
+        );
     }
 
 
@@ -269,7 +346,7 @@ class AuditedCustomerValidationTest {
                 any(exType),
                 eq(customerId),
                 eq(method),
-                eq(AuditingStatus.WARNING),
+                any(AuditingStatus.class),
                 eq(code)
         );
     }

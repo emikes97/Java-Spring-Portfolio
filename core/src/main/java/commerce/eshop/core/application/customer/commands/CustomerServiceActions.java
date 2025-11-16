@@ -45,7 +45,7 @@ public class CustomerServiceActions {
         validator.verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_NAME);
         String trimmed = name.trim();
 
-        if(validator.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_NAME)){
+        if(validator.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_NAME)){
             return;
         }
 
@@ -62,7 +62,7 @@ public class CustomerServiceActions {
         validator.verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_SURNAME);
 
         String trimmed = lastName.trim();
-        if (validator.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_SURNAME)) {
+        if (validator.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_SURNAME)) {
             return;
         }
 
@@ -83,12 +83,12 @@ public class CustomerServiceActions {
         String newSurname = lastName.trim();
 
         boolean changed = false;
-        if (!validator.isNoChange(customer, newName, EndpointsNameMethods.UPDATE_NAME))
+        if (!validator.hasNoUpdate(customer, newName, EndpointsNameMethods.UPDATE_NAME))
         {
             customer.setName(newName);
             changed = true;
         }
-        if(!validator.isNoChange(customer, newSurname, EndpointsNameMethods.UPDATE_SURNAME)){
+        if(!validator.hasNoUpdate(customer, newSurname, EndpointsNameMethods.UPDATE_SURNAME)){
             customer.setSurname(newSurname);
             changed = true;
         }
@@ -110,7 +110,7 @@ public class CustomerServiceActions {
         validator.verifyPasswordOrThrow(customer, password, customerId, EndpointsNameMethods.UPDATE_USERNAME);
 
         String trimmed = userName.trim();
-        if(validator.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_USERNAME)) {
+        if(validator.hasNoUpdate(customer, trimmed, EndpointsNameMethods.UPDATE_USERNAME)) {
             return;
         }
 
