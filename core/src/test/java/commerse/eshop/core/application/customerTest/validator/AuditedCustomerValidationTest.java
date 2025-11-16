@@ -118,7 +118,7 @@ class AuditedCustomerValidationTest {
     }
 
     @Test
-    void verifyPasswordDuplication() {
+    void  verifyPasswordDuplication() {
         Customer customer = mock(Customer.class);
 
         when(customer.getPasswordHash()).thenReturn("encoded_password");
@@ -151,15 +151,106 @@ class AuditedCustomerValidationTest {
 
     @Test
     void verifyPasswordIntegrity() {
+        UUID customerId = UUID.randomUUID();
+        String newPassword = "1@%#@F$%!@#$%%&F@#EEDE";
+
+        assertDoesNotThrow(
+                () -> validation.verifyPasswordIntegrity(newPassword, customerId)
+        );
+
+        verifyNoInteractions(centralAudit);
+    }
+
+    @Test
+    void verifyPasswordIntegrity_WeakPassword(){
+        UUID customerId = UUID.randomUUID();
+        String newPassword = "12345";
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> validation.verifyPasswordIntegrity(newPassword, customerId));
+
+        assertEquals("Password too short.", ex.getMessage());
+        verifyAuditCalledOnce(IllegalArgumentException.class, customerId, EndpointsNameMethods.UPDATE_PASSWORD, "WEAK_PASSWORD");
     }
 
     @Test
     void verifyCustomer() {
+        Customer customer = mock(Customer.class);
+
+        when(customer.getCustomerId()).thenReturn(UUID.randomUUID());
+
+        assertDoesNotThrow(
+                () -> validation.verifyCustomer(customer.getCustomerId(), "endpoint")
+        );
+
+        verifyNoInteractions(centralAudit);
     }
 
     @Test
-    void isNoChange() {
+    void verifyCustomer_NullException(){
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> validation.verifyCustomer(null, "endpoint" ));
+
+        assertEquals("Missing customerId.", ex.getMessage());
+        verifyAuditCalledOnce(IllegalArgumentException.class, null, "endpoint", "MISSING_CUSTOMER_ID");
     }
+
+    @Test
+    void isNoChange_namePath_SameName() {
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getCustomerId()).thenReturn(customerId);
+        when(customer.getName()).thenReturn("John");
+
+        String trimmed = "John";
+
+        //
+        boolean result = validation.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_NAME);
+
+        assertTrue(result);
+
+        verify(centralAudit, times(1)).info(
+                eq(customerId),
+                eq(EndpointsNameMethods.UPDATE_NAME),
+                eq(AuditingStatus.WARNING),
+                eq("NO_CHANGE_SAME_NAME")
+        );
+    }
+
+
+    @Test
+    void isNoChange_namePath_differentName() {
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getCustomerId()).thenReturn(customerId);
+        when(customer.getName()).thenReturn("John");
+
+        String trimmed = "Nick";
+
+        //
+        boolean result = validation.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_NAME);
+
+        assertFalse(result);
+        verifyNoInteractions(centralAudit);
+    }
+
+    void isNoChange_surnamePath_sameSurname(){
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getSurname()).thenReturn("JoJo");
+        when(customer.getCustomerId()).thenReturn(customerId);
+
+        String trimmed = "JoJo";
+
+        boolean result = validation.isNoChange(customer, trimmed, EndpointsNameMethods.UPDATE_SURNAME);
+
+        assertTrue(result);
+        verifyNoInteractions(centralAudit);
+    }
+
 
     @Test
     void auditNoChange() {
@@ -190,7 +281,7 @@ class AuditedCustomerValidationTest {
     static <E extends RuntimeException> void mockAuditReturnSame(CentralAudit auditMock) {
         when(auditMock.audit(
                 any(RuntimeException.class),
-                any(UUID.class),
+                any(),
                 anyString(),
                 any(AuditingStatus.class),
                 anyString()
