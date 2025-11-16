@@ -1,14 +1,13 @@
 package commerce.eshop.core.application.customer.queries;
 
+import commerce.eshop.core.application.customer.validation.AuditedCustomerValidation;
 import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.CartItem;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
-import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
 import commerce.eshop.core.application.util.SortSanitizer;
 import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
-import commerce.eshop.core.application.util.enums.AuditingStatus;
 import commerce.eshop.core.application.util.sort.CustomerSort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -24,37 +23,30 @@ public class CustomerQueries {
     // == Fields ==
     private final DomainLookupService domainLookupService;
     private final SortSanitizer sortSanitizer;
-    private final CentralAudit centralAudit;
+    private final AuditedCustomerValidation validation;
 
     // == Constructors ==
     @Autowired
-    public CustomerQueries(DomainLookupService domainLookupService, CentralAudit centralAudit, SortSanitizer sortSanitizer) {
+    public CustomerQueries(DomainLookupService domainLookupService, SortSanitizer sortSanitizer, AuditedCustomerValidation validation) {
         this.domainLookupService = domainLookupService;
-        this.centralAudit = centralAudit;
         this.sortSanitizer = sortSanitizer;
+        this.validation = validation;
     }
 
     // == Public methods ==
 
     @Transactional(readOnly = true)
     public Customer getCustomerProfile(UUID customerId){
-
-        if (customerId == null) {
-            IllegalArgumentException bad = new IllegalArgumentException("Missing customerId.");
-            throw centralAudit.audit(bad, null, EndpointsNameMethods.GET_PROFILE_BY_ID, AuditingStatus.WARNING, "MISSING_CUSTOMER_ID");
-        }
-
+        validation.verifyCustomer(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID);
         return domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.GET_PROFILE_BY_ID);
     }
 
     @Transactional(readOnly = true)
     public Customer getCustomerProfile(String phoneOrEmail){
-
-        requireNotBlank(phoneOrEmail, null, EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
+        validation.requireNotBlank(phoneOrEmail, null, EndpointsNameMethods.GET_PROFILE_BY_SEARCH,
                 "MISSING_IDENTIFIER", "Missing phone/email identifier.");
         final String key = phoneOrEmail.trim();
         return domainLookupService.getCustomerByPhoneOrEmailOrThrow(key, EndpointsNameMethods.GET_PROFILE_BY_SEARCH);
-
     }
 
     @Transactional(readOnly = true)
@@ -68,15 +60,6 @@ public class CustomerQueries {
         final Cart cart = domainLookupService.getCartOrThrow(customerId, EndpointsNameMethods.GET_CART_ITEMS);
         Pageable p = sortSanitizer.sanitize(pageable, CustomerSort.CUSTOMER_CART_ITEMS_SORT_WHITELIST, CustomerSort.MAX_PAGE_SIZE);
         return domainLookupService.getPagedCartItems(cart.getCartId(), p);
-    }
-
-    // == Private methods ==
-
-    /** Fail if the value is blank. Audits with WARNING and throws 400 (IllegalArgumentException). */
-    private void requireNotBlank(String val, UUID cid, String endpoint, String code, String msg) {
-        if (val == null || val.isBlank()) {
-            throw centralAudit.audit(new IllegalArgumentException(msg), cid, endpoint, AuditingStatus.WARNING, code);
-        }
     }
 }
 

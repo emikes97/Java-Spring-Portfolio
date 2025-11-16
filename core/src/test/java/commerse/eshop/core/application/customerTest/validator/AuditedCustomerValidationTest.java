@@ -351,10 +351,6 @@ class AuditedCustomerValidationTest {
         );
     }
 
-    private <E extends RuntimeException> E auditAndThrow(E ex, UUID cid, String method, String code) {
-        return centralAudit.audit(ex, cid, method, AuditingStatus.WARNING, code);
-    }
-
     static <E extends RuntimeException> void mockAuditReturnSame(CentralAudit auditMock) {
         when(auditMock.audit(
                 any(RuntimeException.class),
