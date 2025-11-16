@@ -2,6 +2,7 @@ package commerse.eshop.core.application.customerTest.validator;
 
 import commerce.eshop.core.application.customer.validation.AuditedCustomerValidation;
 import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
+import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.application.util.enums.AuditingStatus;
 import commerce.eshop.core.model.entity.Customer;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +42,7 @@ class AuditedCustomerValidationTest {
         assertDoesNotThrow(
                 () -> validation.requireNotBlank("hello", customerId, "EP", "CODE", "msg")
         );
-        verifyAuditCalledOnce(any(), any(), any(), any());
+        verifyNoInteractions(centralAudit);
     }
 
     // --> Invalid Case
@@ -81,7 +82,7 @@ class AuditedCustomerValidationTest {
                 validation.verifyPasswordOrThrow(customer, "password", customerId, "EP")
         );
 
-        verifyAuditCalledOnce(any(), customerId, "EP", "CODE");
+        verifyNoInteractions(centralAudit);
     }
 
     @Test
@@ -97,7 +98,7 @@ class AuditedCustomerValidationTest {
 
         assertEquals("Invalid password", ex.getMessage());
 
-        verifyAuditCalledOnce(BadCredentialsException.class, customerId, "EP", "CODE");
+        verifyAuditCalledOnce(BadCredentialsException.class, customerId, "EP", "INVALID_PASSWORD");
     }
 
     @Test
@@ -106,17 +107,46 @@ class AuditedCustomerValidationTest {
         Customer customer = mock(Customer.class);
 
         when(customer.getPasswordHash()).thenReturn("encoded_password");
+        when(passwordEncoder.matches(null, "encoded-password")).thenReturn(false);
 
         BadCredentialsException ex = assertThrows(BadCredentialsException.class,
                 () -> validation.verifyPasswordOrThrow(customer, null, customerId, "EP"));
 
         assertEquals("Invalid password", ex.getMessage());
 
-        verifyAuditCalledOnce(BadCredentialsException.class, customerId, "EP", "CODE");
+        verifyAuditCalledOnce(BadCredentialsException.class, customerId, "EP", "INVALID_PASSWORD");
     }
 
     @Test
     void verifyPasswordDuplication() {
+        Customer customer = mock(Customer.class);
+
+        when(customer.getPasswordHash()).thenReturn("encoded_password");
+        when(customer.getCustomerId()).thenReturn(UUID.randomUUID());
+        when(passwordEncoder.matches("different_encoded_password", "encoded_password")).thenReturn(false);
+
+        assertDoesNotThrow(
+                () -> validation.verifyPasswordDuplication("different_encoded_password", customer)
+        );
+
+        verifyNoInteractions(centralAudit);
+    }
+
+    @Test
+    void verifyPasswordDuplication_throwDuplicatePassword(){
+        Customer customer = mock(Customer.class);
+        UUID customerId = UUID.randomUUID();
+
+        when(customer.getCustomerId()).thenReturn(customerId);
+        when(customer.getPasswordHash()).thenReturn("encoded_password");
+        when(passwordEncoder.matches("new_password", "encoded_password")).thenReturn(true);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> validation.verifyPasswordDuplication("new_password", customer)
+        );
+
+        assertEquals("New password must be different from current.", ex.getMessage());
+        verifyAuditCalledOnce(IllegalArgumentException.class, customerId, EndpointsNameMethods.UPDATE_PASSWORD, "REUSED_PASSWORD");
     }
 
     @Test
