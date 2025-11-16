@@ -42,6 +42,7 @@ public class CancelOrder {
 
         int expected = orderWriter.countOrderItems(order.getOrderId());
         validation.checkExpectedUpdated(expected, customerId); // -> If expected == 0 fail
+
         int updated = orderWriter.restoreProductStock(order.getOrderId());
         validation.checkRestockUpdate(updated, expected, customerId); // -> If update != expected fail & rollback data mismatch
 

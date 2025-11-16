@@ -80,7 +80,7 @@ public class OrderPlacementExecutor {
             throw new CannotSerializeTransactionException("cart checkout locked");
         }
 
-        // -> If true, generate the default address from customer
+        // -> If adressDto == null, generate the default address from customer else fail
         if(validation.checkAddressDto(addressDto))
             addressDto = defaultAddressFactory.handle(customerId);
 
@@ -90,10 +90,9 @@ public class OrderPlacementExecutor {
         Order order = orderFactory.handle(customer, addressDto, total_outstanding);
 
         // Decrement quantity of products based on the cart
-        // IMPORTANT: let serialization/deadlock exceptions bubble to outer retry
         cartWriter.reserveStock(cart.getCartId(), customerId);
 
-        // Save order and flush
+        // Save order and flush for forced check + generate UUID.
         order = orderWriter.save(order, cart.getCartId(), customerId);
         PlacedOrderEvent orderEvent = new PlacedOrderEvent(customerId, order.getOrderId(), order.getTotalOutstanding(), "Euro");
         publisher.publishEvent(orderEvent);
