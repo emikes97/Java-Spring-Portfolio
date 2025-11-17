@@ -117,7 +117,7 @@ class CustomerApplicationEventsTest {
     }
 
     @Test
-    void testOn_CustomerFailedUpdatePasswordEvent_fired(){
+    void testOn_CustomerSuccessfulOrFailedUpdatePasswordEvent_fired(){
         UUID customerId = UUID.randomUUID();
         Customer customer = mock(Customer.class);
         CustomerSuccessfulOrFailedUpdatePasswordEvent event = mock(CustomerSuccessfulOrFailedUpdatePasswordEvent.class);
@@ -139,7 +139,17 @@ class CustomerApplicationEventsTest {
     }
 
     @Test
-    void testOn_CustomerFailedUpdatePasswordEvent_notFired(){
+    void testOn_CustomerSuccessfulOrFailedUpdatePasswordEvent_notFired(){
+        UUID customerId = UUID.randomUUID();
+        CustomerSuccessfulOrFailedUpdatePasswordEvent event = mock(CustomerSuccessfulOrFailedUpdatePasswordEvent.class);
 
+        when(event.customerId()).thenReturn(customerId);
+        when(domainLookupService.getCustomerOrThrow(eq(customerId), anyString())).thenThrow(new NoSuchElementException("not found"));
+
+        assertThrows(NoSuchElementException.class, () -> customerApplicationEvents.on(event));
+
+        verify(domainLookupService).getCustomerOrThrow(eq(customerId), anyString());
+        verify(emailComposer, never()).passwordUpdated(any(), anyBoolean());
+        verify(publisher, never()).publishEvent(any());
     }
 }
