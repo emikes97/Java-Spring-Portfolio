@@ -3,7 +3,6 @@ package commerce.eshop.core.application.customer.listeners;
 import commerce.eshop.core.application.email.EmailComposer;
 import commerce.eshop.core.application.events.email.EmailEventRequest;
 import commerce.eshop.core.application.events.customer.CustomerRegisteredEvent;
-import commerce.eshop.core.application.events.customer.CustomerFailedUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerSuccessfulOrFailedUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;

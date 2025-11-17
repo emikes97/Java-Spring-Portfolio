@@ -2,7 +2,6 @@ package commerse.eshop.core.application.customerTest.listeners;
 
 import commerce.eshop.core.application.customer.listeners.CustomerApplicationEvents;
 import commerce.eshop.core.application.email.EmailComposer;
-import commerce.eshop.core.application.events.customer.CustomerFailedUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerRegisteredEvent;
 import commerce.eshop.core.application.events.customer.CustomerSuccessfulOrFailedUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
