@@ -4,7 +4,7 @@ import commerce.eshop.core.application.email.EmailComposer;
 import commerce.eshop.core.application.events.email.EmailEventRequest;
 import commerce.eshop.core.application.events.customer.CustomerRegisteredEvent;
 import commerce.eshop.core.application.events.customer.CustomerFailedUpdatePasswordEvent;
-import commerce.eshop.core.application.events.customer.CustomerSuccessfulUpdatePasswordEvent;
+import commerce.eshop.core.application.events.customer.CustomerSuccessfulOrFailedUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
@@ -59,16 +59,8 @@ public class CustomerApplicationEvents {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
-    public void on(CustomerFailedUpdatePasswordEvent event){
-        Customer customer = domainLookupService.getCustomerOrThrow(event.customerId(), "Placeholder");
-        EmailEventRequest publishMailEvent = emailComposer.passwordUpdated(customer, event.successfulOrNot());
-        publisher.publishEvent(publishMailEvent);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(CustomerSuccessfulUpdatePasswordEvent event){
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
+    public void on(CustomerSuccessfulOrFailedUpdatePasswordEvent event){
         Customer customer = domainLookupService.getCustomerOrThrow(event.customerId(), "Placeholder");
         EmailEventRequest publishMailEvent = emailComposer.passwordUpdated(customer, event.successfulOrNot());
         publisher.publishEvent(publishMailEvent);

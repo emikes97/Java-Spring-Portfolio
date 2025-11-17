@@ -1,7 +1,7 @@
 package commerce.eshop.core.application.customer.commands;
 
 import commerce.eshop.core.application.customer.writer.CustomerWriter;
-import commerce.eshop.core.application.events.customer.CustomerSuccessfulUpdatePasswordEvent;
+import commerce.eshop.core.application.events.customer.CustomerSuccessfulOrFailedUpdatePasswordEvent;
 import commerce.eshop.core.application.events.customer.CustomerUpdatedInfoEvent;
 import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
@@ -128,14 +128,19 @@ public class CustomerServiceActions {
         Customer customer = domainLookupService.getCustomerOrThrow(customerId, EndpointsNameMethods.UPDATE_PASSWORD);
         validator.verifyPasswordOrThrow(customer, currentPassword, customerId, EndpointsNameMethods.UPDATE_PASSWORD);
 
+        String hashedPassword;
         // Reject easy passwords
-        validator.verifyPasswordIntegrity(newPassword, customerId);
-
         // Prevent reuse -- If it's not duplicate return new hashed password
-        String hashedPassword = validator.verifyPasswordDuplication(newPassword, customer);
+        try {
+            validator.verifyPasswordIntegrity(newPassword, customerId);
+            hashedPassword = validator.verifyPasswordDuplication(newPassword, customer);
+        } catch (IllegalArgumentException ex){
+            publisher.publishEvent(new CustomerSuccessfulOrFailedUpdatePasswordEvent(customerId, false));
+            return;
+        }
 
         customer.setPasswordHash(hashedPassword);
         customerWriter.save(customer);
-        publisher.publishEvent(new CustomerSuccessfulUpdatePasswordEvent(customerId, true));
+        publisher.publishEvent(new CustomerSuccessfulOrFailedUpdatePasswordEvent(customerId, true));
     }
 }
