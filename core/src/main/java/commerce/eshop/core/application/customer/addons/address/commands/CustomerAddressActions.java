@@ -86,7 +86,7 @@ public class CustomerAddressActions {
         customerAddress.setDefault(true);
         customerAddress = addressWriter.save(customerAddress, customerId, EndpointsNameMethods.ADDR_MAKE_DEFAULT);
 
-        return customerAddress;
+        return customerAddress; // index hell
     }
 
     @Transactional
