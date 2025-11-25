@@ -131,6 +131,35 @@ public class GlobalApiErrorHandler {
         return problemDetail;
     }
 
+    /** Business rule violations (e.g. product already exists) */
+    @ExceptionHandler(IllegalStateException.class)
+    public ProblemDetail handle(IllegalStateException ex, HttpServletRequest req) {
+
+        String msg = ex.getMessage() != null ? ex.getMessage() : "ILLEGAL_STATE";
+
+        // Specific case: product already exists
+        if ("Product already exists".equals(msg)) {
+            var problemDetail = ProblemDetail.forStatusAndDetail(
+                    HttpStatus.CONFLICT,
+                    "PRODUCT_ALREADY_EXISTS"
+            );
+            problemDetail.setTitle("Conflict");
+            enrich(problemDetail, req);
+            audit(req, AuditingStatus.WARNING, "PRODUCT_ALREADY_EXISTS");
+            return problemDetail;
+        }
+
+        // Fallback for other IllegalStateException cases -> 400
+        var problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                msg
+        );
+        problemDetail.setTitle("Bad request");
+        enrich(problemDetail, req);
+        audit(req, AuditingStatus.WARNING, "ILLEGAL_STATE:" + safeMsg(ex));
+        return problemDetail;
+    }
+
     /** Fallback -> 500 */
     @ExceptionHandler(Exception.class)
     public ProblemDetail handle(Throwable ex, HttpServletRequest req){

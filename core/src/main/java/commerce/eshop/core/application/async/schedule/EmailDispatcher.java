@@ -3,7 +3,6 @@ package commerce.eshop.core.application.async.schedule;
 import commerce.eshop.core.application.email.EmailClaimService;
 import commerce.eshop.core.model.entity.EmailsSent;
 import commerce.eshop.core.repository.EmailsSentRepo;
-import commerce.eshop.core.application.async.external.contracts.EmailSender;
 import commerce.eshop.core.application.async.internal.email.EmailSendWorker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,6 @@ public class EmailDispatcher {
 
     // == Fields ==
     private final EmailsSentRepo emailsSentRepo;
-    private final EmailSender emailSender;
     private final int batchSize;
     private final Executor exec;
     private final EmailClaimService emailClaimService;
@@ -30,12 +28,11 @@ public class EmailDispatcher {
 
     // == Constructors ==
     @Autowired
-    public EmailDispatcher(EmailsSentRepo emailsSentRepo, EmailSender emailSender,
+    public EmailDispatcher(EmailsSentRepo emailsSentRepo,
                            @Qualifier("emailExecutor") Executor exec,
                            @Value("${emails.dispatch.batch-size:25}") int batchSize,
                            EmailClaimService emailClaimService, EmailSendWorker emailSendWorker) {
         this.emailsSentRepo = emailsSentRepo;
-        this.emailSender = emailSender;
         this.exec = exec;
         this.batchSize = batchSize;
         this.emailClaimService = emailClaimService;

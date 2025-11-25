@@ -6,7 +6,6 @@ import commerce.eshop.core.application.product.validation.AuditedProductValidati
 import commerce.eshop.core.application.product.writer.ProductWriter;
 import commerce.eshop.core.model.entity.Product;
 import commerce.eshop.core.web.dto.requests.Products.DTOAddProduct;
-import commerce.eshop.core.web.dto.response.Product.DTOProductResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,26 +18,25 @@ public class ImportProduct {
     // == Fields ==
     private final ProductFactory productFactory;
     private final ProductWriter productWriter;
+    private final AuditedProductValidation auditedProductValidation;
     private final ImportClientProduct importClientProduct;
 
     // == Constructors ==
     @Autowired
-    public ImportProduct(ProductFactory productFactory, ProductWriter productWriter, ImportClientProduct importClientProduct) {
+    public ImportProduct(ProductFactory productFactory, ProductWriter productWriter, AuditedProductValidation auditedProductValidation, ImportClientProduct importClientProduct) {
         this.productFactory = productFactory;
         this.productWriter = productWriter;
+        this.auditedProductValidation = auditedProductValidation;
         this.importClientProduct = importClientProduct;
     }
 
     // == Public Methods ==
     @Transactional
     public Product handle(){
-
         Map<String, Object> importedProduct = importClientProduct.getProduct();
-
         DTOAddProduct productToAdd = productFactory.normaliseNewProduct(importedProduct);
         Product product = productFactory.handle(productToAdd.productName(), productToAdd.productDescription(), productToAdd);
-
-        product = productWriter.save(product, "ImportNewProduct");
-        return product;
+        auditedProductValidation.checkIfProductExists(product.getProductName());
+        return productWriter.save(product, "ImportNewProduct");
     }
 }
