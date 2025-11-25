@@ -33,8 +33,8 @@ public class ImportProduct {
     // == Public Methods ==
     @Transactional
     public Product handle(){
-        Map<String, Object> importedProduct = importClientProduct.getProduct();
-        DTOAddProduct productToAdd = productFactory.normaliseNewProduct(importedProduct);
+        Map<String, Object> raw = importClientProduct.getProduct();
+        DTOAddProduct productToAdd = productFactory.normaliseNewProduct(raw);
         Product product = productFactory.handle(productToAdd.productName(), productToAdd.productDescription(), productToAdd);
         auditedProductValidation.checkIfProductExists(product.getProductName());
         return productWriter.save(product, "ImportNewProduct");
