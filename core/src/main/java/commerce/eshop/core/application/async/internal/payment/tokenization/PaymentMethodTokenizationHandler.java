@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.internal;
+package commerce.eshop.core.application.async.internal.payment.tokenization;
 
 
 import commerce.eshop.core.application.events.customer.PaymentMethodCreatedEvent;
@@ -26,15 +26,15 @@ import java.util.NoSuchElementException;
 @Slf4j
 public class PaymentMethodTokenizationHandler {
 
-    private final ProviderClient providerClient;
+    private final PaymentMethodTokenizationOrchestrator client;
     private final CustomerPaymentMethodRepo customerPaymentMethodRepo;
     private final CentralAudit centralAudit;
 
     @Autowired
-    public PaymentMethodTokenizationHandler(ProviderClient providerClient,
+    public PaymentMethodTokenizationHandler(PaymentMethodTokenizationOrchestrator client,
                                             CustomerPaymentMethodRepo customerPaymentMethodRepo,
                                             CentralAudit centralAudit){
-        this.providerClient = providerClient;
+        this.client = client;
         this.customerPaymentMethodRepo = customerPaymentMethodRepo;
         this.centralAudit = centralAudit;
     }
@@ -77,7 +77,7 @@ public class PaymentMethodTokenizationHandler {
 
         // Winner does the external call
         try {
-            String token = providerClient.fetchPaymentToken(paymentMethod.getProvider(), paymentMethod);
+            String token = client.fetchPaymentToken(paymentMethod.getProvider(), paymentMethod);
             paymentMethod.setProviderPaymentMethodToken(token);          // never log the token
             paymentMethod.setTokenStatus(TokenStatus.ACTIVE);
             customerPaymentMethodRepo.saveAndFlush(paymentMethod);

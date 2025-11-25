@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.external.impl;
+package commerce.eshop.core.application.async.external.impl.payment.token;
 
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import commerce.eshop.core.application.async.external.ProviderClient;
@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
-@Component
+@Component("providerClientImpl")
 public class ProviderClientImpl implements ProviderClient {
 
     @Override

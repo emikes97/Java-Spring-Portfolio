@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.external.impl;
+package commerce.eshop.core.application.async.external.impl.payment;
 
 import commerce.eshop.core.model.entity.Transaction;
 import commerce.eshop.core.application.async.external.PaymentProviderClient;
