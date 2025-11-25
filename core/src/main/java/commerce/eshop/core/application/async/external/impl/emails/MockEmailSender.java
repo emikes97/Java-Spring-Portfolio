@@ -1,11 +1,11 @@
-package commerce.eshop.core.application.async.external.impl;
+package commerce.eshop.core.application.async.external.impl.emails;
 
-import commerce.eshop.core.application.async.external.EmailSender;
+import commerce.eshop.core.application.async.external.contracts.EmailSender;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-@Component
+@Component("internalMockEmailSender")
 public class MockEmailSender implements EmailSender {
 
     @Override

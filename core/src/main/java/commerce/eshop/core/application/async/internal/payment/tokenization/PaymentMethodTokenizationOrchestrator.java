@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.async.internal.payment.tokenization;
 
-import commerce.eshop.core.application.async.external.ProviderClient;
+import commerce.eshop.core.application.async.external.contracts.ProviderClient;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;

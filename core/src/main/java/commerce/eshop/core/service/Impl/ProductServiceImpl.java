@@ -1,9 +1,6 @@
 package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.application.product.commands.AddProduct;
-import commerce.eshop.core.application.product.commands.ChangeProductQuantity;
-import commerce.eshop.core.application.product.commands.ProductLinkManager;
-import commerce.eshop.core.application.product.commands.RemoveProduct;
+import commerce.eshop.core.application.product.commands.*;
 import commerce.eshop.core.application.product.queries.ProductQueries;
 import commerce.eshop.core.model.entity.Product;
 import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
@@ -27,6 +24,7 @@ public class ProductServiceImpl implements ProductService {
     // == Fields ==
     private final AddProduct addProduct;
     private final ProductQueries queries;
+    private final ImportProduct importProduct;
     private final ChangeProductQuantity changeProductQuantity;
     private final ProductLinkManager productLinkManager;
     private final RemoveProduct removeProduct;
@@ -35,11 +33,12 @@ public class ProductServiceImpl implements ProductService {
 
     // == Constructors ==
     @Autowired
-    public ProductServiceImpl(AddProduct addProduct, ProductQueries queries, ChangeProductQuantity changeProductQuantity,
+    public ProductServiceImpl(AddProduct addProduct, ProductQueries queries, ImportProduct importProduct, ChangeProductQuantity changeProductQuantity,
                               ProductLinkManager productLinkManager, RemoveProduct removeProduct,
                               CentralAudit centralAudit, ProductServiceMapper productServiceMapper){
         this.addProduct = addProduct;
         this.queries = queries;
+        this.importProduct = importProduct;
         this.changeProductQuantity = changeProductQuantity;
         this.productLinkManager = productLinkManager;
         this.removeProduct = removeProduct;
@@ -53,6 +52,12 @@ public class ProductServiceImpl implements ProductService {
     public DTOProductResponse addProduct(DTOAddProduct dto) {
         final Product product = addProduct.handle(dto);
         centralAudit.info(null, EndpointsNameMethods.PRODUCT_ADD, AuditingStatus.SUCCESSFUL, AuditMessage.PRODUCT_ADD_SUCCESS.getMessage());
+        return productServiceMapper.toDto(product);
+    }
+
+    @Override
+    public DTOProductResponse importRandomProduct() {
+        final Product product = importProduct.handle();
         return productServiceMapper.toDto(product);
     }
 

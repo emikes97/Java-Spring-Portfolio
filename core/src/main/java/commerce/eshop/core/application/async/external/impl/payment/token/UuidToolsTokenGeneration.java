@@ -1,6 +1,6 @@
 package commerce.eshop.core.application.async.external.impl.payment.token;
 
-import commerce.eshop.core.application.async.external.ProviderClient;
+import commerce.eshop.core.application.async.external.contracts.ProviderClient;
 import commerce.eshop.core.model.entity.CustomerPaymentMethod;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

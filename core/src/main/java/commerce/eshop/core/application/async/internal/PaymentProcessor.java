@@ -15,7 +15,7 @@ import commerce.eshop.core.application.util.enums.OrderStatus;
 import commerce.eshop.core.application.util.enums.TransactionStatus;
 import commerce.eshop.core.repository.OrderRepo;
 import commerce.eshop.core.repository.TransactionRepo;
-import commerce.eshop.core.application.async.external.PaymentProviderClient;
+import commerce.eshop.core.application.async.external.contracts.PaymentProviderClient;
 import commerce.eshop.core.web.dto.response.Providers.Charging.ProviderChargeResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

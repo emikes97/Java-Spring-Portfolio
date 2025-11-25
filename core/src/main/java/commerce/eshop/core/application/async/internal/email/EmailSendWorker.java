@@ -1,8 +1,8 @@
-package commerce.eshop.core.application.async.internal;
+package commerce.eshop.core.application.async.internal.email;
 
 import commerce.eshop.core.model.entity.EmailsSent;
 import commerce.eshop.core.repository.EmailsSentRepo;
-import commerce.eshop.core.application.async.external.EmailSender;
+import commerce.eshop.core.application.async.external.contracts.EmailSender;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,10 +12,10 @@ public class EmailSendWorker {
 
     // == Fields ==
     private final EmailsSentRepo emailsSentRepo;
-    private final EmailSender emailSender;
+    private final EmailSenderOrchestrator emailSender;
 
     // == Constructors ==
-    public EmailSendWorker(EmailsSentRepo emailsSentRepo, EmailSender emailSender){
+    public EmailSendWorker(EmailsSentRepo emailsSentRepo, EmailSenderOrchestrator emailSender){
         this.emailsSentRepo = emailsSentRepo;
         this.emailSender = emailSender;
     }

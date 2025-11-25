@@ -1,7 +1,7 @@
 package commerce.eshop.core.application.async.external.impl.payment;
 
 import commerce.eshop.core.model.entity.Transaction;
-import commerce.eshop.core.application.async.external.PaymentProviderClient;
+import commerce.eshop.core.application.async.external.contracts.PaymentProviderClient;
 import commerce.eshop.core.web.dto.response.Providers.Charging.ProviderChargeResult;
 import org.springframework.stereotype.Component;
 

@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.internal;
+package commerce.eshop.core.application.async.internal.email;
 
 import commerce.eshop.core.application.events.email.EmailEventRequest;
 import commerce.eshop.core.model.entity.EmailsSent;

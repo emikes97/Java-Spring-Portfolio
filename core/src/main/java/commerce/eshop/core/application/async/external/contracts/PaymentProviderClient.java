@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.external;
+package commerce.eshop.core.application.async.external.contracts;
 
 import commerce.eshop.core.model.entity.Transaction;
 import commerce.eshop.core.web.dto.response.Providers.Charging.ProviderChargeResult;

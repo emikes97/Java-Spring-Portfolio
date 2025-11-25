@@ -8,7 +8,6 @@ import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.application.util.enums.AuditingStatus;
 import commerce.eshop.core.application.util.enums.TokenStatus;
 import commerce.eshop.core.repository.CustomerPaymentMethodRepo;
-import commerce.eshop.core.application.async.external.ProviderClient;
 import jakarta.persistence.OptimisticLockException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

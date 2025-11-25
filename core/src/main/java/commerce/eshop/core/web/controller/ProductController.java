@@ -91,4 +91,9 @@ public class ProductController {
     public void removeProduct(@PathVariable long productId){
         productService.removeProduct(productId);
     }
+
+    @PostMapping("/import/test")
+    public DTOProductResponse importRandomProduct(){
+        return productService.importRandomProduct();
+    }
 }

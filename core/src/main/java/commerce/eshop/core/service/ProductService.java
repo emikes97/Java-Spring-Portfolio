@@ -9,6 +9,7 @@ public interface ProductService {
 
     // == Add New Product
     DTOProductResponse addProduct(DTOAddProduct dto);
+    DTOProductResponse importRandomProduct();
 
     // == Fetch Product
     DTOProductResponse getProduct(long id);
