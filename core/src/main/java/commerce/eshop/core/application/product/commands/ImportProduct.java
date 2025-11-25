@@ -35,8 +35,8 @@ public class ImportProduct {
     public Product handle(){
         Map<String, Object> raw = importClientProduct.getProduct();
         DTOAddProduct productToAdd = productFactory.normaliseNewProduct(raw);
-        Product product = productFactory.handle(productToAdd.productName(), productToAdd.productDescription(), productToAdd);
-        auditedProductValidation.checkIfProductExists(product.getProductName());
-        return productWriter.save(product, "ImportNewProduct");
+        Product productToSave = productFactory.handle(productToAdd.productName(), productToAdd.productDescription(), productToAdd);
+        auditedProductValidation.checkIfProductExists(productToSave.getProductName());
+        return productWriter.save(productToSave, "ImportNewProduct");
     }
 }
