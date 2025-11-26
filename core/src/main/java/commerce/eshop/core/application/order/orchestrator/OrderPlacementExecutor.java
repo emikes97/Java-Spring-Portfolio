@@ -25,9 +25,6 @@ import java.util.UUID;
 @Component
 public class OrderPlacementExecutor {
 
-    /**
-     * ONE ATTEMPT (transactional)
-     */
     // == Field ==
     private final AuditedOrderValidation validation;
     private final DefaultAddressFactory defaultAddressFactory;
