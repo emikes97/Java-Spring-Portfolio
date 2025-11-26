@@ -54,7 +54,7 @@ class PayOrderTest {
         UUID customerId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
         String idemKey = "idem-123";
-        UUID transactionid = UUID.randomUUID();
+        UUID transactionId = UUID.randomUUID();
         DTOTransactionRequest dto = mock(DTOTransactionRequest.class);
         Order order = mock(Order.class);
         Transaction transaction = mock(Transaction.class);
@@ -78,7 +78,7 @@ class PayOrderTest {
         when(transactionWriter.save(transaction)).thenReturn(transaction);
         when(transactionFactory.toDto(transaction)).thenReturn(dtoResponse);
 
-        when(transaction.getTransactionId()).thenReturn(transactionid);
+        when(transaction.getTransactionId()).thenReturn(transactionId);
         when(transaction.getOrder()).thenReturn(order);
         when(order.getOrderId()).thenReturn(orderId);
         when(transaction.getPaymentMethod()).thenReturn(Map.of("type", "card"));
@@ -102,7 +102,7 @@ class PayOrderTest {
         verify(applicationEventPublisher, times(1)).publishEvent(eventCaptor.capture());
         PaymentExecutionRequestEvent event = eventCaptor.getValue();
 
-        assertEquals(transactionid, event.transactionId());
+        assertEquals(transactionId, event.transactionId());
         assertEquals(orderId, event.orderId());
         assertEquals(customerId, event.customerId());
         assertEquals("USE_NEW_CARD", event.methodType());
