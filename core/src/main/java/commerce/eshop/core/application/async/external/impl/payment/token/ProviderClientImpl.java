@@ -7,21 +7,26 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 
 @Slf4j
 @Component("providerClientImpl")
 public class ProviderClientImpl implements ProviderClient {
 
+    private final Function<String, String> tokenGenerator =
+            provider -> "tok_" + provider.toLowerCase() + "_" + UUID.randomUUID();
+
     @Override
     public String fetchPaymentToken(String provider, CustomerPaymentMethod paymentMethod) {
-
         try{
-            Thread.sleep(ThreadLocalRandom.current().nextInt(200,800));
-        } catch (InterruptedException ignored){}
 
-        String token = "tok_" + provider.toLowerCase() + "_" + UUID.randomUUID();
-        log.info("Generated token for provider={} paymentId={}", provider, paymentMethod.getCustomerPaymentId());
-
-        return token;
+            Thread.sleep(ThreadLocalRandom.current().nextInt(1000,3000));
+            String token = tokenGenerator.apply(provider);
+            log.info("Generated token for provider={} paymentId={}", provider, paymentMethod.getCustomerPaymentId());
+            return token;
+        } catch (InterruptedException ex){
+            Thread.currentThread().interrupt(); // restore the interrupted status
+            throw new IllegalStateException("Thread interrupted during token generation", ex);
+        }
     }
 }
