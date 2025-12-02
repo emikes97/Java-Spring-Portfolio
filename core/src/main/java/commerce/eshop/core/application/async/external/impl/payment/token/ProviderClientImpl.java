@@ -18,15 +18,14 @@ public class ProviderClientImpl implements ProviderClient {
 
     @Override
     public String fetchPaymentToken(String provider, CustomerPaymentMethod paymentMethod) {
-        try{
 
+        try{
             Thread.sleep(ThreadLocalRandom.current().nextInt(1000,3000));
-            String token = tokenGenerator.apply(provider);
-            log.info("Generated token for provider={} paymentId={}", provider, paymentMethod.getCustomerPaymentId());
-            return token;
-        } catch (InterruptedException ex){
-            Thread.currentThread().interrupt(); // restore the interrupted status
-            throw new IllegalStateException("Thread interrupted during token generation", ex);
+        } catch (InterruptedException ignored){
         }
+
+        String token = tokenGenerator.apply(provider);
+        log.info("Generated token for provider={} paymentId={}", provider, paymentMethod.getCustomerPaymentId());
+        return token;
     }
 }
