@@ -190,7 +190,7 @@ Portfolio_Eshop/
         │   ├── TransactionRepo.java
         │   ├── WishlistItemRepo.java
         │   ├── WishlistRepo.java
-        │   └── Impl/                          # Custom impls
+        │   └── Impl/                          
         │       └── DbLockRepository.java
         │
         ├── application/                       # Application layer (use-cases, orchestration, infra)
@@ -274,7 +274,6 @@ Portfolio_Eshop/
         │   │   ├── commands/
         │   │   │   ├── CustomerRegistration.java
         │   │   │   ├── CustomerServiceActions.java
-        │   │   │   └── (other customer commands)
         │   │   ├── factory/
         │   │   │   └── CustomerFactory.java
         │   │   ├── queries/
