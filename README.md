@@ -146,135 +146,261 @@ A production-style **e-commerce backend simulation** designed as a portfolio pro
 ## Project Structure
 ```
 Portfolio_Eshop/
-├── core/                                # Core domain logic & infra
-│   ├── config/                          # App configs (executors, background, branding)
-│   │   ├── AsyncConfig.java
-│   │   ├── AsyncExecutorConfig.java
-│   │   ├── BackgroundConfig.java
-│   │   ├── BrandConfig.java
-│   │   └── Conf.java
-│   │
-│   ├── email/                           # Email outbox subsystem
-│   │   ├── constants/
-│   │   ├── enums/
-│   │   ├── properties/
-│   │   ├── templating/
-│   │   │   ├── EmailClaimService.java
-│   │   │   └── EmailComposer.java
-│   │
-│   ├── events/                          # Domain/application events
-│   │   ├── auditing_events/
-│   │   │   └── EmailEventRequest.java
-│   │   ├── PaymentExecutionRequestEvent.java
-│   │   ├── PaymentMethodCreatedEvent.java
-│   │   └── PaymentSucceededOrFailed.java
-│   │
-│   ├── model/                           # Entities (DB schema mirror)
-│   │   └── entity/
-│   │       ├── Auditing.java
-│   │       ├── Cart.java
-│   │       ├── CartItem.java
-│   │       ├── Category.java
-│   │       ├── Customer.java
-│   │       ├── CustomerAddress.java
-│   │       ├── CustomerPaymentMethod.java
-│   │       ├── EmailsSent.java
-│   │       ├── Order.java
-│   │       ├── OrderItem.java
-│   │       ├── Product.java
-│   │       ├── ProductCategory.java
-│   │       ├── Transaction.java
-│   │       ├── Wishlist.java
-│   │       └── WishlistItem.java
-│   │
-│   ├── repository/                      # Spring Data JPA repos
-│   │   ├── AuditingRepo.java
-│   │   ├── CartItemRepo.java
-│   │   ├── CartRepo.java
-│   │   ├── CategoryRepo.java
-│   │   ├── CustomerAddrRepo.java
-│   │   ├── CustomerPaymentMethodRepo.java
-│   │   ├── CustomerRepo.java
-│   │   ├── EmailsSentRepo.java
-│   │   ├── OrderItemRepo.java
-│   │   ├── OrderRepo.java
-│   │   ├── ProductCategoryRepo.java
-│   │   ├── ProductRepo.java
-│   │   ├── TransactionRepo.java
-│   │   ├── WishlistItemRepo.java
-│   │   └── WishlistRepo.java
-│   │
-│   ├── service/                         # Business logic services
-│   │   ├── async/
-│   │   │   ├── external/                # Provider clients (e.g. payment tokenization)
-│   │   │   ├── internal/                # Internal async tasks
-│   │   │   └── schedule/                # Scheduled jobs (pollers/retries)
-│   │   └── impl/
-│   │       ├── AuditingService.java
-│   │       ├── CartService.java
-│   │       ├── CategoryService.java
-│   │       ├── CustomerAddressService.java
-│   │       ├── CustomerPaymentMethodService.java
-│   │       ├── CustomerService.java
-│   │       ├── DomainLookupService.java
-│   │       ├── OrderService.java
-│   │       ├── ProductService.java
-│   │       ├── TransactionsService.java
-│   │       └── WishlistService.java
-│   │
-│   └── util/                            # Utilities (cross-cutting)
-│       ├── constants/
-│       ├── enums/
-│       ├── sort/
-│       │   └── SortSanitizer.java
-│       └── CentralAudit.java
-│
-└── web/                                 # Web/API layer
-    ├── controller/                      # REST controllers
-    │   ├── CartController.java
-    │   ├── CategoryController.java
-    │   ├── CustomerAddressController.java
-    │   ├── CustomerController.java
-    │   ├── CustomerPaymentMethodController.java
-    │   ├── OrderController.java
-    │   ├── ProductController.java
-    │   ├── TransactionController.java
-    │   └── WishController.java
-    │
-    ├── dto/                             # Request/response DTOs
-    │   ├── requests/
-    │   │   ├── Cart/
-    │   │   ├── Category/
-    │   │   ├── Customer/
-    │   │   ├── CustomerAddr/
-    │   │   ├── CustomerPaymentMethodRequests/
-    │   │   ├── Order/
-    │   │   ├── Products/
-    │   │   ├── Transactions/
-    │   │   └── Wishlist/
-    │   └── response/
-    │       ├── Cart/
-    │       ├── Category/
-    │       ├── Customer/
-    │       ├── CustomerAddr/
-    │       ├── Order/
-    │       ├── PaymentMethod/
-    │       ├── Product/
-    │       ├── Providers/
-    │       ├── Transactions/
-    │       └── Wishlist/
-    │
-    ├── errorHandler/
-    │   └── GlobalApiErrorHandler.java
-    │
-    └── mapper/                          # DTO ↔ Entity mappers
-        ├── CartServiceMapper.java
-        ├── CategoryServiceMapper.java
-        ├── CustomerAddressServiceMapper.java
-        ├── CustomerPaymentMethodServiceMapper.java
-        ├── CustomerServiceMapper.java
-        ├── OrderServiceMapper.java
-        ├── ProductServiceMapper.java
-        ├── TransactionServiceMapper.java
-        └── WishlistServiceMapper.java
+└── core/
+    └── src/main/java/commerce/eshop/core/
+        ├── config/                            # App configs (executors, async, branding, etc.)
+        │   ├── AsyncConfig.java
+        │   ├── AsyncExecutorConfig.java
+        │   ├── BackgroundConfig.java
+        │   ├── BrandConfig.java
+        │   ├── Conf.java
+        │   └── RestTemplateConfig.java
+        │
+        ├── model/                             # Entities (DB schema mirror)
+        │   └── entity/
+        │       ├── Auditing.java
+        │       ├── Cart.java
+        │       ├── CartItem.java
+        │       ├── Category.java
+        │       ├── Customer.java
+        │       ├── CustomerAddress.java
+        │       ├── CustomerPaymentMethod.java
+        │       ├── EmailsSent.java
+        │       ├── Order.java
+        │       ├── OrderItem.java
+        │       ├── Product.java
+        │       ├── ProductCategory.java
+        │       ├── Transaction.java
+        │       ├── Wishlist.java
+        │       └── WishlistItem.java
+        │
+        ├── repository/                        # Spring Data JPA repos (+ impls)
+        │   ├── AuditingRepo.java
+        │   ├── CartItemRepo.java
+        │   ├── CartRepo.java
+        │   ├── CategoryRepo.java
+        │   ├── CustomerAddrRepo.java
+        │   ├── CustomerPaymentMethodRepo.java
+        │   ├── CustomerRepo.java
+        │   ├── EmailsSentRepo.java
+        │   ├── OrderItemRepo.java
+        │   ├── OrderRepo.java
+        │   ├── ProductCategoryRepo.java
+        │   ├── ProductRepo.java
+        │   ├── TransactionRepo.java
+        │   ├── WishlistItemRepo.java
+        │   ├── WishlistRepo.java
+        │   └── Impl/                          
+        │       └── DbLockRepository.java
+        │
+        ├── application/                       # Application layer (use-cases, orchestration, infra)
+        │   ├── async/
+        │   │   ├── external/                  # External provider clients (payment/email)
+        │   │   │   ├── contracts/
+        │   │   │   │   ├── EmailSender.java
+        │   │   │   │   └── PaymentProviderClient.java
+        │   │   │   └── impl/
+        │   │   │       ├── MockEmailSender.java
+        │   │   │       ├── PaymentProviderClientImpl.java
+        │   │   │       └── (other mock/provider impls)
+        │   │   ├── internal/                  # Internal async tasks
+        │   │   │   └── EmailOutboxProcessor.java
+        │   │   └── schedule/                  # Scheduled jobs, retries, pollers
+        │   │       └── PaymentStatusPoller.java
+        │   │
+        │   ├── email/                         # Email composition + claim service
+        │   │   ├── constants/
+        │   │   ├── enums/
+        │   │   ├── properties/
+        │   │   └── templating/
+        │   │       ├── EmailClaimService.java
+        │   │       └── EmailComposer.java
+        │   │
+        │   ├── events/                        # Domain/application events
+        │   │   ├── auditing_events/
+        │   │   │   └── EmailEventRequest.java
+        │   │   ├── customer/
+        │   │   │   ├── CustomerRegisteredEvent.java
+        │   │   │   ├── CustomerUpdatedInfoEvent.java
+        │   │   │   └── CustomerSuccessfulOrFailedUpdatePasswordEvent.java
+        │   │   ├── email/
+        │   │   │   └── EmailSentOrFailedEvent.java
+        │   │   ├── order/
+        │   │   │   ├── PlacedOrderEvent.java
+        │   │   │   └── CancelledOrderEvent.java
+        │   │   └── payments/
+        │   │       ├── PaymentExecutionRequestEvent.java
+        │   │       ├── PaymentMethodCreatedEvent.java
+        │   │       └── PaymentSucceededOrFailed.java
+        │   │
+        │   ├── infrastructure/                # Cross-cutting infra (audit, lookup, client impls)
+        │   │   ├── audit/
+        │   │   │   └── CentralAudit.java
+        │   │   ├── domain/
+        │   │   │   └── DomainLookupService.java
+        │   │   └── impl/
+        │   │       ├── EmailSenderOutboxAdapter.java
+        │   │       ├── PaymentProviderOutboxAdapter.java
+        │   │       └── (other infra adapter impls)
+        │   │
+        │   ├── cart/
+        │   │   ├── commands/
+        │   │   │   ├── AddToCart.java
+        │   │   │   ├── ClearCart.java
+        │   │   │   └── RemoveFromCart.java
+        │   │   ├── factory/
+        │   │   │   └── CartItemFactory.java
+        │   │   ├── queries/
+        │   │   │   └── CartQueries.java
+        │   │   ├── validation/
+        │   │   │   └── AuditedCartValidation.java
+        │   │   └── writer/
+        │   │       └── CartWriter.java
+        │   │
+        │   ├── category/
+        │   │   ├── commands/
+        │   │   │   ├── AddCategory.java
+        │   │   │   └── RemoveCategory.java
+        │   │   ├── factory/
+        │   │   │   └── CategoryFactory.java
+        │   │   ├── queries/
+        │   │   │   └── CategoryQueries.java
+        │   │   ├── validation/
+        │   │   │   └── AuditedCategoryValidation.java
+        │   │   └── writer/
+        │   │       └── CategoryWriter.java
+        │   │
+        │   ├── customer/
+        │   │   ├── commands/
+        │   │   │   ├── CustomerRegistration.java
+        │   │   │   ├── CustomerServiceActions.java
+        │   │   ├── factory/
+        │   │   │   └── CustomerFactory.java
+        │   │   ├── queries/
+        │   │   │   └── CustomerQueries.java
+        │   │   ├── validation/
+        │   │   │   └── AuditedCustomerValidation.java
+        │   │   ├── writer/
+        │   │   │   └── CustomerWriter.java
+        │   │   └── addons/                    # Addresses, payment methods, wishlist, etc.
+        │   │       ├── address/
+        │   │       │   ├── commands/
+        │   │       │   ├── factory/
+        │   │       │   ├── queries/
+        │   │       │   ├── validation/
+        │   │       │   └── writer/
+        │   │       ├── payments/
+        │   │       │   ├── commands/
+        │   │       │   ├── factory/
+        │   │       │   ├── listener/
+        │   │       │   ├── validation/
+        │   │       │   └── writer/
+        │   │       └── wishlist/
+        │   │           ├── commands/
+        │   │           ├── factory/
+        │   │           ├── queries/
+        │   │           └── writer/
+        │   │
+        │   ├── order/
+        │   │   ├── commands/
+        │   │   │   ├── CancelOrder.java
+        │   │   │   └── PlaceOrder.java
+        │   │   ├── factory/
+        │   │   │   ├── DefaultAddressFactory.java
+        │   │   │   └── OrderFactory.java
+        │   │   ├── listener/
+        │   │   │   └── OrderApplicationEventListener.java
+        │   │   ├── orchestrator/
+        │   │   │   └── OrderPlacementExecutor.java
+        │   │   ├── queries/
+        │   │   │   └── OrderQueries.java
+        │   │   ├── validation/
+        │   │   │   └── AuditedOrderValidation.java
+        │   │   └── writer/
+        │   │       ├── OrderCartWriter.java
+        │   │       └── OrderWriter.java
+        │   │
+        │   ├── product/
+        │   │   ├── commands/
+        │   │   │   ├── AddProduct.java
+        │   │   │   └── RemoveProduct.java
+        │   │   ├── factory/
+        │   │   │   └── ProductFactory.java
+        │   │   ├── queries/
+        │   │   │   └── ProductQueries.java
+        │   │   ├── validation/
+        │   │   │   └── AuditedProductValidation.java
+        │   │   └── writer/
+        │   │       └── ProductWriter.java
+        │   │
+        │   ├── transaction/
+        │   │   ├── commands/
+        │   │   │   └── PayOrder.java
+        │   │   ├── factory/
+        │   │   │   └── TransactionFactory.java
+        │   │   ├── validation/
+        │   │   │   └── AuditedTransactionValidation.java
+        │   │   └── writer/
+        │   │       └── TransactionWriter.java
+        │   │
+        │   └── util/                          # Cross-cutting app-level utilities
+        │       ├── constants/
+        │       │   └── EndpointsNameMethods.java
+        │       ├── enums/
+        │       │   ├── AuditingStatus.java
+        │       │   ├── OrderStatus.java
+        │       │   ├── PaymentStatus.java
+        │       │   ├── TokenStatus.java
+        │       │   └── TransactionStatus.java
+        │       └── sort/
+        │           └── SortSanitizer.java
+        │
+        └── web/                               # Web/API layer
+            ├── controller/
+            │   ├── CartController.java
+            │   ├── CategoryController.java
+            │   ├── CustomerAddressController.java
+            │   ├── CustomerController.java
+            │   ├── CustomerPaymentMethodController.java
+            │   ├── OrderController.java
+            │   ├── ProductController.java
+            │   ├── TransactionController.java
+            │   └── WishController.java
+            │
+            ├── dto/
+            │   ├── requests/
+            │   │   ├── Cart/
+            │   │   ├── Category/
+            │   │   ├── Customer/
+            │   │   ├── CustomerAddr/
+            │   │   ├── CustomerPaymentMethodRequests/
+            │   │   ├── Order/
+            │   │   ├── Products/
+            │   │   ├── Transactions/
+            │   │   └── Wishlist/
+            │   └── response/
+            │       ├── Cart/
+            │       ├── Category/
+            │       ├── Customer/
+            │       ├── CustomerAddr/
+            │       ├── Order/
+            │       ├── PaymentMethod/
+            │       ├── Product/
+            │       ├── Providers/
+            │       ├── Transactions/
+            │       └── Wishlist/
+            │
+            ├── errorHandler/
+            │   └── GlobalApiErrorHandler.java
+            │
+            └── mapper/
+                ├── CartServiceMapper.java
+                ├── CategoryServiceMapper.java
+                ├── CustomerAddressServiceMapper.java
+                ├── CustomerPaymentMethodServiceMapper.java
+                ├── CustomerServiceMapper.java
+                ├── OrderServiceMapper.java
+                ├── ProductServiceMapper.java
+                ├── TransactionServiceMapper.java
+                └── WishlistServiceMapper.java
 ```
