@@ -24,10 +24,7 @@ import java.util.UUID;
 public class Order {
 
     // == Fields ==
-    // == Auto Generated UUID for the customer
-    @Setter(AccessLevel.NONE)
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name="order_id", updatable=false, nullable=false)
     private UUID orderId;
 
