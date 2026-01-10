@@ -1,37 +1,37 @@
-package commerce.eshop.core.application.order.commands;
+package commerce.eshop.core.service.Impl;
 
-import commerce.eshop.core.application.order.orchestrator.OrderPlacementExecutor;
-import commerce.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
-import commerce.eshop.core.web.dto.response.Order.DTOOrderPlacedResponse;
+import commerce.eshop.core.application.checkout.commands.ProcessCheckout;
+import commerce.eshop.core.service.CheckoutService;
+import commerce.eshop.core.web.dto.requests.checkout.DTOCheckoutRequest;
+import commerce.eshop.core.web.dto.response.Checkout.DTOCheckoutResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.CannotSerializeTransactionException;
 import org.springframework.dao.DeadlockLoserDataAccessException;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-@Component
-public class PlaceOrder {
+@Service
+public class CheckoutServiceImpl implements CheckoutService {
 
     // == Fields ==
-    private final OrderPlacementExecutor executor; // Orchestrator
+    private final ProcessCheckout checkout;
 
     // == Constructors ==
     @Autowired
-    public PlaceOrder(OrderPlacementExecutor executor) {
-        this.executor = executor;
+    public CheckoutServiceImpl(ProcessCheckout checkout) {
+        this.checkout = checkout;
     }
 
     // == Public Methods ==
-    /**
-     * ENTRYPOINT (non-transactional): bounded retry with small random backoff.
-     */
-    public DTOOrderPlacedResponse handle(UUID customerId, DTOOrderCustomerAddress addressDto) {
+
+    @Override
+    public DTOCheckoutResponse process(UUID customerId, UUID idemkey, DTOCheckoutRequest request) {
         int attempts = 0;
         while (true) {
             try {
-                return executor.tryPlaceOrder(customerId, addressDto);
+                return checkout.process();
             } catch (CannotSerializeTransactionException | DeadlockLoserDataAccessException ex) {
                 if (++attempts >= 5) {
                     throw ex;

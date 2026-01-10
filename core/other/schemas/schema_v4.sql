@@ -25,7 +25,7 @@ CREATE TYPE auditing_status    AS ENUM ('SUCCESSFUL','FAILED','ERROR', 'WARNING'
 CREATE TYPE email_status       AS ENUM ('QUEUED','SENT', 'SENDING', 'FAILED');
 CREATE TYPE email_kind         AS ENUM ('ORDER_CONFIRMATION', 'ORDER_CANCEL_CONFIRMATION', 'PAYMENT_CONFIRMATION', 'PAYMENT_FAILED_CONFIRMATION','ACCOUNT_UPDATE',
  'PASSWORD_CHANGE', 'ACCOUNT_CREATED');
-CREATE TYPE order_outbox_status AS ENUM('PENDING', 'PROCESSING', 'ORDER_CREATED', "TRANSACTION_READY", 'COMPLETED', 'FAILED');
+CREATE TYPE checkout_status AS ENUM('PENDING', 'PROCESSING', 'ORDER_CREATED', "TRANSACTION_READY", 'COMPLETED', 'FAILED');
 
 -- ====================================
 --         Clear all tables
@@ -262,7 +262,7 @@ create table checkout_job(
     customer_id UUID NOT NULL,
     customer_address JSONB,
     transaction_method JSONB NOT NULL,
-    state order_outbox_status NOT NULL DEFAULT 'PENDING',
+    state checkout_status NOT NULL DEFAULT 'PENDING',
     created_at timestamptz NOT NULL DEFAULT NOW(),
     updated_at timestamptz,
     CONSTRAINT uq_idemkey_customer_id UNIQUE (customer_id, idemkey)

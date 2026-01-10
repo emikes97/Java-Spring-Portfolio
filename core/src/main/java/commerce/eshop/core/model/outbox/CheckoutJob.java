@@ -17,7 +17,6 @@ import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Getter
@@ -77,6 +76,23 @@ public class CheckoutJob {
         this.customerPayment = mapPayment(dtoTransaction);
     }
 
+    // == Public Methods ==
+
+    @Override
+    public String toString() {
+        return "CheckoutJob{" +
+                "id=" + id +
+                ", idemkey=" + idemkey +
+                ", orderId=" + orderId +
+                ", customerId=" + customerId +
+                ", customerAddress=" + customerAddress +
+                ", customerPayment=" + customerPayment +
+                ", state=" + state +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                '}';
+    }
+
     // == Private Methods ==
 
     private Map<String,Object> mapAddress(DTOOrderCustomerAddress dto){
@@ -111,6 +127,6 @@ public class CheckoutJob {
             return map;
         }
 
-        throw new NoSuchElementException("Unsupported Method");
+        throw new IllegalArgumentException("Unsupported Method " + i.getClass().getSimpleName());
     }
 }
