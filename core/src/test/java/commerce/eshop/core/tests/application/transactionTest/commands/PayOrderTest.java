@@ -61,11 +61,10 @@ class PayOrderTest {
         DTOTransactionResponse dtoResponse = mock(DTOTransactionResponse.class);
         UseNewCard instruction = new UseNewCard(
                 "4111111111111111",
-                "VISA",
+                "digimon",
                 12,
                 30,
-                "Mike",
-                "123"
+                "Mike"
         );
 
         when(domainLookupService.getOrderOrThrow(customerId, orderId, EndpointsNameMethods.TRANSACTION_PAY))
@@ -123,12 +122,11 @@ class PayOrderTest {
         Transaction winnerTransaction = mock(Transaction.class);
         DTOTransactionResponse winnerDto = mock(DTOTransactionResponse.class);
         UseNewCard instruction = new UseNewCard(
-                "4111111111111111",
                 "VISA",
+                "digimon",
                 12,
                 30,
-                "Mike",
-                "123"
+                "Mike"
         );
 
         when(domainLookupService.getOrderOrThrow(customerId, orderId, EndpointsNameMethods.TRANSACTION_PAY))

@@ -40,7 +40,7 @@ class TransactionFactoryTest {
         // PaymentInstruction instruction = mock(PaymentInstruction.class.); -> blows up
         // Object dummyInstruction = new Object(); -> this doesn't work either as it expects type PaymentInstruction
         // Instance a dummy UseNewCard to verify the test.
-        UseNewCard dummyInstruction = new UseNewCard("4111","VISA",12, 30, "Mike", "443");
+        UseNewCard dummyInstruction = new UseNewCard("VISA","DIGIMON",12, 30, "Mike");
         Map<String, Object> snapshot = Map.of("key", "value");
 
         when(dto.instruction()).thenReturn(dummyInstruction);

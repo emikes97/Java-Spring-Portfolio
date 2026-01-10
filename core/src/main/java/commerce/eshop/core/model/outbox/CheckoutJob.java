@@ -1,6 +1,10 @@
 package commerce.eshop.core.model.outbox;
 
 import commerce.eshop.core.model.states.CheckoutStates;
+import commerce.eshop.core.web.dto.requests.Order.DTOOrderCustomerAddress;
+import commerce.eshop.core.web.dto.requests.Transactions.DTOTransactionRequest;
+import commerce.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseNewCard;
+import commerce.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseSavedMethod;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,7 +15,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Getter
@@ -21,6 +27,7 @@ import java.util.UUID;
 public class CheckoutJob {
 
     // == Fields ==
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(updatable = false, nullable = false)
@@ -58,4 +65,52 @@ public class CheckoutJob {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    // == Constructors ==
+
+    protected CheckoutJob(){}
+
+    public CheckoutJob(UUID idemkey, UUID customerId, DTOOrderCustomerAddress dtoAddress, DTOTransactionRequest dtoTransaction){
+        this.idemkey = idemkey;
+        this.customerId = customerId;
+        this.customerAddress = mapAddress(dtoAddress);
+        this.customerPayment = mapPayment(dtoTransaction);
+    }
+
+    // == Private Methods ==
+
+    private Map<String,Object> mapAddress(DTOOrderCustomerAddress dto){
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("country", dto.country());
+        map.put("street", dto.street());
+        map.put("city", dto.city());
+        map.put("postalCode", dto.postalCode());
+
+        return map;
+    }
+
+    private Map<String, Object> mapPayment(DTOTransactionRequest dto){
+        Map<String, Object> map = new HashMap<>();
+
+        var i = dto.instruction();
+
+        if (i instanceof UseSavedMethod saved){
+            map.put("type", "USE_SAVED_METHOD");
+            map.put("customerPaymentMethodId", saved.customerPaymentMethodId());
+            return map;
+        }
+
+        if (i instanceof UseNewCard card){
+            map.put("type", "USE_NEW_CARD");
+            map.put("token", card.tokenRef());
+            map.put("brand", card.brand());
+            map.put("expMonth", card.expMonth());
+            map.put("expYear", card.expYear());
+            map.put("holderName", card.holderName());
+            return map;
+        }
+
+        throw new NoSuchElementException("Unsupported Method");
+    }
 }
