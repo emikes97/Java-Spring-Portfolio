@@ -1,6 +1,7 @@
 package commerce.eshop.core.application.infrastructure;
 
 import commerce.eshop.core.model.entity.*;
+import commerce.eshop.core.model.outbox.CheckoutJob;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -73,4 +74,9 @@ public interface DomainLookupService {
 
     // --- Product pageable ---
     Page<Product> getPagedProducts(long categoryId, Pageable pageable);
+
+    ///  ======= Outbox / Infra =======
+    // --- Checkout Infra Domain ---
+    CheckoutJob getCheckoutJob(long jobId, String method);
+
 }

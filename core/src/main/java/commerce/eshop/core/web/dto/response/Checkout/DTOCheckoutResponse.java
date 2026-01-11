@@ -1,4 +1,6 @@
 package commerce.eshop.core.web.dto.response.Checkout;
 
-public record DTOCheckoutResponse() {
+import java.util.UUID;
+
+public record DTOCheckoutResponse(UUID orderId) {
 }

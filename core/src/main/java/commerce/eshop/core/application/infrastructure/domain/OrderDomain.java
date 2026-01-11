@@ -3,6 +3,8 @@ package commerce.eshop.core.application.infrastructure.domain;
 import commerce.eshop.core.application.infrastructure.audit.CentralAudit;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.OrderItem;
+import commerce.eshop.core.model.outbox.CheckoutJob;
+import commerce.eshop.core.repository.CheckoutJobRepo;
 import commerce.eshop.core.repository.OrderItemRepo;
 import commerce.eshop.core.repository.OrderRepo;
 import commerce.eshop.core.application.util.enums.AuditingStatus;
@@ -21,13 +23,15 @@ public class OrderDomain {
     // == Fields ==
     private final OrderRepo oRepo;
     private final OrderItemRepo oiRepo;
+    private final CheckoutJobRepo checkRepo;
     private final CentralAudit centralAudit;
 
     // == Constructors ==
     @Autowired
-    public OrderDomain(OrderRepo oRepo, OrderItemRepo oiRepo, CentralAudit centralAudit) {
+    public OrderDomain(OrderRepo oRepo, OrderItemRepo oiRepo, CheckoutJobRepo checkRepo, CentralAudit centralAudit) {
         this.oRepo = oRepo;
         this.oiRepo = oiRepo;
+        this.checkRepo = checkRepo;
         this.centralAudit = centralAudit;
     }
 
@@ -37,6 +41,14 @@ public class OrderDomain {
             return oRepo.findByCustomer_CustomerIdAndOrderId(customerId, orderId).orElseThrow( () -> new NoSuchElementException("There is no order with the ID=" + orderId));
         } catch (NoSuchElementException e){
             throw centralAudit.audit(e, customerId, method, AuditingStatus.WARNING, e.toString());
+        }
+    }
+
+    public CheckoutJob retrieveCheckoutJob(Long id, String method){
+        try {
+            return checkRepo.getCheckoutJobById(id).orElseThrow(() -> new NoSuchElementException("There is no checkout job with the ID=" + id));
+        }catch (NoSuchElementException e){
+            throw centralAudit.audit(e, null, method, AuditingStatus.WARNING, e.toString());
         }
     }
 

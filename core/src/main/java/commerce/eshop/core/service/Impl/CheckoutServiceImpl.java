@@ -27,11 +27,11 @@ public class CheckoutServiceImpl implements CheckoutService {
     // == Public Methods ==
 
     @Override
-    public DTOCheckoutResponse process(UUID customerId, UUID idemkey, DTOCheckoutRequest request) {
+    public DTOCheckoutResponse process(UUID customerId, UUID idemKey, DTOCheckoutRequest request) {
         int attempts = 0;
         while (true) {
             try {
-                return checkout.process();
+                return checkout.process(customerId, idemKey, request);
             } catch (CannotSerializeTransactionException | DeadlockLoserDataAccessException ex) {
                 if (++attempts >= 5) {
                     throw ex;
@@ -41,7 +41,7 @@ public class CheckoutServiceImpl implements CheckoutService {
                     Thread.sleep(backoffMs);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrupted while retrying order placement", ie);
+                    throw new IllegalStateException("Interrupted while retrying checkout placement", ie);
                 }
             }
         }

@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.internal;
+package commerce.eshop.core.application.async.internal.order;
 
 
 import commerce.eshop.core.application.events.payments.PaymentSucceededOrFailed;

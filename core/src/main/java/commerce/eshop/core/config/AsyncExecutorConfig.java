@@ -27,38 +27,56 @@ public class AsyncExecutorConfig implements AsyncConfigurer {
 
     @Bean(name="asyncExecutor")
     public Executor asyncExecutor(){
-        ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-        ex.setThreadNamePrefix("async-"); // Adds async- as a prefix to thread name, to make it easier for our info/debug.
-
-        // IO-Bound work (HTTP calls): allow higher concurrency
-        ex.setCorePoolSize(8);
-        ex.setMaxPoolSize(32);
-        ex.setQueueCapacity(200); //  * - Queue capacity: 200 (backlog of tasks before rejecting).
-        ex.setKeepAliveSeconds(60); // * - Keep alive: 60 seconds (time before idle threads are removed).
-        ex.setAwaitTerminationSeconds(30); // * - Await termination: 30 seconds (time to wait for tasks to finish on shutdown).
-        ex.setWaitForTasksToCompleteOnShutdown(true);
-        ex.initialize();
+        ThreadPoolTaskExecutor ex = createThreadPoolTask("async-");
         return ex;
     }
 
     @Bean(name = "emailExecutor")
     public Executor emailExecutor(){
-        ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
-        ex.setThreadNamePrefix("async-email-"); // Adds async- as a prefix to thread name, to make it easier for our info/debug.
+        ThreadPoolTaskExecutor ex = createThreadPoolTask("async-email-");
+        return ex;
+    }
 
-        // IO-Bound work (HTTP calls): allow higher concurrency
+    @Bean(name = "checkoutJobExecutor")
+    public Executor checkoutJobExecutor(){
+        ThreadPoolTaskExecutor ex = createThreadPoolTask("async-order-");
+        return ex;
+    }
+
+    @Bean(name = "orderExecutor")
+    public Executor orderExecutor(){
+        ThreadPoolTaskExecutor ex = createThreadPoolTask("async-order-");
+        return ex;
+    }
+
+    @Bean(name = "transactionExecutor")
+    public Executor transactionExecutor(){
+        ThreadPoolTaskExecutor ex = createThreadPoolTask("async-transaction-");
+        return ex;
+    }
+
+    // == Public Methods ==
+
+    @Override
+    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler(){
+        return (ex, method, params) -> System.err.println("[ASYNC-UNCAUGHT] " + method + " -> " + ex.getMessage());
+    }
+
+    // == Private Methods ==
+    // Keep the rest as non changing for now and change only names, after we finalize the async refactoring we will expand on threadpools.
+    private ThreadPoolTaskExecutor createThreadPoolTask(String threadName){
+        ThreadPoolTaskExecutor ex = new ThreadPoolTaskExecutor();
+        ex.setThreadNamePrefix(threadName);
+
+        // IO-Bound work (HTTP Calls): allow higher concurrency
         ex.setCorePoolSize(8);
         ex.setMaxPoolSize(32);
         ex.setQueueCapacity(200); //  * - Queue capacity: 200 (backlog of tasks before rejecting).
         ex.setKeepAliveSeconds(60); // * - Keep alive: 60 seconds (time before idle threads are removed).
         ex.setAwaitTerminationSeconds(30); // * - Await termination: 30 seconds (time to wait for tasks to finish on shutdown).
         ex.setWaitForTasksToCompleteOnShutdown(true);
+        ex.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
         ex.initialize();
         return ex;
-    }
-
-    @Override
-    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler(){
-        return (ex, method, params) -> System.err.println("[ASYNC-UNCAUGHT] " + method + " -> " + ex.getMessage());
     }
 }

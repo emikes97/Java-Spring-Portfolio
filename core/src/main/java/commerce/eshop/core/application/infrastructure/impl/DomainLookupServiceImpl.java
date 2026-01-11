@@ -3,6 +3,7 @@ package commerce.eshop.core.application.infrastructure.impl;
 import commerce.eshop.core.application.infrastructure.domain.*;
 import commerce.eshop.core.model.entity.*;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
+import commerce.eshop.core.model.outbox.CheckoutJob;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -110,6 +111,12 @@ public class DomainLookupServiceImpl implements DomainLookupService {
     @Override
     public Order getOrderOrThrow(UUID customerId, UUID orderId, String method){
         return orderDomain.retrieveOrder(customerId, orderId, method);
+    }
+
+    // --- Checkout Infra Domain ---
+    @Override
+    public CheckoutJob getCheckoutJob(long jobId, String method) {
+        return orderDomain.retrieveCheckoutJob(jobId, method);
     }
 
     @Override
