@@ -58,8 +58,9 @@ public class Order {
 
     protected Order(){} /// For JPA only
 
-    public Order(Customer customer, Map<String, Object> addressToSend, BigDecimal totalOutstanding)
+    public Order(UUID orderId, Customer customer, Map<String, Object> addressToSend, BigDecimal totalOutstanding)
     {
+        this.orderId = orderId;
         this.customer = customer;
         this.addressToSend = addressToSend;
         this.totalOutstanding = totalOutstanding;

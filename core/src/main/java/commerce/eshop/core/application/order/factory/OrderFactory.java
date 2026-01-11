@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Component
 public class OrderFactory {
@@ -25,8 +26,8 @@ public class OrderFactory {
 
     // == Public Methods ==
 
-    public Order handle(Customer customer, DTOOrderCustomerAddress dto, BigDecimal total_outstanding){
-        Order order = new Order(customer, mapper.toMap(dto), total_outstanding);
+    public Order handle(UUID orderId, Customer customer, DTOOrderCustomerAddress dto, BigDecimal total_outstanding){
+        Order order = new Order(orderId, customer, mapper.toMap(dto), total_outstanding);
         order.setOrderStatus(OrderStatus.PENDING_PAYMENT);
         return order;
     }
