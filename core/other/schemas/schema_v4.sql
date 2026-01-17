@@ -201,7 +201,7 @@ create table transactions(
     status transaction_status NOT NULL DEFAULT 'PENDING',
     idempotency_key varchar (100),
     provider_reference varchar(100),
-    CONSTRAINT uq_transactions_idem UNIQUE (idempotency_key)
+    CONSTRAINT uq_transactions_idem UNIQUE (order_id, idempotency_key)
 );
 
 --===================================

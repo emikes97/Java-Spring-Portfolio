@@ -9,6 +9,7 @@ import commerce.eshop.core.model.entity.Customer;
 import commerce.eshop.core.model.entity.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,12 @@ public class OrderApplicationEventListener {
         this.domainLookupService = domainLookupService;
     }
     // == Public Methods ==
+
+    @Async("transactionalExecutor")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onPayment(PlacedOrderEvent event){
+    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

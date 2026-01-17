@@ -3,7 +3,6 @@ package commerce.eshop.core.application.async.internal.order.createNewOrder.proc
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.application.order.validation.AuditedOrderValidation;
 import commerce.eshop.core.application.order.writer.OrderCartWriter;
-import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.model.entity.Cart;
 import commerce.eshop.core.model.entity.Customer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +10,6 @@ import org.springframework.dao.CannotSerializeTransactionException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 
 @Component
 public class ProcessCart {

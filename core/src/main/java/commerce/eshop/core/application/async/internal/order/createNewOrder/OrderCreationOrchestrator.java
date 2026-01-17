@@ -59,7 +59,7 @@ public class OrderCreationOrchestrator {
         // #3 Create Order entity & Save
         Order order = processOrder.process(job, customer, cart, address, total_outstanding);
 
-        PlacedOrderEvent orderEvent = new PlacedOrderEvent(job.getCustomerId(), order.getOrderId(), order.getTotalOutstanding(), "Euro");
+        PlacedOrderEvent orderEvent = new PlacedOrderEvent(job.getCustomerId(), order.getOrderId(), order.getTotalOutstanding(), "Euro", job.getIdemkey());
         publisher.publishEvent(orderEvent);
     }
 }
