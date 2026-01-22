@@ -128,7 +128,7 @@ public class PaymentProcessor {
             log.info("Transaction: " + tr.getTransactionId() + "was completed");
             transactionRepo.save(tr);
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAID, OffsetDateTime.now(), tr.getOrder().getOrderId()));
-            publishPaymentEmail(paymentExecutionRequestEvent, tr, providerChargeResult.successful());
+            publishPaymentEmail(paymentExecutionRequestEvent, tr, true);
             centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.SUCCESSFUL,
                     "Transaction Succeeded");
         } else {
@@ -140,7 +140,7 @@ public class PaymentProcessor {
             centralAudit.info(paymentExecutionRequestEvent.customerId(), EndpointsNameMethods.PAYMENT_PROCESSING_ASYNC, AuditingStatus.FAILED,
                     "Transaction Failed");
             publisher.publishEvent(new PaymentSucceededOrFailed(OrderStatus.PAYMENT_FAILED, OffsetDateTime.now(), tr.getOrder().getOrderId()));
-            publishPaymentEmail(paymentExecutionRequestEvent, tr, providerChargeResult.successful());
+            publishPaymentEmail(paymentExecutionRequestEvent, tr, false);
         }
     }
 

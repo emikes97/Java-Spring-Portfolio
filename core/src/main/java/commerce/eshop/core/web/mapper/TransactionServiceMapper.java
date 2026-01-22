@@ -17,9 +17,8 @@ public class TransactionServiceMapper {
         Map<String, Object> m = new LinkedHashMap<>();
 
         if (paymentInstruction instanceof UseNewCard card){
-            m.put("type", "USE_NEW_CARD");
+            m.put("token", card.tokenRef());     // ✅ token reference instead of panMasked/cvc <-- more changes will happen in 'terms of paying'
             m.put("brand", card.brand());
-            m.put("panMasked", card.panMasked());     // masked only
             m.put("expMonth", card.expMonth());
             m.put("expYear", card.expYear());
             m.put("holderName", card.holderName());

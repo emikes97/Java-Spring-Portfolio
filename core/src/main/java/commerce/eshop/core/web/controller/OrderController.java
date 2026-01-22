@@ -21,14 +21,14 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    // Place order
-    /// curl -i -X POST "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/checkout" ^
-    ///   -H "Content-Type: application/json" ^
-    ///   -d "{\"country\":\"GR\",\"street\":\"Akadimias 1\",\"city\":\"Athens\",\"postalCode\":\"10562\"}"
-    @PostMapping("/checkout")
-    public DTOOrderPlacedResponse placeOrder(@PathVariable UUID customerId, @RequestBody(required = false) DTOOrderCustomerAddress dto){
-        return orderService.placeOrder(customerId, dto);
-    }
+//    // Place order Not used anymore, now we have checkout for both payment and order.
+//    /// curl -i -X POST "http://localhost:8080/api/v1/customers/499008e1-13fa-4db8-983f-a6fc175f2445/checkout" ^
+//    ///   -H "Content-Type: application/json" ^
+//    ///   -d "{\"country\":\"GR\",\"street\":\"Akadimias 1\",\"city\":\"Athens\",\"postalCode\":\"10562\"}"
+//    @PostMapping("/checkout")
+//    public DTOOrderPlacedResponse placeOrder(@PathVariable UUID customerId, @RequestBody(required = false) DTOOrderCustomerAddress dto){
+//        return orderService.placeOrder(customerId, dto);
+//    }
 
     // Order Cancel
     ///http://localhost:8080/api/v1/customers/5305688f-2c42-4f7f-9514-ce46dc310ba4/orders/c2287bfe-67a1-417e-8cdf-04e4ca78ab0b

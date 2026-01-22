@@ -12,4 +12,5 @@ public record PaymentExecutionRequestEvent(UUID transactionId,
                                            String methodType,
                                            Map<String, Object> snapshot,
                                            BigDecimal amount,
-                                           String idemKey) {}
+                                           String idemKey,
+                                           long jobId) {}

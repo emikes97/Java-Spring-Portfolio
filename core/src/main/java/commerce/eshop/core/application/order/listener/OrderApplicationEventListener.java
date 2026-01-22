@@ -1,5 +1,6 @@
 package commerce.eshop.core.application.order.listener;
 
+import commerce.eshop.core.application.async.internal.payment.confirmPayment.ConfirmPaymentOrchestrator;
 import commerce.eshop.core.application.email.EmailComposer;
 import commerce.eshop.core.application.events.email.EmailEventRequest;
 import commerce.eshop.core.application.events.order.CancelledOrderEvent;
@@ -23,22 +24,26 @@ public class OrderApplicationEventListener {
 
     // == Fields ==
     private final EmailComposer emailComposer;
+    private final ConfirmPaymentOrchestrator confirmPaymentOrchestrator;
     private final ApplicationEventPublisher publisher;
     private final DomainLookupService domainLookupService;
 
     // == Constructors ==
     @Autowired
-    public OrderApplicationEventListener(EmailComposer emailComposer, ApplicationEventPublisher publisher, DomainLookupService domainLookupService) {
+    public OrderApplicationEventListener(EmailComposer emailComposer, ConfirmPaymentOrchestrator confirmPaymentOrchestrator,
+                                         ApplicationEventPublisher publisher, DomainLookupService domainLookupService) {
         this.emailComposer = emailComposer;
+        this.confirmPaymentOrchestrator = confirmPaymentOrchestrator;
         this.publisher = publisher;
         this.domainLookupService = domainLookupService;
     }
     // == Public Methods ==
 
-    @Async("transactionalExecutor")
+    @Async("transactionExecutor")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onPayment(PlacedOrderEvent event){
+        confirmPaymentOrchestrator.handle(event.customerId(), event.orderId(), event.idemkey(), event.jobId());
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

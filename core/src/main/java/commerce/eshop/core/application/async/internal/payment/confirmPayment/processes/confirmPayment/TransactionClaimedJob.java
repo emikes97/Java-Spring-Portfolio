@@ -1,11 +1,13 @@
-package commerce.eshop.core.application.async.internal.payment.confirmPayment.processes;
+package commerce.eshop.core.application.async.internal.payment.confirmPayment.processes.confirmPayment;
 
+import commerce.eshop.core.application.checkout.writer.CheckoutWriter;
 import commerce.eshop.core.application.infrastructure.DomainLookupService;
 import commerce.eshop.core.application.transaction.factory.TransactionFactory;
 import commerce.eshop.core.application.transaction.writer.TransactionWriter;
 import commerce.eshop.core.application.util.constants.EndpointsNameMethods;
 import commerce.eshop.core.model.entity.Order;
 import commerce.eshop.core.model.entity.Transaction;
+import commerce.eshop.core.model.outbox.CheckoutJob;
 import commerce.eshop.core.web.dto.requests.Transactions.DTOTransactionRequest;
 import commerce.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseNewCard;
 import commerce.eshop.core.web.dto.requests.Transactions.PaymentVariants.UseSavedMethod;
@@ -22,14 +24,16 @@ public class TransactionClaimedJob {
 
     // == Fields ==
     private final ValidateInfo validate;
+    private final CheckoutWriter jobWriter;
     private final DomainLookupService domainLookupService;
     private final TransactionFactory factory;
     private final TransactionWriter writer;
 
     // == Constructors ==
     @Autowired
-    public TransactionClaimedJob(ValidateInfo validate, DomainLookupService domainLookupService, TransactionFactory factory, TransactionWriter writer) {
+    public TransactionClaimedJob(ValidateInfo validate, CheckoutWriter jobWriter, DomainLookupService domainLookupService, TransactionFactory factory, TransactionWriter writer) {
         this.validate = validate;
+        this.jobWriter = jobWriter;
         this.domainLookupService = domainLookupService;
         this.factory = factory;
         this.writer = writer;
@@ -42,10 +46,23 @@ public class TransactionClaimedJob {
         return order;
     }
 
+    public CheckoutJob saveState(CheckoutJob job){
+        try {
+            return jobWriter.save(job);
+        } catch (DataIntegrityViolationException dup){
+            log.info(
+                    "Job race spotted, changes will be ignored| thread={} | jobId= {} | idemKey={}",
+                    Thread.currentThread().getName(),
+                    job.getId(),
+                    job.getIdemkey()
+            );
+            throw dup;
+        }
+    }
+
     public Transaction createTransaction(DTOTransactionRequest dto, Order order, String customerId, String idemKey){
         Transaction transaction =  factory.handle(dto, order, customerId, idemKey);
 
-        // -> Idemkey run , if duplicate resolve early
         try {
             return writer.save(transaction);
         } catch (DataIntegrityViolationException dup){
@@ -57,6 +74,10 @@ public class TransactionClaimedJob {
             );
             throw dup;
         }
+    }
+
+    public CheckoutJob fetchJob(long id){
+        return domainLookupService.getCheckoutJob(id, "FETCH_JOB -> ORDER_CREATION");
     }
 
     public void auditSuccess(UUID customerId, String message){
@@ -75,5 +96,4 @@ public class TransactionClaimedJob {
             throw ex;
         }
     }
-
 }

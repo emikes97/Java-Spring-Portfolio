@@ -43,7 +43,6 @@ public class CheckoutDispatcher {
             List<Long> pendingJobs = claimService.claim(batchSize);
             if (pendingJobs == null || pendingJobs.isEmpty()) return;
             submitBatch(pendingJobs);
-            return;
         }
 
         // check for stucked jobs

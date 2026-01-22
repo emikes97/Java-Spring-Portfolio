@@ -1,4 +1,4 @@
-package commerce.eshop.core.application.async.internal.payment.confirmPayment.processes;
+package commerce.eshop.core.application.async.internal.payment.confirmPayment.processes.confirmPayment;
 
 import commerce.eshop.core.application.transaction.validation.AuditedTransactionValidation;
 import commerce.eshop.core.model.entity.Order;

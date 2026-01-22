@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface OrderService {
 
     // == Place Order ==
-    DTOOrderPlacedResponse placeOrder(UUID customerId, DTOOrderCustomerAddress dto);
+//    DTOOrderPlacedResponse placeOrder(UUID customerId, DTOOrderCustomerAddress dto);
 
     // == Cancel Order ==
     void cancel(UUID customerId, UUID orderId);
